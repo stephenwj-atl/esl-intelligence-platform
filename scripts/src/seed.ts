@@ -1,4 +1,4 @@
-import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable } from "@workspace/db";
+import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable, covenantsTable, esapItemsTable, monitoringEventsTable, auditLogsTable, frameworkAlignmentsTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 function clamp(val: number, min: number, max: number): number {
@@ -143,6 +143,11 @@ function generateRiskHistory(projectId: number, baseRisk: number, baseConfidence
 
 async function seed() {
   console.log("Clearing existing data...");
+  await db.execute(sql`TRUNCATE TABLE audit_logs RESTART IDENTITY CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE monitoring_events RESTART IDENTITY CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE esap_items RESTART IDENTITY CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE covenants RESTART IDENTITY CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE framework_alignments RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE risk_history RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE portfolio_projects RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE portfolios RESTART IDENTITY CASCADE`);
@@ -216,7 +221,7 @@ async function seed() {
     },
   ];
 
-  const insertedProjects = [];
+  const insertedProjects: any[] = [];
   for (const proj of sampleProjects) {
     const analysis = analyzeProject(proj);
     const [inserted] = await db.insert(projectsTable).values({
@@ -271,10 +276,154 @@ async function seed() {
     console.log(`  Added ${proj.name} to portfolio (${stages[i]}, $${proj.investmentAmount}M)`);
   }
 
+  console.log("\nSeeding governance data...");
+
+  const monitoringData: Array<{projectId: number; date: string; type: string; result: string; status: string; findings: string | null}> = [];
+
+  for (const proj of insertedProjects) {
+    if (proj.hasMonitoringData) {
+      monitoringData.push(
+        { projectId: proj.id, date: "2025-01-10", type: "Site Visit", result: "Pass", status: "Verified", findings: "No issues found during routine inspection" },
+        { projectId: proj.id, date: "2025-02-15", type: "Lab Test", result: "Pass", status: "Verified", findings: "Water quality within acceptable parameters" },
+        { projectId: proj.id, date: "2025-03-20", type: "Community Review", result: "Pass", status: "Verified", findings: "Community engagement session completed successfully" },
+      );
+    }
+    if (proj.hasLabData) {
+      monitoringData.push(
+        { projectId: proj.id, date: "2025-01-05", type: "Lab Test", result: "Pass", status: "Verified", findings: "Soil contamination levels below threshold" },
+      );
+    }
+  }
+
+  const montegoBay = insertedProjects[1];
+  monitoringData.push(
+    { projectId: montegoBay.id, date: "2025-02-01", type: "Site Visit", result: "Issue Found", status: "Escalated", findings: "Unauthorized discharge near construction zone observed" },
+    { projectId: montegoBay.id, date: "2025-03-10", type: "Audit", result: "Fail", status: "Escalated", findings: "ESMS documentation not available on site" },
+  );
+
+  const coastalSolar = insertedProjects[3];
+  monitoringData.push(
+    { projectId: coastalSolar.id, date: "2025-01-20", type: "Site Visit", result: "Issue Found", status: "Escalated", findings: "Drainage infrastructure inadequate for flood zone" },
+  );
+
+  for (const m of monitoringData) {
+    await db.insert(monitoringEventsTable).values(m);
+  }
+  console.log(`  ${monitoringData.length} monitoring events`);
+
+  const covenantSeeds: Array<{projectId: number; category: string; description: string; triggerCondition: string; status: string}> = [];
+
+  for (const proj of insertedProjects) {
+    if (!proj.hasLabData) {
+      covenantSeeds.push({
+        projectId: proj.id, category: "Environmental",
+        description: "Independent water quality monitoring required quarterly to ISO 17025 standard",
+        triggerCondition: "Lab data absent", status: "Pending"
+      });
+    }
+    if (!proj.hasMonitoringData) {
+      covenantSeeds.push({
+        projectId: proj.id, category: "Environmental",
+        description: "Continuous environmental monitoring system deployment within 60 days",
+        triggerCondition: "No monitoring data available", status: "Pending"
+      });
+    }
+    if (proj.floodRisk >= 5) {
+      covenantSeeds.push({
+        projectId: proj.id, category: "Environmental",
+        description: "Flood risk mitigation infrastructure must be installed prior to drawdown",
+        triggerCondition: "Flood risk score exceeds threshold",
+        status: proj.hasMonitoringData ? "In Progress" : "Pending"
+      });
+    }
+    if (!proj.isIFCAligned) {
+      covenantSeeds.push({
+        projectId: proj.id, category: "Monitoring",
+        description: "Alignment with IFC Performance Standards required within 180 days",
+        triggerCondition: "Project not currently IFC-aligned", status: "Pending"
+      });
+    }
+    if (proj.communitySensitivity >= 5) {
+      covenantSeeds.push({
+        projectId: proj.id, category: "Social",
+        description: "Community stakeholder engagement plan required prior to construction",
+        triggerCondition: "Community sensitivity exceeds threshold",
+        status: proj.hasMonitoringData ? "In Progress" : "Pending"
+      });
+    }
+    covenantSeeds.push({
+      projectId: proj.id, category: "Monitoring",
+      description: "Quarterly E&S monitoring reports submitted to lender",
+      triggerCondition: "Standard monitoring obligation",
+      status: proj.hasMonitoringData ? "Met" : "Pending"
+    });
+  }
+
+  covenantSeeds.push({
+    projectId: montegoBay.id, category: "Environmental",
+    description: "Contamination assessment to ISO17025 standard prior to drawdown",
+    triggerCondition: "High contamination risk + no lab data", status: "Breach"
+  });
+
+  for (const c of covenantSeeds) {
+    await db.insert(covenantsTable).values(c);
+  }
+  console.log(`  ${covenantSeeds.length} covenants`);
+
+  const esapSeeds: Array<{projectId: number; action: string; owner: string; deadline: string; status: string; evidence: string | null}> = [];
+
+  for (const proj of insertedProjects) {
+    if (!proj.hasLabData) {
+      esapSeeds.push({ projectId: proj.id, action: "Conduct independent laboratory testing of soil and water samples", owner: "Sponsor", deadline: "90 days", status: "Not Started", evidence: null });
+    }
+    if (!proj.hasMonitoringData) {
+      esapSeeds.push({ projectId: proj.id, action: "Deploy continuous environmental monitoring stations", owner: "Sponsor", deadline: "60 days", status: "Not Started", evidence: null });
+    }
+    if (!proj.isIFCAligned) {
+      esapSeeds.push({ projectId: proj.id, action: "Complete IFC Performance Standards gap analysis", owner: "E&S Consultant", deadline: "120 days", status: "In Progress", evidence: null });
+    }
+    esapSeeds.push({ projectId: proj.id, action: "Prepare Environmental & Social Management System (ESMS)", owner: "Sponsor", deadline: "180 days", status: proj.hasMonitoringData ? "In Progress" : "Not Started", evidence: null });
+    esapSeeds.push({ projectId: proj.id, action: "Submit initial E&S monitoring report", owner: "Sponsor", deadline: "30 days", status: proj.hasMonitoringData ? "Complete" : "Not Started", evidence: proj.hasMonitoringData ? "Report submitted" : null });
+  }
+
+  esapSeeds.push(
+    { projectId: montegoBay.id, action: "Conduct Phase II environmental site assessment", owner: "Environmental Consultant", deadline: "60 days", status: "Overdue", evidence: null },
+    { projectId: montegoBay.id, action: "Develop flood risk mitigation and drainage plan", owner: "Civil Engineer", deadline: "90 days", status: "Not Started", evidence: null },
+    { projectId: coastalSolar.id, action: "Complete coastal vulnerability and climate adaptation assessment", owner: "Climate Consultant", deadline: "120 days", status: "Overdue", evidence: null },
+  );
+
+  for (const e of esapSeeds) {
+    await db.insert(esapItemsTable).values(e);
+  }
+  console.log(`  ${esapSeeds.length} ESAP items`);
+
+  const auditSeeds = [
+    { projectId: insertedProjects[0].id, action: "Project Created", user: "System", details: "Kingston Solar Farm added to platform" },
+    { projectId: insertedProjects[0].id, action: "Risk Assessment Complete", user: "System", details: "Overall risk: 25.6 — PROCEED" },
+    { projectId: montegoBay.id, action: "Project Created", user: "System", details: "Montego Bay Port Expansion added to platform" },
+    { projectId: montegoBay.id, action: "Risk Assessment Complete", user: "System", details: "Overall risk: 76.9 — DECLINE" },
+    { projectId: montegoBay.id, action: "Risk Updated", user: "Analyst", details: "Contamination risk revised: 4 → 5 based on site survey" },
+    { projectId: montegoBay.id, action: "Covenant Breach Detected", user: "System", details: "ISO17025 contamination assessment not completed by deadline" },
+    { projectId: montegoBay.id, action: "Escalation Triggered", user: "System", details: "Breach escalated to Investment Officer for review" },
+    { projectId: coastalSolar.id, action: "Project Created", user: "System", details: "Coastal Solar Phase II added to platform" },
+    { projectId: coastalSolar.id, action: "ESAP Item Overdue", user: "System", details: "Coastal vulnerability assessment past deadline" },
+    { projectId: insertedProjects[2].id, action: "Monitoring Event", user: "Analyst", details: "Site visit completed — community concerns noted" },
+    { projectId: insertedProjects[4].id, action: "Covenant Status Updated", user: "Investment Officer", details: "Quarterly monitoring report: Pending → Met" },
+  ];
+
+  for (const a of auditSeeds) {
+    await db.insert(auditLogsTable).values(a);
+  }
+  console.log(`  ${auditSeeds.length} audit log entries`);
+
   console.log("\nSeeding complete!");
   console.log(`  ${insertedProjects.length} projects`);
   console.log(`  ${insertedProjects.length * 12} risk history entries`);
   console.log(`  1 portfolio with ${insertedProjects.length} assignments`);
+  console.log(`  ${covenantSeeds.length} covenants`);
+  console.log(`  ${esapSeeds.length} ESAP items`);
+  console.log(`  ${monitoringData.length} monitoring events`);
+  console.log(`  ${auditSeeds.length} audit log entries`);
   process.exit(0);
 }
 

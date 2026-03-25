@@ -1,0 +1,264 @@
+MASTER REPLIT PROMPT — V3
+Institutional Layer
+E&S Governance, Covenants, ESAP, and Reporting Engine
+ROLE
+
+You are a senior systems architect building an institutional-grade extension of the V2 platform.
+
+The system must align with how:
+
+IDB / IDB Invest
+IFC
+Proparco
+climate funds
+infrastructure investors
+
+actually operate.
+
+OBJECTIVE
+
+Extend the system from:
+
+Portfolio Intelligence → Capital Allocation
+
+to:
+
+Governance → Covenants → ESAP → Monitoring → Reporting → Audit Trail
+CORE IDEA
+
+Institutions don’t just assess risk.
+
+They:
+
+structure it
+condition it
+monitor it
+report it
+audit it
+
+This system must demonstrate:
+
+👉 ESL can support the full institutional lifecycle
+
+NEW MODULES (V3)
+1. FRAMEWORK ALIGNMENT ENGINE
+Purpose
+
+Map each project against:
+
+IFC Performance Standards (PS1–PS8)
+IDB Invest E&S Policy
+Equator Principles (EP4)
+GCF (basic alignment only)
+UI
+
+Project page → new tab:
+
+👉 “Framework Alignment”
+
+Output Table:
+Standard	Status	Gap	Severity
+PS1	Partial	Missing ESMS	High
+PS2	Compliant	—	Low
+PS3	Partial	Waste mgmt gaps	Medium
+Logic:
+Map risk inputs → standards gaps
+Example:
+If contamination risk high + no lab data → PS3 gap
+2. COVENANT ENGINE
+Purpose
+
+Translate risks → enforceable investment conditions
+
+UI
+
+“Covenants” tab
+
+Auto-generate:
+Environmental covenants
+Social covenants
+Monitoring obligations
+Example:
+COVENANT 1:
+Independent water quality monitoring required quarterly
+
+COVENANT 2:
+Contamination assessment to ISO17025 standard prior to drawdown
+Fields:
+Covenant ID
+Description
+Trigger condition
+Status:
+Pending
+In Progress
+Met
+Breach
+3. ESAP ENGINE (CRITICAL)
+
+Environmental & Social Action Plan
+
+UI
+
+Timeline-style tracker
+
+Each ESAP Item:
+Action
+Owner
+Deadline
+Status
+Evidence uploaded
+Example:
+Action: Conduct groundwater testing  
+Owner: Sponsor  
+Deadline: 90 days  
+Status: In Progress
+Visual:
+
+Progress bar:
+
+👉 % ESAP completed
+
+4. MONITORING ENGINE (UPGRADE)
+
+From V2 simulated → institutional
+
+Add:
+
+Monitoring Events:
+
+Site Visit
+Lab Test
+Community Review
+Audit
+Table:
+Date	Type	Result	Status
+Jan 10	Lab Test	Pass	Verified
+Feb 15	Site Visit	Issue Found	Escalated
+5. BREACH & ESCALATION ENGINE
+Purpose
+
+Show:
+
+👉 when things go wrong
+
+Trigger:
+Covenant not met
+ESAP overdue
+Monitoring failure
+Output:
+⚠ BREACH DETECTED
+
+Project: Coastal Solar II  
+Issue: Water testing not completed  
+Impact: Covenant breach risk  
+Recommended Action: Escalate to lender
+6. REPORTING ENGINE (INSTITUTIONAL OUTPUT)
+Generate:
+PDF-style reports (simple HTML export OK)
+Report Types:
+Pre-IC Risk Report
+Post-Close Monitoring Report
+ESAP Progress Report
+Breach / Exception Report
+Structure:
+Executive Summary
+Risk Summary
+Key Issues
+Covenants
+ESAP Status
+Monitoring Findings
+
+👉 This must feel like something a credit committee would read
+
+7. AUDIT TRAIL (VERY IMPORTANT)
+Purpose
+
+Institutions need defensibility
+
+Log:
+Risk changes
+Covenant updates
+ESAP updates
+Monitoring results
+Table:
+Date	Action	User	Change
+Mar 1	Risk updated	Analyst	65 → 72
+8. ROLE-BASED VIEW (SIMPLE)
+
+Add roles:
+
+Analyst
+Investment Officer
+Admin
+Behavior:
+Analyst → inputs data
+Investment Officer → views decisions
+Admin → manages system
+9. PORTFOLIO GOVERNANCE DASHBOARD
+
+Add to main screen:
+
+A. ESAP Completion %
+B. Covenant Compliance %
+C. Breach Count
+D. High-Risk Projects
+10. DATA MODEL ADDITIONS
+covenants
+id
+project_id
+description
+status
+esap_items
+id
+project_id
+action
+deadline
+status
+monitoring_events
+id
+project_id
+type
+result
+audit_logs
+id
+action
+user
+timestamp
+UX REQUIREMENTS
+Must feel like:
+compliance + risk + investment system
+not a dashboard
+not a startup tool
+Visual cues:
+clean tables
+strong hierarchy
+minimal color (use red only for risk)
+CRITICAL DIFFERENCE FROM V2
+
+V2 shows:
+
+👉 better decisions
+
+V3 shows:
+
+👉 institutional readiness + governance
+
+FINAL DEMONSTRATION MESSAGE
+
+After V3, a user should think:
+
+👉 This system can sit inside a fund or DFI workflow
+👉 This can support real investment decisions
+👉 This replaces fragmented E&S processes
+
+WHAT THIS UNLOCKS
+
+With V3, you can now credibly say:
+
+👉 ESL is building environmental intelligence infrastructure for capital deployment
+
+Not a pitch.
+
+Not a claim.
+
+A demonstrated system

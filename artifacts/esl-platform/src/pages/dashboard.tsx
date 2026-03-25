@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   useListProjects, 
@@ -12,7 +12,8 @@ import {
   Plus, Activity, AlertTriangle, ShieldCheck, 
   DollarSign, Loader2, ArrowRight, TrendingDown,
   Target, Info, ChevronRight, Zap, Brain, Database,
-  Shield, TrendingUp, Crosshair, Globe, Layers, BarChart3
+  Shield, TrendingUp, Crosshair, Globe, Layers, BarChart3,
+  FileCheck, ClipboardList, AlertOctagon, User
 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { Card, Button, Badge, AnimatedContainer } from "@/components/ui";
@@ -21,6 +22,10 @@ import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip as RechartsTooltip, 
   ResponsiveContainer, ReferenceLine, Cell, PieChart, Pie, BarChart, Bar
 } from "recharts";
+import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
+
+const ROLES = ["Analyst", "Investment Officer", "Admin"] as const;
+type Role = (typeof ROLES)[number];
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -30,8 +35,14 @@ export default function Dashboard() {
   const { data: intelligence } = useGetCrossProjectIntelligence();
   const { data: confidenceIndex } = useGetDataConfidenceIndex();
   const { data: portfolioDecision } = useGetPortfolioDecision();
+  const [governance, setGovernance] = useState<GovernanceSummary | null>(null);
+  const [role, setRole] = useState<Role>("Analyst");
 
   const [showOptimization, setShowOptimization] = useState(false);
+
+  useEffect(() => {
+    governanceApi.getGovernanceSummary().then(setGovernance).catch(() => {});
+  }, []);
 
   const isLoading = projectsLoading || summaryLoading;
 
@@ -116,7 +127,17 @@ export default function Dashboard() {
             <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">Portfolio Command Center</h1>
             <p className="text-muted-foreground mt-1">Real-time risk and capital allocation intelligence.</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-1.5 border border-border/50">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as Role)}
+                className="bg-transparent text-sm font-mono text-foreground border-none outline-none cursor-pointer"
+              >
+                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
             <Button 
               variant="outline" 
               className="group border-primary/30 hover:bg-primary/10 hover:text-primary"
@@ -455,6 +476,73 @@ export default function Dashboard() {
             </div>
           </Card>
         </AnimatedContainer>
+
+        {/* Governance Dashboard */}
+        {governance && (
+          <AnimatedContainer delay={0.55}>
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center">
+                <Shield className="w-4 h-4 mr-2" /> Portfolio Governance
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="p-5 text-center">
+                  <div className="text-3xl font-mono font-bold text-primary">{governance.esapCompletion}%</div>
+                  <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">ESAP Completion</div>
+                  <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mt-3">
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${governance.esapCompletion}%` }} />
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">{governance.esapComplete} of {governance.esapTotal} items</div>
+                </Card>
+                <Card className="p-5 text-center">
+                  <div className="text-3xl font-mono font-bold text-primary">{governance.covenantCompliance}%</div>
+                  <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Covenant Compliance</div>
+                  <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mt-3">
+                    <div className={`h-full rounded-full ${governance.covenantCompliance >= 70 ? "bg-success" : governance.covenantCompliance >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${governance.covenantCompliance}%` }} />
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-2">{governance.covenantsMet} of {governance.covenantsTotal} met</div>
+                </Card>
+                <Card className={`p-5 text-center ${governance.breachCount > 0 ? "border-destructive/50 bg-destructive/5" : ""}`}>
+                  <div className={`text-3xl font-mono font-bold ${governance.breachCount > 0 ? "text-destructive" : "text-success"}`}>{governance.breachCount}</div>
+                  <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Active Breaches</div>
+                  {governance.breachCount > 0 && (
+                    <div className="flex items-center justify-center gap-1 text-xs text-destructive mt-3">
+                      <AlertOctagon className="w-3 h-3" /> Requires escalation
+                    </div>
+                  )}
+                  {governance.covenantsBreach > 0 && <div className="text-xs text-muted-foreground mt-1">{governance.covenantsBreach} covenant, {governance.esapOverdue} ESAP overdue</div>}
+                </Card>
+                <Card className="p-5 text-center">
+                  <div className="text-3xl font-mono font-bold text-foreground">{governance.monitoringEvents}</div>
+                  <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Monitoring Events</div>
+                  <div className="text-xs text-muted-foreground mt-3">Across portfolio</div>
+                </Card>
+              </div>
+
+              {governance.breaches.length > 0 && (
+                <Card className="p-4 border-destructive/30 bg-destructive/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <span className="text-sm font-bold text-destructive uppercase tracking-wider">Breach & Escalation Alerts</span>
+                  </div>
+                  <div className="space-y-2">
+                    {governance.breaches.slice(0, 5).map((b, i) => (
+                      <div key={i} className="flex items-start gap-3 text-sm bg-background/50 rounded-lg px-3 py-2">
+                        <Badge variant="destructive" className="text-[10px] shrink-0">{b.severity}</Badge>
+                        <div className="flex-1">
+                          <span className="font-medium">{b.type}</span>
+                          <span className="text-muted-foreground"> — {b.issue.slice(0, 80)}{b.issue.length > 80 ? "..." : ""}</span>
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-xs h-6 shrink-0" onClick={() => setLocation(`/project/${b.projectId}`)}>
+                          View <ChevronRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </AnimatedContainer>
+        )}
 
         {/* Project Table */}
         <AnimatedContainer delay={0.6}>

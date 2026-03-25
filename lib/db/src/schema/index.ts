@@ -2,3 +2,8 @@ export * from "./projects";
 export * from "./portfolios";
 export * from "./portfolio-projects";
 export * from "./risk-history";
+export * from "./covenants";
+export * from "./esap-items";
+export * from "./monitoring-events";
+export * from "./audit-logs";
+export * from "./framework-alignments";

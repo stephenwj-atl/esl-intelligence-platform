@@ -7,13 +7,29 @@ import {
   ArrowLeft, Trash2, ShieldCheck, AlertTriangle, XCircle, 
   Droplet, Factory, Users, Gavel, Loader2, Target,
   TrendingUp, TrendingDown, CalendarX, DollarSign, ActivitySquare, Wand2, ArrowRight,
-  Clock
+  Clock, Shield, FileCheck, ClipboardList, Activity, History, FileText
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   LineChart, Line, Legend
 } from "recharts";
 import { useState } from "react";
+import {
+  FrameworkAlignmentTab, CovenantsTab, EsapTab, MonitoringTab,
+  AuditTrailTab, ReportTab, BreachAlert
+} from "@/components/governance-tabs";
+
+const TABS = [
+  { id: "overview", label: "Risk Overview", icon: ActivitySquare },
+  { id: "framework", label: "Framework", icon: Shield },
+  { id: "covenants", label: "Covenants", icon: FileCheck },
+  { id: "esap", label: "ESAP", icon: ClipboardList },
+  { id: "monitoring", label: "Monitoring", icon: Activity },
+  { id: "audit", label: "Audit Trail", icon: History },
+  { id: "report", label: "Report", icon: FileText },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
 
 export default function ProjectDetail() {
   const [, params] = useRoute("/project/:id");
@@ -24,6 +40,7 @@ export default function ProjectDetail() {
   const { mutate: deleteProject, isPending: isDeleting } = useDeleteProject();
   const { mutate: runScenario, isPending: isRunningScenario, data: scenarioResult } = useRunScenario();
   const { data: riskHistory } = useGetProjectRiskHistory(id);
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
 
   const [toggles, setToggles] = useState({
     hasMonitoringData: false,
@@ -91,7 +108,7 @@ export default function ProjectDetail() {
     DECLINE: { icon: XCircle, color: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/30", title: "DECLINE" },
   };
 
-  const dConf = decisionConfig[decision.outcome];
+  const dConf = decisionConfig[decision.outcome as keyof typeof decisionConfig] || decisionConfig.DECLINE;
   const DecisionIcon = dConf.icon;
 
   const handleDelete = () => {
@@ -121,8 +138,7 @@ export default function ProjectDetail() {
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto pb-12 space-y-8">
-        {/* Header */}
+      <div className="max-w-6xl mx-auto pb-12 space-y-6">
         <AnimatedContainer className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" className="h-10 w-10 p-0 rounded-full bg-secondary hover:bg-white/10" onClick={() => setLocation("/")}>
@@ -142,263 +158,183 @@ export default function ProjectDetail() {
           </Button>
         </AnimatedContainer>
 
-        {/* Decision Banner */}
-        <AnimatedContainer delay={0.1}>
-          <div className={`rounded-2xl border ${dConf.border} ${dConf.bg} p-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden backdrop-blur-md transition-all duration-500`}>
+        <AnimatedContainer delay={0.05}>
+          <div className={`rounded-2xl border ${dConf.border} ${dConf.bg} p-6 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden backdrop-blur-md`}>
             {isScenarioMode && (
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 rounded-bl-xl text-xs font-bold uppercase tracking-wider shadow-lg flex items-center">
                 <Wand2 className="w-3 h-3 mr-2" /> Scenario Mode Active
               </div>
             )}
-            <div className={`p-4 rounded-full bg-background border ${dConf.border} shadow-lg shrink-0 transition-colors duration-500`}>
-              <DecisionIcon className={`w-12 h-12 ${dConf.color} transition-colors duration-500`} />
+            <div className={`p-4 rounded-full bg-background border ${dConf.border} shadow-lg shrink-0`}>
+              <DecisionIcon className={`w-10 h-10 ${dConf.color}`} />
             </div>
             <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start space-x-3 mb-2">
-                <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold">Investment Decision Signal</h2>
+              <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-bold mb-1">Investment Decision Signal</h2>
+              <div className="flex items-end justify-center md:justify-start mb-3">
+                <h3 className={`text-3xl font-display font-black tracking-tight ${dConf.color}`}>{dConf.title}</h3>
               </div>
-              <div className="flex items-end justify-center md:justify-start mb-4">
-                <h3 className={`text-4xl font-display font-black tracking-tight ${dConf.color} transition-colors duration-500`}>
-                  {dConf.title}
-                </h3>
-                {isScenarioMode && project.decision.outcome !== decision.outcome && (
-                  <div className="ml-4 mb-1 text-sm font-mono text-muted-foreground flex items-center">
-                    (was <span className="line-through ml-1">{project.decision.outcome}</span>)
-                  </div>
-                )}
-              </div>
-              <p className="text-foreground/90 text-lg max-w-3xl leading-relaxed border-l-2 pl-4 border-foreground/20">
+              <p className="text-foreground/90 text-sm max-w-3xl leading-relaxed border-l-2 pl-4 border-foreground/20">
                 {decision.insight}
               </p>
-              
-              {decision.conditions && decision.conditions.length > 0 && (
-                <div className="mt-6 bg-background/50 rounded-xl p-5 border border-white/5 text-left">
-                  <h4 className="text-sm font-semibold mb-3 flex items-center"><Target className="w-4 h-4 mr-2 text-warning"/> Required Mitigations</h4>
-                  <ul className="space-y-2">
-                    {decision.conditions.map((cond, idx) => (
-                      <li key={idx} className="flex items-start text-sm text-foreground/80">
-                        <span className="text-warning mr-2 mt-0.5">&bull;</span> {cond}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+            </div>
+            <div className="text-center shrink-0">
+              <div className={`text-4xl font-mono font-black ${getRiskColor(riskScores.overallRisk)}`}>{riskScores.overallRisk.toFixed(1)}</div>
+              <div className="text-xs text-muted-foreground">Risk Score</div>
+              <div className="text-xs font-mono text-primary mt-1">{formatPercent(riskScores.dataConfidence)} conf.</div>
             </div>
           </div>
         </AnimatedContainer>
 
-        {/* Scenario Panel */}
-        <AnimatedContainer delay={0.15}>
-          <Card className="p-6 border-primary/30 bg-gradient-to-r from-background to-primary/5">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div>
-                <h3 className="text-lg font-semibold flex items-center text-primary">
-                  <Wand2 className="w-5 h-5 mr-2" /> What-If Scenario Analysis
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">Test the impact of mitigations and data validation on risk profile.</p>
-              </div>
-              <Button onClick={handleScenarioRun} disabled={isRunningScenario} className="w-full md:w-auto shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                {isRunningScenario ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Simulating...</> : 'Run Simulation'}
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <ToggleCard 
-                active={toggles.hasMonitoringData || project.inputs.hasMonitoringData}
-                disabled={project.inputs.hasMonitoringData}
-                onClick={() => handleToggle('hasMonitoringData')}
-                label="Add Monitoring"
-                desc="+12mo baseline data"
-              />
-              <ToggleCard 
-                active={toggles.hasLabData || project.inputs.hasLabData}
-                disabled={project.inputs.hasLabData}
-                onClick={() => handleToggle('hasLabData')}
-                label="Lab Validation"
-                desc="Certified sampling"
-              />
-              <ToggleCard 
-                active={toggles.isIFCAligned || project.inputs.isIFCAligned}
-                disabled={project.inputs.isIFCAligned}
-                onClick={() => handleToggle('isIFCAligned')}
-                label="IFC Alignment"
-                desc="World Bank standards"
-              />
-              <ToggleCard 
-                active={toggles.reducedInputs}
-                disabled={false}
-                onClick={() => handleToggle('reducedInputs')}
-                label="Mitigate Hazards"
-                desc="Flood/Contamination eng."
-              />
-            </div>
-          </Card>
+        <BreachAlert projectId={id} projectName={project.name} />
+
+        <AnimatedContainer delay={0.1}>
+          <div className="flex gap-1 bg-secondary/30 rounded-xl p-1 overflow-x-auto">
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                    activeTab === tab.id
+                      ? "bg-primary text-primary-foreground shadow-lg"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </AnimatedContainer>
 
-        {/* Risk History Chart */}
-        {riskHistory && riskHistory.length > 0 && (
-          <AnimatedContainer delay={0.18}>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-2 flex items-center">
-                <Clock className="w-5 h-5 mr-2 text-primary" /> Risk Monitoring Timeline
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6">Simulated 12-month risk trajectory showing impact of monitoring and validation improvements.</p>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={riskHistory} margin={{ top: 10, right: 30, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke="#71717a" 
-                      fontSize={12} 
-                      tickLine={false} 
-                      axisLine={false}
-                      tickFormatter={(v) => `M${v}`}
-                    />
-                    <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }}
-                      labelFormatter={(v) => `Month ${v}`}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="overallRisk" 
-                      stroke="#f43f5e" 
-                      strokeWidth={2} 
-                      dot={{ fill: '#f43f5e', r: 3 }}
-                      name="Risk Score"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="dataConfidence" 
-                      stroke="#06b6d4" 
-                      strokeWidth={2} 
-                      dot={{ fill: '#06b6d4', r: 3 }}
-                      name="Data Confidence"
-                      strokeDasharray="5 5"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 flex items-center gap-6 text-xs text-muted-foreground border-t border-border/50 pt-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5 bg-[#f43f5e]" />
-                  Risk drops as monitoring data is added over time
+        <AnimatedContainer delay={0.15}>
+          {activeTab === "overview" && (
+            <div className="space-y-8">
+              <Card className="p-6 border-primary/30 bg-gradient-to-r from-background to-primary/5">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold flex items-center text-primary">
+                      <Wand2 className="w-5 h-5 mr-2" /> What-If Scenario Analysis
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">Test the impact of mitigations and data validation on risk profile.</p>
+                  </div>
+                  <Button onClick={handleScenarioRun} disabled={isRunningScenario} className="w-full md:w-auto shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                    {isRunningScenario ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Simulating...</> : 'Run Simulation'}
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5 bg-[#06b6d4] border-dashed" />
-                  Confidence improves with data validation milestones
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <ToggleCard active={toggles.hasMonitoringData || project.inputs.hasMonitoringData} disabled={project.inputs.hasMonitoringData} onClick={() => handleToggle('hasMonitoringData')} label="Add Monitoring" desc="+12mo baseline data" />
+                  <ToggleCard active={toggles.hasLabData || project.inputs.hasLabData} disabled={project.inputs.hasLabData} onClick={() => handleToggle('hasLabData')} label="Lab Validation" desc="Certified sampling" />
+                  <ToggleCard active={toggles.isIFCAligned || project.inputs.isIFCAligned} disabled={project.inputs.isIFCAligned} onClick={() => handleToggle('isIFCAligned')} label="IFC Alignment" desc="World Bank standards" />
+                  <ToggleCard active={toggles.reducedInputs} disabled={false} onClick={() => handleToggle('reducedInputs')} label="Mitigate Hazards" desc="Flood/Contamination eng." />
+                </div>
+              </Card>
+
+              {riskHistory && riskHistory.length > 0 && (
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-2 flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-primary" /> Risk Monitoring Timeline
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6">Simulated 12-month risk trajectory showing impact of monitoring and validation improvements.</p>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={riskHistory} margin={{ top: 10, right: 30, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                        <XAxis dataKey="month" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `M${v}`} />
+                        <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+                        <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }} labelFormatter={(v) => `Month ${v}`} />
+                        <Legend />
+                        <Line type="monotone" dataKey="overallRisk" stroke="#f43f5e" strokeWidth={2} dot={{ fill: '#f43f5e', r: 3 }} name="Risk Score" />
+                        <Line type="monotone" dataKey="dataConfidence" stroke="#06b6d4" strokeWidth={2} dot={{ fill: '#06b6d4', r: 3 }} name="Data Confidence" strokeDasharray="5 5" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8">
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center">
+                      <ActivitySquare className="w-5 h-5 mr-2 text-primary" /> Risk Topology Breakdown
+                    </h3>
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                          <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                          <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+                          <Tooltip cursor={{fill: '#27272a', opacity: 0.4}} contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+                          <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60} animationDuration={1000}>
+                            {chartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.value > 70 ? '#f43f5e' : entry.value > 40 ? '#f59e0b' : '#10b981'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <RiskSubCard title="Environmental" score={riskScores.environmentalRisk} prevScore={isScenarioMode ? project.riskScores.environmentalRisk : undefined} icon={Droplet} />
+                    <RiskSubCard title="Infrastructure" score={riskScores.infrastructureRisk} prevScore={isScenarioMode ? project.riskScores.infrastructureRisk : undefined} icon={Factory} />
+                    <RiskSubCard title="Human Exposure" score={riskScores.humanExposureRisk} prevScore={isScenarioMode ? project.riskScores.humanExposureRisk : undefined} icon={Users} />
+                    <RiskSubCard title="Regulatory" score={riskScores.regulatoryRisk} prevScore={isScenarioMode ? project.riskScores.regulatoryRisk : undefined} icon={Gavel} />
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  <Card className="p-6 border-primary/20 bg-primary/5">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center text-primary">
+                      <TrendingUp className="w-5 h-5 mr-2" /> Financial Translation
+                    </h3>
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-foreground/80 flex items-center"><CalendarX className="w-4 h-4 mr-2 text-muted-foreground" /> Delay Risk</span>
+                          <div className="font-mono font-bold text-destructive">{formatPercent(financialRisk.delayRiskPercent)}</div>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div className="h-full bg-destructive transition-all duration-1000" style={{ width: `${financialRisk.delayRiskPercent}%` }} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-foreground/80 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-muted-foreground" /> Cost Overrun</span>
+                          <div className="font-mono font-bold text-warning">{formatPercent(financialRisk.costOverrunPercent)}</div>
+                        </div>
+                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                          <div className="h-full bg-warning transition-all duration-1000" style={{ width: `${financialRisk.costOverrunPercent}%` }} />
+                        </div>
+                      </div>
+                      <div className="pt-4 border-t border-border/50">
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-muted-foreground">Covenant Breach Prob.</span>
+                          <Badge variant="outline" className="font-mono">{formatPercent(financialRisk.covenantBreachPercent)}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-muted-foreground">Reputational Risk</span>
+                          <Badge variant={financialRisk.reputationalRisk === 'High' ? 'destructive' : financialRisk.reputationalRisk === 'Medium' ? 'warning' : 'success'}>
+                            {financialRisk.reputationalRisk}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
               </div>
-            </Card>
-          </AnimatedContainer>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Risk Scores */}
-          <AnimatedContainer delay={0.2} className="lg:col-span-2 space-y-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-6 flex items-center">
-                <ActivitySquare className="w-5 h-5 mr-2 text-primary" /> Risk Topology Breakdown
-              </h3>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                    <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
-                    <Tooltip 
-                      cursor={{fill: '#27272a', opacity: 0.4}}
-                      contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }}
-                      itemStyle={{ color: '#fff' }}
-                    />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60} animationDuration={1000}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.value > 70 ? '#f43f5e' : entry.value > 40 ? '#f59e0b' : '#10b981'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <RiskSubCard title="Environmental" score={riskScores.environmentalRisk} prevScore={isScenarioMode ? project.riskScores.environmentalRisk : undefined} icon={Droplet} />
-              <RiskSubCard title="Infrastructure" score={riskScores.infrastructureRisk} prevScore={isScenarioMode ? project.riskScores.infrastructureRisk : undefined} icon={Factory} />
-              <RiskSubCard title="Human Exposure" score={riskScores.humanExposureRisk} prevScore={isScenarioMode ? project.riskScores.humanExposureRisk : undefined} icon={Users} />
-              <RiskSubCard title="Regulatory" score={riskScores.regulatoryRisk} prevScore={isScenarioMode ? project.riskScores.regulatoryRisk : undefined} icon={Gavel} />
             </div>
-          </AnimatedContainer>
+          )}
 
-          {/* Side Panel */}
-          <AnimatedContainer delay={0.3} className="space-y-8">
-            <Card className="p-8 text-center relative overflow-hidden transition-all duration-500">
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
-              <div className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">Overall Risk Score</div>
-              <div className={`text-7xl font-display font-black tracking-tighter ${getRiskColor(riskScores.overallRisk)} transition-colors duration-500`}>
-                {riskScores.overallRisk.toFixed(1)}
-              </div>
-              <div className="flex justify-center mb-4">
-                {renderComparison("Risk", project.riskScores.overallRisk, riskScores.overallRisk)}
-              </div>
-              
-              <div className="mt-4 flex flex-col items-center">
-                <div className="inline-flex items-center justify-center px-3 py-1 bg-secondary rounded-full text-xs font-mono">
-                  Data Confidence: <span className="text-primary ml-2">{formatPercent(riskScores.dataConfidence)}</span>
-                </div>
-                {renderComparison("Conf", project.riskScores.dataConfidence, riskScores.dataConfidence, false)}
-              </div>
-            </Card>
-
-            <Card className="p-6 border-primary/20 bg-primary/5">
-              <h3 className="text-lg font-semibold mb-6 flex items-center text-primary">
-                <TrendingUp className="w-5 h-5 mr-2" /> Financial Translation
-              </h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-foreground/80 flex items-center"><CalendarX className="w-4 h-4 mr-2 text-muted-foreground" /> Delay Risk</span>
-                    <div className="text-right">
-                      <div className="font-mono font-bold text-destructive">{formatPercent(financialRisk.delayRiskPercent)}</div>
-                      {renderComparison("Delay", project.financialRisk.delayRiskPercent, financialRisk.delayRiskPercent)}
-                    </div>
-                  </div>
-                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-destructive transition-all duration-1000" style={{ width: `${financialRisk.delayRiskPercent}%` }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-foreground/80 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-muted-foreground" /> Cost Overrun</span>
-                    <div className="text-right">
-                      <div className="font-mono font-bold text-warning">{formatPercent(financialRisk.costOverrunPercent)}</div>
-                      {renderComparison("Cost", project.financialRisk.costOverrunPercent, financialRisk.costOverrunPercent)}
-                    </div>
-                  </div>
-                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-warning transition-all duration-1000" style={{ width: `${financialRisk.costOverrunPercent}%` }} />
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-border/50">
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm text-muted-foreground">Covenant Breach Prob.</span>
-                    <Badge variant="outline" className="font-mono">{formatPercent(financialRisk.covenantBreachPercent)}</Badge>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm text-muted-foreground">Reputational Risk</span>
-                    <Badge variant={financialRisk.reputationalRisk === 'High' ? 'destructive' : financialRisk.reputationalRisk === 'Medium' ? 'warning' : 'success'}>
-                      {financialRisk.reputationalRisk}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </AnimatedContainer>
-        </div>
+          {activeTab === "framework" && <FrameworkAlignmentTab projectId={id} />}
+          {activeTab === "covenants" && <CovenantsTab projectId={id} />}
+          {activeTab === "esap" && <EsapTab projectId={id} />}
+          {activeTab === "monitoring" && <MonitoringTab projectId={id} />}
+          {activeTab === "audit" && <AuditTrailTab projectId={id} />}
+          {activeTab === "report" && <ReportTab projectId={id} />}
+        </AnimatedContainer>
       </div>
     </Layout>
   );

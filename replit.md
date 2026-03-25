@@ -2,7 +2,7 @@
 
 ## Overview
 
-ESL Environmental Intelligence Platform — a Bloomberg-style Portfolio Command Center for Environmental Solutions Limited. Converts environmental data into investment risk signals with clear Proceed/Condition/Decline decisions across a portfolio of projects.
+ESL Environmental Intelligence Platform — a Bloomberg-style Portfolio Command Center for Environmental Solutions Limited. Converts environmental data into investment risk signals with clear Proceed/Condition/Decline decisions across a portfolio of projects. V3 adds a full institutional governance lifecycle layer.
 
 pnpm workspace monorepo using TypeScript.
 
@@ -53,6 +53,8 @@ artifacts-monorepo/
 - Top Risk Alerts Panel
 - Sortable Asset Inventory Table
 - Portfolio Optimization Panel with recommendations
+- **Portfolio Governance Section**: ESAP Completion %, Covenant Compliance %, Active Breaches count, Monitoring Events count, Breach & Escalation Alerts panel
+- **Role Selector**: Analyst / Investment Officer / Admin selector in dashboard header
 
 ### Portfolio Manager (/portfolios)
 - Portfolio CRUD (create, delete)
@@ -60,12 +62,14 @@ artifacts-monorepo/
 - Investment amount entry per project
 - Portfolio metrics (weighted risk, total investment, project count)
 
-### Project Intelligence View
-- Investment Decision Signal (PROCEED/CONDITION/DECLINE)
-- Risk Monitoring Timeline (simulated 12-month trajectory with risk score + data confidence lines)
-- Risk Topology Breakdown with bar charts
-- Financial Translation (delay, cost, covenant, reputational risk)
-- What-If Scenario Analysis (toggle inputs to see before/after risk impact)
+### Project Intelligence View (7-tab interface)
+- **Risk Overview**: Investment Decision Signal, What-If Scenario Analysis, Risk Monitoring Timeline, Risk Topology, Financial Translation
+- **Framework Alignment**: IFC PS1-PS8, Equator Principles, IDB Invest alignment with status/severity/gap analysis
+- **Covenants**: Investment covenant tracking with status management (Pending/In Progress/Met/Breach)
+- **ESAP**: Environmental & Social Action Plan items with progress tracking and evidence
+- **Monitoring**: Monitoring event log with type, result, findings, escalation status
+- **Audit Trail**: Full audit log of all governance actions with timestamps and actors
+- **Report**: Institutional report generation (Pre-IC / Post-Close format) with full governance data
 
 ### Risk Scoring Engine (`artifacts/api-server/src/lib/risk-engine.ts`)
 - Environmental, Infrastructure, Human Exposure, Regulatory risk subscores (0-100)
@@ -80,6 +84,11 @@ artifacts-monorepo/
 - `portfolios` table: named portfolio groupings
 - `portfolio_projects` table: project-to-portfolio assignments with stage + investment amount
 - `risk_history` table: monthly risk/confidence snapshots per project (12-month timeline)
+- `covenants` table: investment covenant tracking per project (category, description, trigger, status)
+- `esap_items` table: ESAP action items per project (action, responsible, deadline, status, evidence)
+- `monitoring_events` table: monitoring event log per project (date, type, result, findings, status)
+- `audit_logs` table: governance audit trail (action, user, details, timestamps)
+- `framework_alignments` table: framework alignment records per project (framework, standard, status, gap, severity)
 
 ### API Routes
 - `GET /api/healthz` — health check
@@ -100,6 +109,23 @@ artifacts-monorepo/
 - `DELETE /api/portfolios/:id` — delete portfolio
 - `POST /api/portfolios/:id/projects` — add project to portfolio (with duplicate guard)
 - `DELETE /api/portfolios/:id/projects/:projectId` — remove project from portfolio
+- `GET /api/projects/:id/framework-alignment` — framework alignment for project (auto-generates on first call)
+- `GET /api/projects/:id/covenants` — covenants for project (auto-generates on first call)
+- `PATCH /api/covenants/:id` — update covenant status (validated enum: Pending/In Progress/Met/Breach)
+- `GET /api/projects/:id/esap` — ESAP items for project (auto-generates on first call)
+- `PATCH /api/esap/:id` — update ESAP item status/evidence (validated enum: Not Started/In Progress/Complete/Overdue)
+- `POST /api/projects/:id/monitoring` — add monitoring event (validated type + status enums)
+- `GET /api/projects/:id/monitoring` — monitoring events for project
+- `GET /api/projects/:id/audit-log` — audit log for project
+- `GET /api/audit-log` — global audit log (last 200 entries)
+- `GET /api/governance/summary` — portfolio governance KPIs (covenant compliance %, ESAP completion %, breaches, monitoring events)
+- `GET /api/projects/:id/report` — generate institutional report for project
+
+### Governance Frontend
+- Governance API client: `artifacts/esl-platform/src/lib/governance-api.ts` (direct fetch, not codegen)
+- Governance tab components: `artifacts/esl-platform/src/components/governance-tabs.tsx`
+- Dashboard governance section in `artifacts/esl-platform/src/pages/dashboard.tsx`
+- API governance routes in `artifacts/api-server/src/routes/governance.ts`
 
 ## Commands
 
