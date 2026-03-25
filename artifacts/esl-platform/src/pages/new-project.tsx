@@ -6,12 +6,13 @@ import * as z from "zod";
 import { useCreateProject, CreateProjectInputProjectType } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Card, Button, Input, Label, AnimatedContainer } from "@/components/ui";
-import { ShieldAlert, Database, MapPin, Activity, Save, Loader2 } from "lucide-react";
+import { ShieldAlert, Database, MapPin, Activity, Save, Loader2, DollarSign } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name is required"),
   country: z.string().min(2, "Country is required"),
   projectType: z.nativeEnum(CreateProjectInputProjectType),
+  investmentAmount: z.coerce.number().min(1, "Investment amount is required"),
   floodRisk: z.coerce.number().min(0).max(10),
   coastalExposure: z.coerce.number().min(0).max(10),
   contaminationRisk: z.coerce.number().min(0).max(10),
@@ -34,6 +35,7 @@ export default function NewProject() {
     defaultValues: {
       country: "Jamaica",
       projectType: CreateProjectInputProjectType.Solar,
+      investmentAmount: 10,
       floodRisk: 5,
       coastalExposure: 5,
       contaminationRisk: 5,
@@ -115,11 +117,11 @@ export default function NewProject() {
               <h2 className="text-lg font-semibold mb-6 flex items-center text-foreground border-b border-border/50 pb-4">
                 <MapPin className="w-5 h-5 mr-2 text-primary" /> Basic Information
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="space-y-2 lg:col-span-2">
                   <Label>Project Name</Label>
                   <Input {...register("name")} placeholder="e.g. Kingston Solar Array" className={errors.name ? "border-destructive" : ""} />
-                  {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                  {errors.name && <p className="text-xs text-destructive">{errors.name.message as string}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Country</Label>
@@ -135,6 +137,11 @@ export default function NewProject() {
                       <option key={type} value={type}>{type}</option>
                     ))}
                   </select>
+                </div>
+                <div className="space-y-2 lg:col-span-4">
+                  <Label className="flex items-center"><DollarSign className="w-4 h-4 mr-1 text-muted-foreground"/> Investment Amount ($M)</Label>
+                  <Input type="number" {...register("investmentAmount")} min="1" className={errors.investmentAmount ? "border-destructive" : ""} />
+                  {errors.investmentAmount && <p className="text-xs text-destructive">{errors.investmentAmount.message as string}</p>}
                 </div>
               </div>
             </Card>

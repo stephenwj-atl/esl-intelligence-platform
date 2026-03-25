@@ -5,44 +5,38 @@
  * ESL Environmental Intelligence Platform API
  * OpenAPI spec version: 0.2.0
  */
-import type { CreateProjectInputProjectType } from "./createProjectInputProjectType";
 
-export interface CreateProjectInput {
-  name: string;
-  country: string;
-  projectType: CreateProjectInputProjectType;
-  /** Investment amount in millions USD */
-  investmentAmount: number;
+export interface ScenarioInput {
   /**
    * @minimum 0
    * @maximum 10
    */
-  floodRisk: number;
+  floodRisk?: number;
   /**
    * @minimum 0
    * @maximum 10
    */
-  coastalExposure: number;
+  coastalExposure?: number;
   /**
    * @minimum 0
    * @maximum 10
    */
-  contaminationRisk: number;
+  contaminationRisk?: number;
   /**
    * @minimum 0
    * @maximum 10
    */
-  regulatoryComplexity: number;
+  regulatoryComplexity?: number;
   /**
    * @minimum 0
    * @maximum 10
    */
-  communitySensitivity: number;
+  communitySensitivity?: number;
   /**
    * @minimum 0
    * @maximum 10
    */
-  waterStress: number;
+  waterStress?: number;
   hasLabData?: boolean;
   hasMonitoringData?: boolean;
   isIFCAligned?: boolean;

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import * as zod from "zod";
 
@@ -22,6 +22,7 @@ export const ListProjectsResponseItem = zod.object({
   name: zod.string(),
   country: zod.string(),
   projectType: zod.string(),
+  investmentAmount: zod.number(),
   inputs: zod.object({
     floodRisk: zod.number(),
     coastalExposure: zod.number(),
@@ -92,6 +93,7 @@ export const CreateProjectBody = zod.object({
     "Industrial",
     "Agriculture",
   ]),
+  investmentAmount: zod.number().describe("Investment amount in millions USD"),
   floodRisk: zod
     .number()
     .min(createProjectBodyFloodRiskMin)
@@ -135,6 +137,7 @@ export const GetProjectResponse = zod.object({
   name: zod.string(),
   country: zod.string(),
   projectType: zod.string(),
+  investmentAmount: zod.number(),
   inputs: zod.object({
     floodRisk: zod.number(),
     coastalExposure: zod.number(),
@@ -173,4 +176,168 @@ export const GetProjectResponse = zod.object({
  */
 export const DeleteProjectParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Run what-if scenario analysis on a project
+ */
+export const RunScenarioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const runScenarioBodyFloodRiskMin = 0;
+export const runScenarioBodyFloodRiskMax = 10;
+
+export const runScenarioBodyCoastalExposureMin = 0;
+export const runScenarioBodyCoastalExposureMax = 10;
+
+export const runScenarioBodyContaminationRiskMin = 0;
+export const runScenarioBodyContaminationRiskMax = 10;
+
+export const runScenarioBodyRegulatoryComplexityMin = 0;
+export const runScenarioBodyRegulatoryComplexityMax = 10;
+
+export const runScenarioBodyCommunitySensitivityMin = 0;
+export const runScenarioBodyCommunitySensitivityMax = 10;
+
+export const runScenarioBodyWaterStressMin = 0;
+export const runScenarioBodyWaterStressMax = 10;
+
+export const RunScenarioBody = zod.object({
+  floodRisk: zod
+    .number()
+    .min(runScenarioBodyFloodRiskMin)
+    .max(runScenarioBodyFloodRiskMax)
+    .optional(),
+  coastalExposure: zod
+    .number()
+    .min(runScenarioBodyCoastalExposureMin)
+    .max(runScenarioBodyCoastalExposureMax)
+    .optional(),
+  contaminationRisk: zod
+    .number()
+    .min(runScenarioBodyContaminationRiskMin)
+    .max(runScenarioBodyContaminationRiskMax)
+    .optional(),
+  regulatoryComplexity: zod
+    .number()
+    .min(runScenarioBodyRegulatoryComplexityMin)
+    .max(runScenarioBodyRegulatoryComplexityMax)
+    .optional(),
+  communitySensitivity: zod
+    .number()
+    .min(runScenarioBodyCommunitySensitivityMin)
+    .max(runScenarioBodyCommunitySensitivityMax)
+    .optional(),
+  waterStress: zod
+    .number()
+    .min(runScenarioBodyWaterStressMin)
+    .max(runScenarioBodyWaterStressMax)
+    .optional(),
+  hasLabData: zod.boolean().optional(),
+  hasMonitoringData: zod.boolean().optional(),
+  isIFCAligned: zod.boolean().optional(),
+});
+
+export const RunScenarioResponse = zod.object({
+  before: zod.object({
+    riskScores: zod.object({
+      environmentalRisk: zod.number(),
+      infrastructureRisk: zod.number(),
+      humanExposureRisk: zod.number(),
+      regulatoryRisk: zod.number(),
+      dataConfidence: zod.number(),
+      overallRisk: zod.number(),
+    }),
+    financialRisk: zod.object({
+      delayRiskPercent: zod.number(),
+      costOverrunPercent: zod.number(),
+      covenantBreachPercent: zod.number(),
+      reputationalRisk: zod.enum(["Low", "Medium", "High"]),
+    }),
+    decision: zod.object({
+      outcome: zod.enum(["PROCEED", "CONDITION", "DECLINE"]),
+      conditions: zod.array(zod.string()).optional(),
+      insight: zod.string(),
+    }),
+  }),
+  after: zod.object({
+    riskScores: zod.object({
+      environmentalRisk: zod.number(),
+      infrastructureRisk: zod.number(),
+      humanExposureRisk: zod.number(),
+      regulatoryRisk: zod.number(),
+      dataConfidence: zod.number(),
+      overallRisk: zod.number(),
+    }),
+    financialRisk: zod.object({
+      delayRiskPercent: zod.number(),
+      costOverrunPercent: zod.number(),
+      covenantBreachPercent: zod.number(),
+      reputationalRisk: zod.enum(["Low", "Medium", "High"]),
+    }),
+    decision: zod.object({
+      outcome: zod.enum(["PROCEED", "CONDITION", "DECLINE"]),
+      conditions: zod.array(zod.string()).optional(),
+      insight: zod.string(),
+    }),
+  }),
+});
+
+/**
+ * @summary Get portfolio-level summary metrics
+ */
+export const GetPortfolioSummaryResponse = zod.object({
+  totalCapital: zod.number(),
+  avgRisk: zod.number(),
+  exposureAtRisk: zod.number(),
+  avgConfidence: zod.number(),
+  projectCount: zod.number(),
+  proceedCount: zod.number(),
+  conditionCount: zod.number(),
+  declineCount: zod.number(),
+  riskDistribution: zod.array(
+    zod.object({
+      bucket: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+  capitalByRiskLevel: zod.object({
+    low: zod.number(),
+    medium: zod.number(),
+    high: zod.number(),
+  }),
+  alerts: zod.array(
+    zod.object({
+      projectId: zod.number(),
+      projectName: zod.string(),
+      riskScore: zod.number(),
+      confidence: zod.number(),
+      investmentAmount: zod.number(),
+      issue: zod.string(),
+      action: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get portfolio optimization recommendations
+ */
+export const GetPortfolioOptimizationResponse = zod.object({
+  currentPortfolioRisk: zod.number(),
+  optimizedPortfolioRisk: zod.number(),
+  riskReductionPercent: zod.number(),
+  recommendations: zod.array(
+    zod.object({
+      projectId: zod.number(),
+      projectName: zod.string(),
+      action: zod.enum([
+        "reduce_exposure",
+        "increase_allocation",
+        "require_mitigation",
+      ]),
+      detail: zod.string(),
+      riskImpact: zod.number(),
+    }),
+  ),
 });

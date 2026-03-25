@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 
 export * from "./createProjectInput";
@@ -14,6 +14,17 @@ export * from "./errorResponse";
 export * from "./financialRisk";
 export * from "./financialRiskReputationalRisk";
 export * from "./healthStatus";
+export * from "./portfolioOptimization";
+export * from "./portfolioOptimizationRecommendationsItem";
+export * from "./portfolioOptimizationRecommendationsItemAction";
+export * from "./portfolioSummary";
+export * from "./portfolioSummaryCapitalByRiskLevel";
+export * from "./portfolioSummaryRiskDistributionItem";
 export * from "./projectWithAnalysis";
 export * from "./projectWithAnalysisInputs";
+export * from "./riskAlert";
 export * from "./riskScores";
+export * from "./scenarioInput";
+export * from "./scenarioResult";
+export * from "./scenarioResultAfter";
+export * from "./scenarioResultBefore";

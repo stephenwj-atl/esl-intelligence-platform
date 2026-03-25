@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 export interface HealthStatus {
   status: string;
@@ -28,6 +28,8 @@ export interface CreateProjectInput {
   name: string;
   country: string;
   projectType: CreateProjectInputProjectType;
+  /** Investment amount in millions USD */
+  investmentAmount: number;
   /**
    * @minimum 0
    * @maximum 10
@@ -120,9 +122,122 @@ export interface ProjectWithAnalysis {
   name: string;
   country: string;
   projectType: string;
+  investmentAmount: number;
   inputs: ProjectWithAnalysisInputs;
   riskScores: RiskScores;
   financialRisk: FinancialRisk;
   decision: Decision;
   createdAt: string;
+}
+
+export interface ScenarioInput {
+  /**
+   * @minimum 0
+   * @maximum 10
+   */
+  floodRisk?: number;
+  /**
+   * @minimum 0
+   * @maximum 10
+   */
+  coastalExposure?: number;
+  /**
+   * @minimum 0
+   * @maximum 10
+   */
+  contaminationRisk?: number;
+  /**
+   * @minimum 0
+   * @maximum 10
+   */
+  regulatoryComplexity?: number;
+  /**
+   * @minimum 0
+   * @maximum 10
+   */
+  communitySensitivity?: number;
+  /**
+   * @minimum 0
+   * @maximum 10
+   */
+  waterStress?: number;
+  hasLabData?: boolean;
+  hasMonitoringData?: boolean;
+  isIFCAligned?: boolean;
+}
+
+export type ScenarioResultBefore = {
+  riskScores: RiskScores;
+  financialRisk: FinancialRisk;
+  decision: Decision;
+};
+
+export type ScenarioResultAfter = {
+  riskScores: RiskScores;
+  financialRisk: FinancialRisk;
+  decision: Decision;
+};
+
+export interface ScenarioResult {
+  before: ScenarioResultBefore;
+  after: ScenarioResultAfter;
+}
+
+export type PortfolioSummaryRiskDistributionItem = {
+  bucket: string;
+  count: number;
+};
+
+export type PortfolioSummaryCapitalByRiskLevel = {
+  low: number;
+  medium: number;
+  high: number;
+};
+
+export interface RiskAlert {
+  projectId: number;
+  projectName: string;
+  riskScore: number;
+  confidence: number;
+  investmentAmount: number;
+  issue: string;
+  action: string;
+}
+
+export interface PortfolioSummary {
+  totalCapital: number;
+  avgRisk: number;
+  exposureAtRisk: number;
+  avgConfidence: number;
+  projectCount: number;
+  proceedCount: number;
+  conditionCount: number;
+  declineCount: number;
+  riskDistribution: PortfolioSummaryRiskDistributionItem[];
+  capitalByRiskLevel: PortfolioSummaryCapitalByRiskLevel;
+  alerts: RiskAlert[];
+}
+
+export type PortfolioOptimizationRecommendationsItemAction =
+  (typeof PortfolioOptimizationRecommendationsItemAction)[keyof typeof PortfolioOptimizationRecommendationsItemAction];
+
+export const PortfolioOptimizationRecommendationsItemAction = {
+  reduce_exposure: "reduce_exposure",
+  increase_allocation: "increase_allocation",
+  require_mitigation: "require_mitigation",
+} as const;
+
+export type PortfolioOptimizationRecommendationsItem = {
+  projectId: number;
+  projectName: string;
+  action: PortfolioOptimizationRecommendationsItemAction;
+  detail: string;
+  riskImpact: number;
+};
+
+export interface PortfolioOptimization {
+  currentPortfolioRisk: number;
+  optimizedPortfolioRisk: number;
+  riskReductionPercent: number;
+  recommendations: PortfolioOptimizationRecommendationsItem[];
 }

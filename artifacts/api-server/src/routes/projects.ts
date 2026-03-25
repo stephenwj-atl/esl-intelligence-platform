@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { CreateProjectBody, GetProjectParams, DeleteProjectParams } from "@workspace/api-zod";
+import { CreateProjectBody, GetProjectParams, DeleteProjectParams, RunScenarioParams, RunScenarioBody } from "@workspace/api-zod";
 import { db, projectsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { analyzeProject } from "../lib/risk-engine";
@@ -12,6 +12,7 @@ function formatProject(p: typeof projectsTable.$inferSelect) {
     name: p.name,
     country: p.country,
     projectType: p.projectType,
+    investmentAmount: p.investmentAmount,
     inputs: {
       floodRisk: p.floodRisk,
       coastalExposure: p.coastalExposure,
@@ -75,6 +76,7 @@ router.post("/projects", async (req, res) => {
     name: input.name,
     country: input.country ?? "Jamaica",
     projectType: input.projectType,
+    investmentAmount: input.investmentAmount,
     floodRisk: input.floodRisk,
     coastalExposure: input.coastalExposure,
     contaminationRisk: input.contaminationRisk,
@@ -132,6 +134,55 @@ router.delete("/projects/:id", async (req, res) => {
   }
 
   res.status(204).send();
+});
+
+router.post("/projects/:id/scenario", async (req, res) => {
+  const paramsParsed = RunScenarioParams.safeParse({ id: req.params.id });
+  if (!paramsParsed.success) {
+    res.status(400).json({ message: "Invalid project ID" });
+    return;
+  }
+
+  const bodyParsed = RunScenarioBody.safeParse(req.body);
+  if (!bodyParsed.success) {
+    res.status(400).json({ message: bodyParsed.error.message });
+    return;
+  }
+
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, paramsParsed.data.id));
+  if (!project) {
+    res.status(404).json({ message: "Project not found" });
+    return;
+  }
+
+  const beforeInputs = {
+    floodRisk: project.floodRisk,
+    coastalExposure: project.coastalExposure,
+    contaminationRisk: project.contaminationRisk,
+    regulatoryComplexity: project.regulatoryComplexity,
+    communitySensitivity: project.communitySensitivity,
+    waterStress: project.waterStress,
+    hasLabData: project.hasLabData,
+    hasMonitoringData: project.hasMonitoringData,
+    isIFCAligned: project.isIFCAligned,
+  };
+  const before = analyzeProject(beforeInputs);
+
+  const scenarioData = bodyParsed.data;
+  const afterInputs = {
+    floodRisk: scenarioData.floodRisk ?? project.floodRisk,
+    coastalExposure: scenarioData.coastalExposure ?? project.coastalExposure,
+    contaminationRisk: scenarioData.contaminationRisk ?? project.contaminationRisk,
+    regulatoryComplexity: scenarioData.regulatoryComplexity ?? project.regulatoryComplexity,
+    communitySensitivity: scenarioData.communitySensitivity ?? project.communitySensitivity,
+    waterStress: scenarioData.waterStress ?? project.waterStress,
+    hasLabData: scenarioData.hasLabData ?? project.hasLabData,
+    hasMonitoringData: scenarioData.hasMonitoringData ?? project.hasMonitoringData,
+    isIFCAligned: scenarioData.isIFCAligned ?? project.isIFCAligned,
+  };
+  const after = analyzeProject(afterInputs);
+
+  res.json({ before, after });
 });
 
 export default router;

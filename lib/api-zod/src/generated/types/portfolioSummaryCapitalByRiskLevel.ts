@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface ErrorResponse {
-  message: string;
-}
+export type PortfolioSummaryCapitalByRiskLevel = {
+  low: number;
+  medium: number;
+  high: number;
+};

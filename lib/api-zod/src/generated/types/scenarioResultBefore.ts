@@ -7,18 +7,10 @@
  */
 import type { Decision } from "./decision";
 import type { FinancialRisk } from "./financialRisk";
-import type { ProjectWithAnalysisInputs } from "./projectWithAnalysisInputs";
 import type { RiskScores } from "./riskScores";
 
-export interface ProjectWithAnalysis {
-  id: number;
-  name: string;
-  country: string;
-  projectType: string;
-  investmentAmount: number;
-  inputs: ProjectWithAnalysisInputs;
+export type ScenarioResultBefore = {
   riskScores: RiskScores;
   financialRisk: FinancialRisk;
   decision: Decision;
-  createdAt: Date;
-}
+};

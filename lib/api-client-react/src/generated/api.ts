@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.1.0
+ * OpenAPI spec version: 0.2.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -20,7 +20,11 @@ import type {
   CreateProjectInput,
   ErrorResponse,
   HealthStatus,
+  PortfolioOptimization,
+  PortfolioSummary,
   ProjectWithAnalysis,
+  ScenarioInput,
+  ScenarioResult,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -438,3 +442,241 @@ export const useDeleteProject = <
 > => {
   return useMutation(getDeleteProjectMutationOptions(options));
 };
+
+/**
+ * @summary Run what-if scenario analysis on a project
+ */
+export const getRunScenarioUrl = (id: number) => {
+  return `/api/projects/${id}/scenario`;
+};
+
+export const runScenario = async (
+  id: number,
+  scenarioInput: ScenarioInput,
+  options?: RequestInit,
+): Promise<ScenarioResult> => {
+  return customFetch<ScenarioResult>(getRunScenarioUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(scenarioInput),
+  });
+};
+
+export const getRunScenarioMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runScenario>>,
+    TError,
+    { id: number; data: BodyType<ScenarioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runScenario>>,
+  TError,
+  { id: number; data: BodyType<ScenarioInput> },
+  TContext
+> => {
+  const mutationKey = ["runScenario"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runScenario>>,
+    { id: number; data: BodyType<ScenarioInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return runScenario(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunScenarioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runScenario>>
+>;
+export type RunScenarioMutationBody = BodyType<ScenarioInput>;
+export type RunScenarioMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Run what-if scenario analysis on a project
+ */
+export const useRunScenario = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runScenario>>,
+    TError,
+    { id: number; data: BodyType<ScenarioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof runScenario>>,
+  TError,
+  { id: number; data: BodyType<ScenarioInput> },
+  TContext
+> => {
+  return useMutation(getRunScenarioMutationOptions(options));
+};
+
+/**
+ * @summary Get portfolio-level summary metrics
+ */
+export const getGetPortfolioSummaryUrl = () => {
+  return `/api/portfolio/summary`;
+};
+
+export const getPortfolioSummary = async (
+  options?: RequestInit,
+): Promise<PortfolioSummary> => {
+  return customFetch<PortfolioSummary>(getGetPortfolioSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPortfolioSummaryQueryKey = () => {
+  return [`/api/portfolio/summary`] as const;
+};
+
+export const getGetPortfolioSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPortfolioSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPortfolioSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPortfolioSummary>>
+  > = ({ signal }) => getPortfolioSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPortfolioSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPortfolioSummary>>
+>;
+export type GetPortfolioSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get portfolio-level summary metrics
+ */
+
+export function useGetPortfolioSummary<
+  TData = Awaited<ReturnType<typeof getPortfolioSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPortfolioSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get portfolio optimization recommendations
+ */
+export const getGetPortfolioOptimizationUrl = () => {
+  return `/api/portfolio/optimize`;
+};
+
+export const getPortfolioOptimization = async (
+  options?: RequestInit,
+): Promise<PortfolioOptimization> => {
+  return customFetch<PortfolioOptimization>(getGetPortfolioOptimizationUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPortfolioOptimizationQueryKey = () => {
+  return [`/api/portfolio/optimize`] as const;
+};
+
+export const getGetPortfolioOptimizationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPortfolioOptimization>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioOptimization>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPortfolioOptimizationQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPortfolioOptimization>>
+  > = ({ signal }) => getPortfolioOptimization({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioOptimization>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPortfolioOptimizationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPortfolioOptimization>>
+>;
+export type GetPortfolioOptimizationQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get portfolio optimization recommendations
+ */
+
+export function useGetPortfolioOptimization<
+  TData = Awaited<ReturnType<typeof getPortfolioOptimization>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioOptimization>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPortfolioOptimizationQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

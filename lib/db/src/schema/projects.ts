@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, real, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, real, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -7,6 +7,7 @@ export const projectsTable = pgTable("projects", {
   name: text("name").notNull(),
   country: text("country").notNull().default("Jamaica"),
   projectType: text("project_type").notNull(),
+  investmentAmount: real("investment_amount").notNull().default(0),
   floodRisk: real("flood_risk").notNull(),
   coastalExposure: real("coastal_exposure").notNull(),
   contaminationRisk: real("contamination_risk").notNull(),

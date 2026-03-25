@@ -6,7 +6,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/", label: "Portfolio", icon: LayoutDashboard },
     { href: "/new", label: "New Analysis", icon: Plus },
   ];
 
@@ -69,6 +69,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="flex items-center space-x-4 ml-auto">
+            <div className="text-sm font-display font-semibold text-muted-foreground mr-4 hidden sm:block border-r border-border/50 pr-4">
+              Portfolio: <span className="text-foreground">Caribbean Energy Fund</span>
+            </div>
             <div className="flex items-center bg-secondary/50 rounded-full px-3 py-1.5 border border-white/5">
               <Activity className="h-4 w-4 text-primary mr-2 animate-pulse" />
               <span className="text-xs font-medium text-foreground/80">System Nominal</span>

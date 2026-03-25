@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Api
-  version: 0.1.0
+  version: 0.2.0
   description: ESL Environmental Intelligence Platform API
 servers:
   - url: /api
@@ -11,6 +11,8 @@ tags:
     description: Health operations
   - name: projects
     description: Project operations
+  - name: portfolio
+    description: Portfolio analytics
 paths:
   /healthz:
     get:
@@ -98,6 +100,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /projects/{id}/scenario:
+    post:
+      operationId: runScenario
+      tags: [projects]
+      summary: Run what-if scenario analysis on a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScenarioInput"
+      responses:
+        "200":
+          description: Scenario comparison
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /portfolio/summary:
+    get:
+      operationId: getPortfolioSummary
+      tags: [portfolio]
+      summary: Get portfolio-level summary metrics
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSummary"
+  /portfolio/optimize:
+    get:
+      operationId: getPortfolioOptimization
+      tags: [portfolio]
+      summary: Get portfolio optimization recommendations
+      responses:
+        "200":
+          description: Optimization recommendations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioOptimization"
 components:
   schemas:
     HealthStatus:
@@ -120,6 +176,7 @@ components:
         - name
         - country
         - projectType
+        - investmentAmount
         - floodRisk
         - coastalExposure
         - contaminationRisk
@@ -135,6 +192,9 @@ components:
         projectType:
           type: string
           enum: [Solar, Port, Hotel, Industrial, Agriculture]
+        investmentAmount:
+          type: number
+          description: Investment amount in millions USD
         floodRisk:
           type: number
           minimum: 0
@@ -229,6 +289,7 @@ components:
         - name
         - country
         - projectType
+        - investmentAmount
         - inputs
         - riskScores
         - financialRisk
@@ -243,6 +304,8 @@ components:
           type: string
         projectType:
           type: string
+        investmentAmount:
+          type: number
         inputs:
           type: object
           required:
@@ -283,3 +346,189 @@ components:
         createdAt:
           type: string
           format: date-time
+    ScenarioInput:
+      type: object
+      properties:
+        floodRisk:
+          type: number
+          minimum: 0
+          maximum: 10
+        coastalExposure:
+          type: number
+          minimum: 0
+          maximum: 10
+        contaminationRisk:
+          type: number
+          minimum: 0
+          maximum: 10
+        regulatoryComplexity:
+          type: number
+          minimum: 0
+          maximum: 10
+        communitySensitivity:
+          type: number
+          minimum: 0
+          maximum: 10
+        waterStress:
+          type: number
+          minimum: 0
+          maximum: 10
+        hasLabData:
+          type: boolean
+        hasMonitoringData:
+          type: boolean
+        isIFCAligned:
+          type: boolean
+    ScenarioResult:
+      type: object
+      required:
+        - before
+        - after
+      properties:
+        before:
+          type: object
+          required:
+            - riskScores
+            - financialRisk
+            - decision
+          properties:
+            riskScores:
+              $ref: "#/components/schemas/RiskScores"
+            financialRisk:
+              $ref: "#/components/schemas/FinancialRisk"
+            decision:
+              $ref: "#/components/schemas/Decision"
+        after:
+          type: object
+          required:
+            - riskScores
+            - financialRisk
+            - decision
+          properties:
+            riskScores:
+              $ref: "#/components/schemas/RiskScores"
+            financialRisk:
+              $ref: "#/components/schemas/FinancialRisk"
+            decision:
+              $ref: "#/components/schemas/Decision"
+    PortfolioSummary:
+      type: object
+      required:
+        - totalCapital
+        - avgRisk
+        - exposureAtRisk
+        - avgConfidence
+        - projectCount
+        - proceedCount
+        - conditionCount
+        - declineCount
+        - riskDistribution
+        - capitalByRiskLevel
+        - alerts
+      properties:
+        totalCapital:
+          type: number
+        avgRisk:
+          type: number
+        exposureAtRisk:
+          type: number
+        avgConfidence:
+          type: number
+        projectCount:
+          type: integer
+        proceedCount:
+          type: integer
+        conditionCount:
+          type: integer
+        declineCount:
+          type: integer
+        riskDistribution:
+          type: array
+          items:
+            type: object
+            required:
+              - bucket
+              - count
+            properties:
+              bucket:
+                type: string
+              count:
+                type: integer
+        capitalByRiskLevel:
+          type: object
+          required:
+            - low
+            - medium
+            - high
+          properties:
+            low:
+              type: number
+            medium:
+              type: number
+            high:
+              type: number
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskAlert"
+    RiskAlert:
+      type: object
+      required:
+        - projectId
+        - projectName
+        - riskScore
+        - confidence
+        - investmentAmount
+        - issue
+        - action
+      properties:
+        projectId:
+          type: integer
+        projectName:
+          type: string
+        riskScore:
+          type: number
+        confidence:
+          type: number
+        investmentAmount:
+          type: number
+        issue:
+          type: string
+        action:
+          type: string
+    PortfolioOptimization:
+      type: object
+      required:
+        - currentPortfolioRisk
+        - optimizedPortfolioRisk
+        - riskReductionPercent
+        - recommendations
+      properties:
+        currentPortfolioRisk:
+          type: number
+        optimizedPortfolioRisk:
+          type: number
+        riskReductionPercent:
+          type: number
+        recommendations:
+          type: array
+          items:
+            type: object
+            required:
+              - projectId
+              - projectName
+              - action
+              - detail
+              - riskImpact
+            properties:
+              projectId:
+                type: integer
+              projectName:
+                type: string
+              action:
+                type: string
+                enum: [reduce_exposure, increase_allocation, require_mitigation]
+              detail:
+                type: string
+              riskImpact:
+                type: number

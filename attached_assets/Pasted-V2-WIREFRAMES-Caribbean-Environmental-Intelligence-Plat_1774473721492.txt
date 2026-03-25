@@ -1,0 +1,208 @@
+V2 WIREFRAMES
+Caribbean Environmental Intelligence Platform
+(Institutional / Investment-Grade UX)
+1. MAIN SCREEN — PORTFOLIO COMMAND CENTER
+Layout (Top → Bottom)
+--------------------------------------------------
+HEADER
+--------------------------------------------------
+[ ESL Logo ]   Portfolio: Caribbean Energy Fund   [ User ]
+
+--------------------------------------------------
+SUMMARY STRIP (VERY IMPORTANT)
+--------------------------------------------------
+Total Capital: $120M  
+Avg Risk: 58  
+Exposure at Risk: $42M  
+Confidence Score: 64%
+
+--------------------------------------------------
+CORE VISUAL ROW (THE MONEY SHOT)
+--------------------------------------------------
+
+[ Risk vs Confidence Scatter ]   [ Capital Allocation Pie ]
+
+--------------------------------------------------
+SECONDARY ROW
+--------------------------------------------------
+
+[ Risk Distribution Histogram ]   [ Top Risk Alerts ]
+
+--------------------------------------------------
+PROJECT TABLE (BOTTOM)
+--------------------------------------------------
+Sortable table of all projects
+What matters here:
+
+👉 This screen must feel like:
+
+Bloomberg Terminal (light version)
+Investment committee prep screen
+Not SaaS admin panel
+2. RISK VS CONFIDENCE SCATTER (MOST IMPORTANT VISUAL)
+Why this matters
+
+This is where your intelligence becomes obvious instantly.
+
+Design
+Y-Axis: Confidence (0–100)
+X-Axis: Risk (0–100)
+
+Quadrants:
+
+Top Left     → LOW RISK / HIGH CONFIDENCE (Ideal)
+Top Right    → HIGH RISK / HIGH CONFIDENCE (Known Risk)
+Bottom Left  → LOW RISK / LOW CONFIDENCE (Uncertain)
+Bottom Right → HIGH RISK / LOW CONFIDENCE (Danger Zone)
+Visual Behavior
+Each dot = a project
+Size of dot = investment amount
+Color:
+Green → low risk
+Yellow → medium
+Red → high
+Insight Example (auto box beside chart):
+
+3 projects fall in high-risk / low-confidence quadrant — representing $28M exposure requiring immediate validation
+
+3. CAPITAL ALLOCATION PIE
+Purpose
+
+Shows:
+
+👉 where money is sitting relative to risk
+
+Segments:
+Low Risk Capital
+Medium Risk Capital
+High Risk Capital
+Insight:
+
+35% of capital is allocated to high-risk assets
+
+4. RISK DISTRIBUTION HISTOGRAM
+Purpose
+
+Shows clustering:
+
+Are projects mostly mid-risk?
+Are there outliers?
+Insight:
+
+Portfolio risk is concentrated between 55–70, indicating structural exposure rather than isolated issues
+
+5. TOP RISK ALERTS PANEL
+Format (Right side card)
+⚠ High Exposure Alert  
+Project: Coastal Solar Phase II  
+Risk: 78  
+Confidence: 42  
+Investment: $18M  
+
+Issue:
+High flood + low validation data
+
+Action:
+Require monitoring + lab validation before proceeding
+6. PROJECT TABLE (BOTTOM)
+Columns:
+Project Name
+Country
+Type
+Risk Score
+Confidence
+Decision
+Investment
+Status
+Row Color:
+Green → Proceed
+Yellow → Condition
+Red → Decline
+Click Behavior:
+
+👉 Clicking a project opens Project Intelligence View
+
+7. PROJECT INTELLIGENCE VIEW
+Layout
+LEFT: Scores + Breakdown  
+RIGHT: Financial Translation + Decision
+BOTTOM: Time Trend + Notes
+LEFT PANEL
+Overall Risk Score (big)
+Subscores:
+Environmental
+Infrastructure
+Human Exposure
+Regulatory
+RIGHT PANEL
+
+Cards:
+
+Delay Risk
+Cost Overrun Risk
+Covenant Risk
+Reputational Risk
+DECISION BOX (LARGE)
+CONDITION
+
+With:
+
+Required actions:
+Add monitoring
+Validate contamination risk
+Align with IFC standards
+8. SCENARIO PANEL (VERY IMPORTANT)
+
+User toggles:
+
+Add monitoring
+Add lab validation
+Reduce risk inputs
+Show:
+BEFORE → AFTER
+
+Risk: 72 → 54  
+Confidence: 48 → 70  
+Decision: DECLINE → CONDITION
+
+👉 This is your “holy shit” moment in demos
+
+9. PORTFOLIO OPTIMIZATION PANEL
+
+Add button:
+
+👉 “Optimize Portfolio”
+
+Output:
+Reduce exposure to:
+- Project A ($15M)
+
+Increase allocation to:
+- Project B ($10M)
+
+Result:
+Portfolio Risk ↓ from 58 → 47
+Exposure at Risk ↓ 35%
+10. DESIGN RULES (NON-NEGOTIABLE)
+DO:
+Use dark theme (charcoal / black)
+White text, muted accents
+Use spacing generously
+Large numbers (impact)
+Clean charts
+DO NOT:
+Use bright SaaS colors
+Use too many icons
+Clutter the screen
+Add unnecessary features
+11. WHAT THIS WIREFRAME ACHIEVES
+
+When someone sees this, they immediately understand:
+
+👉 This is not a consultant tool
+👉 This is not ESG reporting
+👉 This is not a dashboard
+
+👉 This is:
+
+A capital decision intelligence system
