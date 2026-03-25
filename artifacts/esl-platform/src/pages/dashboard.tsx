@@ -13,7 +13,7 @@ import {
   DollarSign, Loader2, ArrowRight, TrendingDown,
   Target, Info, ChevronRight, Zap, Brain, Database,
   Shield, TrendingUp, Crosshair, Globe, Layers, BarChart3,
-  FileCheck, ClipboardList, AlertOctagon, User
+  FileCheck, ClipboardList, AlertOctagon, User, Umbrella, Building2, XCircle, CheckCircle2
 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { Card, Button, Badge, AnimatedContainer } from "@/components/ui";
@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
 import { regionalApi, type PortfolioBenchmark } from "@/lib/regional-api";
+import { financialApi, type PortfolioFinancialImpact, type ESLComparison } from "@/lib/financial-api";
 
 const ROLES = ["Analyst", "Investment Officer", "Admin"] as const;
 type Role = (typeof ROLES)[number];
@@ -38,6 +39,8 @@ export default function Dashboard() {
   const { data: portfolioDecision } = useGetPortfolioDecision();
   const [governance, setGovernance] = useState<GovernanceSummary | null>(null);
   const [portfolioBench, setPortfolioBench] = useState<PortfolioBenchmark | null>(null);
+  const [portfolioFinancial, setPortfolioFinancial] = useState<PortfolioFinancialImpact | null>(null);
+  const [eslComparison, setEslComparison] = useState<ESLComparison | null>(null);
   const [role, setRole] = useState<Role>("Analyst");
 
   const [showOptimization, setShowOptimization] = useState(false);
@@ -45,6 +48,8 @@ export default function Dashboard() {
   useEffect(() => {
     governanceApi.getGovernanceSummary().then(setGovernance).catch(() => {});
     regionalApi.getPortfolioBenchmark().then(setPortfolioBench).catch(() => {});
+    financialApi.getPortfolioImpact().then(setPortfolioFinancial).catch(() => {});
+    financialApi.getComparison().then(setEslComparison).catch(() => {});
   }, []);
 
   const isLoading = projectsLoading || summaryLoading;
@@ -567,6 +572,127 @@ export default function Dashboard() {
                 </Card>
               )}
             </div>
+          </AnimatedContainer>
+        )}
+
+        {portfolioFinancial && (
+          <AnimatedContainer delay={0.55}>
+            <Card className="overflow-hidden">
+              <div className="p-6 border-b border-white/5 bg-card/80">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Portfolio Financial Impact</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Environmental risk cost across all assets — 10-year projection</p>
+              </div>
+              <div className="p-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="p-4 text-center bg-warning/5 border-warning/20">
+                    <Building2 className="w-5 h-5 text-warning mx-auto mb-2" />
+                    <div className="text-2xl font-mono font-bold text-warning">{portfolioFinancial.totalFinancingCost >= 1_000_000 ? `$${(portfolioFinancial.totalFinancingCost / 1_000_000).toFixed(1)}M` : `$${(portfolioFinancial.totalFinancingCost / 1_000).toFixed(0)}K`}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Additional Financing Cost</div>
+                  </Card>
+                  <Card className="p-4 text-center bg-destructive/5 border-destructive/20">
+                    <Umbrella className="w-5 h-5 text-destructive mx-auto mb-2" />
+                    <div className="text-2xl font-mono font-bold text-destructive">{portfolioFinancial.totalInsuranceUplift >= 1_000_000 ? `$${(portfolioFinancial.totalInsuranceUplift / 1_000_000).toFixed(1)}M` : `$${(portfolioFinancial.totalInsuranceUplift / 1_000).toFixed(0)}K`}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Insurance Uplift</div>
+                  </Card>
+                  <Card className="p-4 text-center bg-primary/5 border-primary/20">
+                    <TrendingUp className="w-5 h-5 text-primary mx-auto mb-2" />
+                    <div className="text-2xl font-mono font-bold text-primary">+{portfolioFinancial.avgRateAdjustment}%</div>
+                    <div className="text-xs text-muted-foreground mt-1">Avg Rate Adjustment</div>
+                  </Card>
+                  <Card className={`p-4 text-center ${portfolioFinancial.capitalConstraint.breach ? "bg-destructive/5 border-destructive/20" : "bg-success/5 border-success/20"}`}>
+                    <AlertTriangle className={`w-5 h-5 mx-auto mb-2 ${portfolioFinancial.capitalConstraint.breach ? "text-destructive" : "text-success"}`} />
+                    <div className={`text-2xl font-mono font-bold ${portfolioFinancial.capitalConstraint.breach ? "text-destructive" : "text-success"}`}>{portfolioFinancial.capitalConstraint.highRiskAllocation}%</div>
+                    <div className="text-xs text-muted-foreground mt-1">High-Risk Allocation</div>
+                    {portfolioFinancial.capitalConstraint.breach && <div className="text-xs text-destructive mt-1">Exceeds {portfolioFinancial.capitalConstraint.policyLimit}% limit</div>}
+                  </Card>
+                </div>
+                <div className="bg-gradient-to-r from-destructive/5 via-background to-destructive/5 rounded-xl border border-destructive/15 p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-bold">Total Environmental Risk Cost</div>
+                      <div className="text-sm text-muted-foreground">{portfolioFinancial.projectCount} projects · 10-year horizon</div>
+                    </div>
+                    <div className="text-3xl font-mono font-black text-destructive">{portfolioFinancial.totalRiskCost >= 1_000_000 ? `$${(portfolioFinancial.totalRiskCost / 1_000_000).toFixed(1)}M` : `$${(portfolioFinancial.totalRiskCost / 1_000).toFixed(0)}K`}</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </AnimatedContainer>
+        )}
+
+        {eslComparison && (
+          <AnimatedContainer delay={0.58}>
+            <Card className="overflow-hidden">
+              <div className="p-6 border-b border-white/5 bg-card/80">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">With vs Without ESL Intelligence</h3>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <XCircle className="w-5 h-5 text-destructive" />
+                      <div className="text-sm font-bold text-foreground uppercase tracking-wider">Without ESL</div>
+                    </div>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Risk Pricing</span><span className="text-foreground/80">{eslComparison.withoutESL.riskPricing}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Discovery</span><span className="text-foreground/80">{eslComparison.withoutESL.discovery}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Covenants</span><span className="text-foreground/80">{eslComparison.withoutESL.covenants}</span></div>
+                    </div>
+                    <div className="space-y-1 border-t border-destructive/20 pt-3">
+                      {eslComparison.withoutESL.issues.map((issue, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs text-destructive/80">
+                          <XCircle className="w-3 h-3 mt-0.5 shrink-0" />{issue}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-destructive/20">
+                      <div className="text-xs text-muted-foreground">Estimated Total Cost</div>
+                      <div className="text-2xl font-mono font-bold text-destructive">{eslComparison.withoutESL.totalCost >= 1_000_000 ? `$${(eslComparison.withoutESL.totalCost / 1_000_000).toFixed(1)}M` : `$${(eslComparison.withoutESL.totalCost / 1_000).toFixed(0)}K`}</div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-success/20 bg-success/5 p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CheckCircle2 className="w-5 h-5 text-success" />
+                      <div className="text-sm font-bold text-foreground uppercase tracking-wider">With ESL Intelligence</div>
+                    </div>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Risk Pricing</span><span className="text-foreground/80">{eslComparison.withESL.riskPricing}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Discovery</span><span className="text-foreground/80">{eslComparison.withESL.discovery}</span></div>
+                      <div className="flex justify-between text-sm"><span className="text-muted-foreground">Covenants</span><span className="text-foreground/80">{eslComparison.withESL.covenants}</span></div>
+                    </div>
+                    <div className="space-y-1 border-t border-success/20 pt-3">
+                      {eslComparison.withESL.advantages.map((adv, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs text-success/80">
+                          <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0" />{adv}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-success/20">
+                      <div className="text-xs text-muted-foreground">Estimated Total Cost</div>
+                      <div className="text-2xl font-mono font-bold text-success">{eslComparison.withESL.totalCost >= 1_000_000 ? `$${(eslComparison.withESL.totalCost / 1_000_000).toFixed(1)}M` : `$${(eslComparison.withESL.totalCost / 1_000).toFixed(0)}K`}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-success/5 via-primary/5 to-success/5 rounded-xl border border-success/20 p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-bold">Net Savings with ESL Intelligence</div>
+                      <div className="text-sm text-muted-foreground mt-1">{eslComparison.savings.roiMultiple}x return on intelligence investment</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-mono font-black text-success">{eslComparison.savings.total >= 1_000_000 ? `$${(eslComparison.savings.total / 1_000_000).toFixed(1)}M` : `$${(eslComparison.savings.total / 1_000).toFixed(0)}K`}</div>
+                      <div className="text-xs text-muted-foreground mt-1">estimated savings</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </AnimatedContainer>
         )}
 

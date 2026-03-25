@@ -1,0 +1,159 @@
+MASTER REPLIT PROMPT — V5
+Financial Impact Layer
+Linking Environmental Intelligence → Money
+ROLE
+
+You are a senior financial systems engineer.
+
+You are extending the platform to simulate how:
+
+banks
+DFIs
+insurers
+investment committees
+
+translate environmental risk into financial consequences.
+
+OBJECTIVE
+
+Upgrade system from:
+
+Risk Intelligence → Decision
+
+to:
+
+Risk Intelligence → Financial Impact → Capital Decision
+CORE MODULES (V5)
+1. FINANCIAL IMPACT ENGINE (CORE)
+Inputs (from existing system)
+Environmental Risk Score
+Data Confidence Score
+Project Type
+Coastal / Flood exposure
+Outputs (MUST SHOW CLEARLY)
+A. LOAN PRICING ADJUSTMENT
+Logic:
+Base Rate = 8%
+
+If Risk 40–60 → +0.5%  
+If Risk 60–75 → +1.0%  
+If Risk >75 → +1.5%
+
+If Confidence <50 → +0.5% penalty
+Output:
+Base Rate: 8.0%  
+Risk Adjustment: +1.2%  
+Final Rate: 9.2%
+B. INSURANCE PREMIUM IMPACT
+Logic:
+Base Premium = 1% of project value
+
+If Coastal Exposure >7 → +25%  
+If Flood Risk >7 → +20%  
+If Risk >70 → +15%
+Output:
+Base Premium: $1.2M  
+Adjusted Premium: $1.65M  
+Increase: +$450K
+C. CAPITAL CONSTRAINT ENGINE
+Logic:
+Max High-Risk Exposure = 25%
+
+If portfolio exceeds → flag breach
+Output:
+High-Risk Allocation: 38%  
+Policy Limit: 25%  
+
+→ Reallocation Required
+D. COVENANT SEVERITY SCORE
+Logic:
+If Risk >70 AND Confidence <60 → HIGH  
+If Risk 50–70 → MEDIUM  
+Else → LOW
+Output:
+Covenant Requirement: HIGH
+
+Required:
+- Independent monitoring  
+- Lab validation  
+- Quarterly reporting
+2. FINANCIAL IMPACT PANEL (UI — CRITICAL)
+
+Add to:
+
+Project View
+Portfolio View
+Layout:
+---------------------------------
+FINANCIAL IMPACT SUMMARY
+---------------------------------
+
++1.2% Financing Cost  
++$450K Insurance Increase  
+High Covenant Requirements  
+
+---------------------------------
+TOTAL FINANCIAL EFFECT:
+---------------------------------
+
++$2.1M lifetime impact
+
+👉 This must be visually dominant
+
+3. PORTFOLIO IMPACT ENGINE
+Aggregate across projects:
+Outputs:
+Total Additional Financing Cost: $4.8M  
+Total Insurance Uplift: $2.3M  
+
+Total Environmental Risk Cost:
+$7.1M annually
+4. “WITH VS WITHOUT INTELLIGENCE” (DEMO KILLER)
+Build comparison mode:
+WITHOUT ESL:
+Risk underpriced  
+Late-stage discovery  
+Cost overruns  
+Higher loss exposure
+WITH ESL:
+Early detection  
+Structured covenants  
+Optimized capital allocation  
+Reduced financial exposure
+5. SCENARIO SIMULATION (UPGRADE)
+
+User toggles:
+
+Add monitoring
+Add lab validation
+Output must show:
+Before:
+Rate: 9.2%  
+Premium: $1.65M  
+
+After:
+Rate: 8.6%  
+Premium: $1.35M  
+
+Savings: $3.2M
+
+👉 This is your “this pays for itself” moment
+
+6. DATA MODEL ADDITIONS
+financial_impacts
+project_id
+rate_adjustment
+insurance_adjustment
+covenant_level
+UX RULES
+Must feel like:
+credit committee tool
+investment memo support system
+NOT:
+fintech app
+startup calculator
+FINAL PURPOSE
+
+When someone uses this:
+
+👉 They must see money moving because of your system

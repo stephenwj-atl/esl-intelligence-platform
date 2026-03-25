@@ -145,6 +145,26 @@ artifacts-monorepo/
 - Portfolio Benchmarking: integrated into dashboard governance section
 - API regional routes in `artifacts/api-server/src/routes/regional.ts`
 
+### V5 Financial Impact Routes
+- `GET /api/financial/project/:id` — project financial impact (loan pricing, insurance, covenant, capital constraint, lifetime cost)
+- `GET /api/financial/portfolio` — portfolio-wide financial impact aggregation
+- `GET /api/financial/comparison` — "With vs Without ESL" intelligence comparison
+- `GET /api/financial/scenario/:id` — financial scenario with mitigation (before/after savings)
+
+### V5 Financial Frontend
+- Financial API client: `artifacts/esl-platform/src/lib/financial-api.ts`
+- Financial Impact tab: `artifacts/esl-platform/src/components/financial-impact.tsx` (project detail)
+- Portfolio Financial Impact + ESL Comparison: integrated into dashboard
+- API financial routes in `artifacts/api-server/src/routes/financial.ts`
+- DB table: `financial_impacts` (schema at `lib/db/src/schema/financial-impacts.ts`)
+
+### Financial Calculation Logic
+- Base Rate: 8%, Risk 40-60 → +0.5%, Risk 60-75 → +1.0%, Risk >75 → +1.5%
+- Confidence <50 → +0.5% penalty
+- Insurance: 1% of project value, +25% coastal >7, +20% flood >7, +15% risk >70
+- Covenant: HIGH (risk>70 + confidence<60), MEDIUM (risk>=50), LOW (else)
+- Capital constraint: 25% max high-risk allocation
+
 ## Commands
 
 - `pnpm run typecheck` — full typecheck

@@ -10,3 +10,4 @@ export * from "./framework-alignments";
 export * from "./regional-data";
 export * from "./regional-indices";
 export * from "./sector-benchmarks";
+export * from "./financial-impacts";

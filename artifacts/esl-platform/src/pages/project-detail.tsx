@@ -14,6 +14,7 @@ import {
   LineChart, Line, Legend
 } from "recharts";
 import { ProjectBenchmarkPanel } from "@/components/benchmarking";
+import { FinancialImpactPanel } from "@/components/financial-impact";
 import { useState } from "react";
 import {
   FrameworkAlignmentTab, CovenantsTab, EsapTab, MonitoringTab,
@@ -27,6 +28,7 @@ const TABS = [
   { id: "esap", label: "ESAP", icon: ClipboardList },
   { id: "monitoring", label: "Monitoring", icon: Activity },
   { id: "audit", label: "Audit Trail", icon: History },
+  { id: "financial", label: "Financial Impact", icon: DollarSign },
   { id: "benchmark", label: "Benchmark", icon: Target },
   { id: "report", label: "Report", icon: FileText },
 ] as const;
@@ -335,6 +337,7 @@ export default function ProjectDetail() {
           {activeTab === "esap" && <EsapTab projectId={id} />}
           {activeTab === "monitoring" && <MonitoringTab projectId={id} />}
           {activeTab === "audit" && <AuditTrailTab projectId={id} />}
+          {activeTab === "financial" && <FinancialImpactPanel projectId={id} />}
           {activeTab === "benchmark" && <ProjectBenchmarkPanel projectId={id} />}
           {activeTab === "report" && <ReportTab projectId={id} />}
         </AnimatedContainer>
