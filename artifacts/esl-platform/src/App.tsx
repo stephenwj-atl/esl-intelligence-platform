@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import NewProject from "@/pages/new-project";
 import ProjectDetail from "@/pages/project-detail";
 import PortfolioManager from "@/pages/portfolio-manager";
+import AuthorityDashboard from "@/pages/authority-dashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/new" component={NewProject} />
       <Route path="/project/:id" component={ProjectDetail} />
       <Route path="/portfolios" component={PortfolioManager} />
+      <Route path="/authority" component={AuthorityDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

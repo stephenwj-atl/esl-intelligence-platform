@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers } from "lucide-react";
+import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -7,6 +7,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: "/", label: "Command Center", icon: LayoutDashboard },
+    { href: "/authority", label: "Authority Index", icon: Globe },
     { href: "/portfolios", label: "Portfolios", icon: Layers },
     { href: "/new", label: "New Analysis", icon: Plus },
   ];

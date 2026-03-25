@@ -121,11 +121,29 @@ artifacts-monorepo/
 - `GET /api/governance/summary` — portfolio governance KPIs (covenant compliance %, ESAP completion %, breaches, monitoring events)
 - `GET /api/projects/:id/report` — generate institutional report for project
 
+### V4 Regional/Authority Routes
+- `GET /api/regional/data` — regional dataset query (filter by country, type)
+- `GET /api/regional/indices` — Caribbean Risk Index (all countries with trends)
+- `GET /api/regional/indices/:country` — single country trend
+- `GET /api/regional/benchmarks/sector` — sector benchmarking with trends
+- `GET /api/regional/benchmarks/project/:id` — project vs region/sector comparison with percentile
+- `GET /api/regional/benchmarks/portfolio` — portfolio vs regional baseline
+- `GET /api/regional/confidence` — regional data confidence/coverage breakdown
+- `GET /api/regional/insights` — generated intelligence insights
+- `GET /api/regional/authority-summary` — authority dashboard headline data (CERI, data moat, countries, sectors)
+
 ### Governance Frontend
 - Governance API client: `artifacts/esl-platform/src/lib/governance-api.ts` (direct fetch, not codegen)
 - Governance tab components: `artifacts/esl-platform/src/components/governance-tabs.tsx`
 - Dashboard governance section in `artifacts/esl-platform/src/pages/dashboard.tsx`
 - API governance routes in `artifacts/api-server/src/routes/governance.ts`
+
+### V4 Regional Frontend
+- Regional API client: `artifacts/esl-platform/src/lib/regional-api.ts`
+- Authority Dashboard: `artifacts/esl-platform/src/pages/authority-dashboard.tsx` (/authority)
+- Project Benchmarking: `artifacts/esl-platform/src/components/benchmarking.tsx` (Benchmark tab)
+- Portfolio Benchmarking: integrated into dashboard governance section
+- API regional routes in `artifacts/api-server/src/routes/regional.ts`
 
 ## Commands
 

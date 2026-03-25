@@ -7,3 +7,6 @@ export * from "./esap-items";
 export * from "./monitoring-events";
 export * from "./audit-logs";
 export * from "./framework-alignments";
+export * from "./regional-data";
+export * from "./regional-indices";
+export * from "./sector-benchmarks";

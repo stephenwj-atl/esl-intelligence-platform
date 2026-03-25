@@ -23,6 +23,7 @@ import {
   ResponsiveContainer, ReferenceLine, Cell, PieChart, Pie, BarChart, Bar
 } from "recharts";
 import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
+import { regionalApi, type PortfolioBenchmark } from "@/lib/regional-api";
 
 const ROLES = ["Analyst", "Investment Officer", "Admin"] as const;
 type Role = (typeof ROLES)[number];
@@ -36,12 +37,14 @@ export default function Dashboard() {
   const { data: confidenceIndex } = useGetDataConfidenceIndex();
   const { data: portfolioDecision } = useGetPortfolioDecision();
   const [governance, setGovernance] = useState<GovernanceSummary | null>(null);
+  const [portfolioBench, setPortfolioBench] = useState<PortfolioBenchmark | null>(null);
   const [role, setRole] = useState<Role>("Analyst");
 
   const [showOptimization, setShowOptimization] = useState(false);
 
   useEffect(() => {
     governanceApi.getGovernanceSummary().then(setGovernance).catch(() => {});
+    regionalApi.getPortfolioBenchmark().then(setPortfolioBench).catch(() => {});
   }, []);
 
   const isLoading = projectsLoading || summaryLoading;
@@ -537,6 +540,29 @@ export default function Dashboard() {
                         </Button>
                       </div>
                     ))}
+                  </div>
+                </Card>
+              )}
+
+              {portfolioBench && (
+                <Card className="p-4 bg-primary/3 border-primary/15">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-primary" />
+                      <div>
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider">Portfolio vs Regional Benchmark</div>
+                        <div className="flex items-baseline gap-4 mt-1">
+                          <span className="text-sm text-muted-foreground">Portfolio Avg: <span className="font-mono font-bold text-foreground">{portfolioBench.portfolioAvg}</span></span>
+                          <span className="text-sm text-muted-foreground">Regional Avg: <span className="font-mono font-bold text-foreground">{portfolioBench.regionalAvg}</span></span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={portfolioBench.diff > 0 ? "warning" : "success"}>
+                        {portfolioBench.diffLabel}
+                      </Badge>
+                      <div className="text-xs text-muted-foreground mt-1">{portfolioBench.countriesBenchmarked} countries benchmarked</div>
+                    </div>
                   </div>
                 </Card>
               )}

@@ -1,0 +1,227 @@
+MASTER REPLIT PROMPT — V4
+Authority Layer
+Regional Dataset + Benchmarking + Caribbean Risk Index
+ROLE
+
+You are a senior data platform architect and systems engineer.
+
+You are extending V3 into a regional environmental intelligence authority system.
+
+This layer transforms the platform from:
+
+Project + Portfolio + Governance System
+
+into:
+
+Regional Environmental Intelligence Authority
+OBJECTIVE
+
+Build a system that demonstrates:
+
+ESL controls regional environmental datasets
+ESL can benchmark projects against regional intelligence
+ESL produces standardized risk indices
+ESL becomes a reference point for capital decisions
+CORE IDEA
+
+At V4, the system is no longer just evaluating projects.
+
+It is answering:
+
+👉 “How does this project compare to everything else we know?”
+
+NEW MODULES (V4)
+1. REGIONAL DATASET ENGINE
+Purpose
+
+Simulate ESL controlling structured regional datasets.
+
+Create dataset categories:
+Coastal Risk Dataset
+Flood Risk Dataset
+Water Quality Dataset
+Infrastructure Failure Dataset
+Community Risk Dataset
+Data structure:
+regional_data
+id
+country
+region/parish
+dataset_type
+value
+timestamp
+Example:
+Country: Jamaica  
+Parish: St. Elizabeth  
+Dataset: Flood Risk  
+Value: 72  
+2. BENCHMARKING ENGINE (CRITICAL)
+Purpose
+
+Compare project vs region
+
+Output on project page:
+Project Risk: 68  
+Regional Average: 52  
+
+→ Project is 31% higher risk than regional baseline
+Add:
+percentile ranking
+Project is in top 20% highest-risk assets in region
+3. CARIBBEAN RISK INDEX (CORE PRODUCT)
+Create:
+Caribbean Environmental Risk Index (CERI)
+Structure:
+
+Each country gets:
+
+Environmental Risk Score
+Infrastructure Risk Score
+Water Stress Score
+Data Confidence Score
+UI:
+
+Map view or table:
+
+Country	Risk Index	Confidence
+Jamaica	58	65
+DR	62	60
+Add:
+
+👉 Trend over time
+
+Jamaica Risk Index:
+2022 → 55  
+2023 → 57  
+2024 → 58
+4. SECTOR BENCHMARKING
+Compare:
+solar vs solar
+ports vs ports
+hotels vs hotels
+Output:
+Solar Projects (Coastal):
+
+Average Risk: 64  
+Your Project: 78  
+
+→ Above sector risk
+5. DATA CONFIDENCE INDEX (REGIONAL)
+Show:
+
+Which regions have:
+
+strong data
+weak data
+Output:
+Caribbean Data Coverage:
+
+High Confidence: 40%  
+Medium: 35%  
+Low: 25%
+
+👉 This is subtle but powerful:
+
+You’re showing data scarcity = opportunity
+
+6. PORTFOLIO BENCHMARKING
+Compare portfolio vs region:
+Portfolio Avg Risk: 58  
+Regional Avg Risk: 54  
+
+→ Portfolio slightly above regional baseline
+7. INSIGHT ENGINE (UPGRADE)
+Generate insights like:
+“Projects in high flood zones consistently underperform”
+“Low data confidence correlates with higher covenant breaches”
+“Coastal assets show 20–30% higher volatility”
+
+👉 Use simple rules (no ML required)
+
+8. AUTHORITY DASHBOARD (NEW MAIN SCREEN)
+Layout:
+
+Top:
+
+Caribbean Risk Index (headline number)
+Data Coverage %
+Total Projects Analyzed
+Middle:
+Map or country table
+Risk trends
+Bottom:
+Top insights
+High-risk sectors
+9. DATA MOAT VISUAL (IMPORTANT FOR DEMO)
+
+Add visual:
+
+Projects Analyzed: 120  
+Lab Samples: 4,500  
+Monitoring Points: 300  
+Countries Covered: 14
+
+👉 This is your defensibility signal
+
+10. DATA MODEL ADDITIONS
+regional_indices
+country
+risk_score
+confidence
+timestamp
+sector_benchmarks
+sector
+avg_risk
+avg_confidence
+UX REQUIREMENTS
+Must feel like:
+Bloomberg / Moody’s / MSCI style intelligence
+NOT SaaS
+NOT consulting tool
+Visual priority:
+comparisons
+rankings
+trends
+benchmarks
+CRITICAL DIFFERENCE FROM V3
+
+V3 shows:
+
+👉 institutional capability
+
+V4 shows:
+
+👉 authority + defensibility
+
+FINAL DEMONSTRATION MESSAGE
+
+After V4, a user should think:
+
+👉 This system defines how environmental risk is understood in the Caribbean
+
+👉 This is not optional intelligence
+
+👉 This is the reference layer for capital
+
+WHAT THIS CREATES
+
+You are now:
+
+not a consultant
+not a platform
+not a tool
+
+You are:
+
+👉 The Environmental Intelligence Authority for Caribbean Capital
+STRATEGIC INSIGHT (IMPORTANT)
+
+At V4, your competitors cannot catch you by:
+
+hiring more people
+building dashboards
+doing more consulting
+
+Because the moat is now:
+
+👉 data + benchmarks + accumulated intelligence

@@ -1,4 +1,4 @@
-import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable, covenantsTable, esapItemsTable, monitoringEventsTable, auditLogsTable, frameworkAlignmentsTable } from "@workspace/db";
+import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable, covenantsTable, esapItemsTable, monitoringEventsTable, auditLogsTable, frameworkAlignmentsTable, regionalDataTable, regionalIndicesTable, sectorBenchmarksTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 function clamp(val: number, min: number, max: number): number {
@@ -416,6 +416,118 @@ async function seed() {
   }
   console.log(`  ${auditSeeds.length} audit log entries`);
 
+  // ── V4: Regional Data ──
+  console.log("\n── V4: Regional Dataset Engine ──");
+  await db.execute(sql`TRUNCATE regional_data, regional_indices, sector_benchmarks RESTART IDENTITY CASCADE`);
+
+  const caribbeanCountries = [
+    { country: "Jamaica", regions: ["Kingston", "St. Andrew", "St. Catherine", "Montego Bay", "Ocho Rios", "Port Antonio", "St. Elizabeth", "Negril"] },
+    { country: "Dominican Republic", regions: ["Santo Domingo", "Punta Cana", "Santiago", "Puerto Plata", "La Romana"] },
+    { country: "Trinidad & Tobago", regions: ["Port of Spain", "San Fernando", "Chaguanas", "Tobago"] },
+    { country: "Barbados", regions: ["Bridgetown", "Christ Church", "St. James", "St. Philip"] },
+    { country: "Bahamas", regions: ["Nassau", "Freeport", "Exuma", "Abaco"] },
+    { country: "Guyana", regions: ["Georgetown", "Linden", "New Amsterdam", "Bartica"] },
+    { country: "Suriname", regions: ["Paramaribo", "Nickerie", "Commewijne"] },
+    { country: "Haiti", regions: ["Port-au-Prince", "Cap-Haitien", "Les Cayes", "Gonaives"] },
+    { country: "Cuba", regions: ["Havana", "Santiago de Cuba", "Varadero", "Trinidad"] },
+    { country: "Puerto Rico", regions: ["San Juan", "Ponce", "Mayaguez", "Caguas"] },
+    { country: "Cayman Islands", regions: ["George Town", "West Bay", "Bodden Town"] },
+    { country: "Belize", regions: ["Belize City", "San Pedro", "Belmopan", "Dangriga"] },
+    { country: "St. Lucia", regions: ["Castries", "Soufriere", "Vieux Fort"] },
+    { country: "Grenada", regions: ["St. George's", "Gouyave", "Grenville"] },
+  ];
+
+  const datasetTypes = ["Coastal Risk", "Flood Risk", "Water Quality", "Infrastructure Failure", "Community Risk"];
+  const rng = (min: number, max: number) => Math.round((min + Math.random() * (max - min)) * 10) / 10;
+
+  const countryRiskProfiles: Record<string, { base: number; infra: number; water: number; conf: number }> = {
+    "Jamaica": { base: 58, infra: 55, water: 52, conf: 65 },
+    "Dominican Republic": { base: 62, infra: 50, water: 48, conf: 60 },
+    "Trinidad & Tobago": { base: 48, infra: 45, water: 40, conf: 72 },
+    "Barbados": { base: 42, infra: 38, water: 35, conf: 78 },
+    "Bahamas": { base: 55, infra: 52, water: 45, conf: 68 },
+    "Guyana": { base: 65, infra: 62, water: 58, conf: 50 },
+    "Suriname": { base: 60, infra: 58, water: 55, conf: 45 },
+    "Haiti": { base: 82, infra: 78, water: 75, conf: 35 },
+    "Cuba": { base: 52, infra: 48, water: 42, conf: 55 },
+    "Puerto Rico": { base: 50, infra: 42, water: 38, conf: 75 },
+    "Cayman Islands": { base: 38, infra: 32, water: 30, conf: 82 },
+    "Belize": { base: 58, infra: 55, water: 50, conf: 55 },
+    "St. Lucia": { base: 52, infra: 48, water: 44, conf: 62 },
+    "Grenada": { base: 50, infra: 46, water: 42, conf: 60 },
+  };
+
+  let regionalDataCount = 0;
+  for (const { country, regions } of caribbeanCountries) {
+    for (const region of regions) {
+      for (const dt of datasetTypes) {
+        const profile = countryRiskProfiles[country];
+        let baseVal = profile.base;
+        if (dt === "Coastal Risk") baseVal = rng(baseVal - 5, baseVal + 15);
+        else if (dt === "Flood Risk") baseVal = rng(baseVal - 10, baseVal + 10);
+        else if (dt === "Water Quality") baseVal = rng(profile.water - 8, profile.water + 12);
+        else if (dt === "Infrastructure Failure") baseVal = rng(profile.infra - 5, profile.infra + 10);
+        else baseVal = rng(baseVal - 15, baseVal + 5);
+
+        await db.insert(regionalDataTable).values({
+          country, region, datasetType: dt,
+          value: clamp(baseVal, 5, 95), unit: "score",
+          timestamp: new Date(`2025-01-15`),
+        });
+        regionalDataCount++;
+      }
+    }
+  }
+  console.log(`  ${regionalDataCount} regional data points`);
+
+  // Regional Indices (multi-year 2021-2025)
+  let indicesCount = 0;
+  for (const [country, profile] of Object.entries(countryRiskProfiles)) {
+    for (let year = 2021; year <= 2025; year++) {
+      const drift = (year - 2021) * rng(-1.5, 2.5);
+      await db.insert(regionalIndicesTable).values({
+        country,
+        riskScore: clamp(profile.base + drift, 10, 95),
+        infrastructureScore: clamp(profile.infra + drift * 0.8, 10, 95),
+        waterStressScore: clamp(profile.water + drift * 1.2, 10, 95),
+        confidence: clamp(profile.conf + (year - 2021) * rng(0.5, 2), 15, 95),
+        year,
+      });
+      indicesCount++;
+    }
+  }
+  console.log(`  ${indicesCount} regional index entries`);
+
+  // Sector Benchmarks
+  const sectorData = [
+    { sector: "Solar", metric: "Overall Risk", avgRisk: 45, avgConfidence: 70, sampleSize: 34 },
+    { sector: "Solar", metric: "Coastal Risk", avgRisk: 52, avgConfidence: 68, sampleSize: 34 },
+    { sector: "Port", metric: "Overall Risk", avgRisk: 62, avgConfidence: 65, sampleSize: 18 },
+    { sector: "Port", metric: "Coastal Risk", avgRisk: 72, avgConfidence: 62, sampleSize: 18 },
+    { sector: "Hotel", metric: "Overall Risk", avgRisk: 48, avgConfidence: 72, sampleSize: 45 },
+    { sector: "Hotel", metric: "Community Risk", avgRisk: 55, avgConfidence: 70, sampleSize: 45 },
+    { sector: "Wind", metric: "Overall Risk", avgRisk: 42, avgConfidence: 68, sampleSize: 12 },
+    { sector: "Wind", metric: "Coastal Risk", avgRisk: 58, avgConfidence: 65, sampleSize: 12 },
+    { sector: "Mining", metric: "Overall Risk", avgRisk: 68, avgConfidence: 55, sampleSize: 8 },
+    { sector: "Mining", metric: "Water Quality", avgRisk: 75, avgConfidence: 50, sampleSize: 8 },
+    { sector: "Agriculture", metric: "Overall Risk", avgRisk: 38, avgConfidence: 60, sampleSize: 22 },
+    { sector: "Agriculture", metric: "Water Quality", avgRisk: 52, avgConfidence: 58, sampleSize: 22 },
+  ];
+
+  for (const s of sectorData) {
+    for (let year = 2022; year <= 2025; year++) {
+      const drift = (year - 2022) * rng(-1, 2);
+      await db.insert(sectorBenchmarksTable).values({
+        sector: s.sector, metric: s.metric,
+        avgRisk: clamp(s.avgRisk + drift, 10, 95),
+        avgConfidence: clamp(s.avgConfidence + (year - 2022) * rng(0.5, 1.5), 20, 95),
+        sampleSize: s.sampleSize + (year - 2022) * Math.floor(rng(1, 5)),
+        year,
+      });
+    }
+  }
+  console.log(`  ${sectorData.length * 4} sector benchmark entries`);
+
   console.log("\nSeeding complete!");
   console.log(`  ${insertedProjects.length} projects`);
   console.log(`  ${insertedProjects.length * 12} risk history entries`);
@@ -424,6 +536,9 @@ async function seed() {
   console.log(`  ${esapSeeds.length} ESAP items`);
   console.log(`  ${monitoringData.length} monitoring events`);
   console.log(`  ${auditSeeds.length} audit log entries`);
+  console.log(`  ${regionalDataCount} regional data points`);
+  console.log(`  ${indicesCount} regional index entries`);
+  console.log(`  ${sectorData.length * 4} sector benchmarks`);
   process.exit(0);
 }
 

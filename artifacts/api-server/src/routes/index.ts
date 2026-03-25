@@ -4,6 +4,7 @@ import projectsRouter from "./projects";
 import portfolioRouter from "./portfolio";
 import portfoliosRouter from "./portfolios";
 import governanceRouter from "./governance";
+import regionalRouter from "./regional";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(projectsRouter);
 router.use(portfolioRouter);
 router.use(portfoliosRouter);
 router.use(governanceRouter);
+router.use(regionalRouter);
 
 export default router;
