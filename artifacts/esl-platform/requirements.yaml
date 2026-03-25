@@ -1,0 +1,17 @@
+packages:
+  "framer-motion": "For premium, staggered entrance animations and page transitions"
+  "recharts": "For the risk analysis radar and bar charts"
+  "react-hook-form": "For complex project risk input forms"
+  "@hookform/resolvers": "For Zod validation with react-hook-form"
+  "zod": "For form schema validation"
+  "clsx": "For conditional class merging"
+  "tailwind-merge": "For tailwind class merging"
+
+images:
+  - path: "artifacts/esl-platform/public/images/auth-bg.png"
+    description: "Deep dark teal and navy abstract gradient mesh with very subtle topographic map lines, giving an environmental intelligence and data science feel, extremely minimal and dark, high end corporate aesthetic"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react
+  - Defaulting to a forced dark mode for the investment-grade aesthetic

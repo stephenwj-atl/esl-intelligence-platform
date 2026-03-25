@@ -1,0 +1,241 @@
+MASTER REPLIT PROMPT
+Caribbean Environmental Intelligence Demo Platform
+(Execution-Ready | Copy-Paste)
+ROLE
+
+You are a senior full-stack engineer and data systems architect.
+
+You are building a production-style prototype (MVP) for:
+
+Environmental Solutions Limited (ESL)
+
+The system demonstrates:
+
+👉 Environmental Intelligence → Risk → Capital Decision
+
+This is NOT a generic SaaS app.
+This is a decision intelligence system.
+
+OBJECTIVE
+
+Build a web application that demonstrates:
+
+Environmental + project data ingestion
+Conversion into structured environmental intelligence
+Translation into financial and investment risk signals
+Clear decision outputs:
+Proceed  
+Condition  
+Decline  
+TECH STACK
+
+Backend:
+
+Python 3.11
+FastAPI
+
+Frontend:
+
+Next.js (latest)
+React
+Tailwind CSS
+
+Database:
+
+PostgreSQL (use simple schema)
+
+Charts:
+
+Recharts
+CORE MODULES (MUST BUILD)
+1. PROJECT INPUT MODULE
+UI Form
+
+User inputs:
+
+Project Name
+Country (Jamaica default)
+Project Type:
+Solar
+Port
+Hotel
+Industrial
+Agriculture
+Environmental Factors (sliders 0–10):
+Flood Risk
+Coastal Exposure
+Contamination Risk
+Regulatory Complexity
+Community Sensitivity
+Water Stress
+Optional toggles:
+"Has independent lab data"
+"Has monitoring data"
+"Aligned with IFC standards"
+2. ENVIRONMENTAL INTELLIGENCE ENGINE (CORE LOGIC)
+Create scoring engine:
+Subscores (0–100):
+Environmental System Risk
+Infrastructure Risk
+Human Exposure Risk
+Regulatory Risk
+Data Confidence Score
+Sample Logic (must implement):
+Environmental Risk = 
+  (Flood * 0.25) +
+  (Contamination * 0.25) +
+  (Water Stress * 0.20) +
+  (Coastal Exposure * 0.30)
+Infrastructure Risk =
+  Flood + Coastal + Regulatory Complexity
+Human Exposure Risk =
+  Community Sensitivity + Contamination
+Data Confidence Modifier:
+
+If:
+
+lab data = TRUE → +15%
+monitoring = TRUE → +15%
+IFC aligned = TRUE → +10%
+
+Else:
+
+Apply penalty:
+
+Final Risk Score = Raw Score * (1 + Uncertainty Factor)
+3. FINANCIAL RISK TRANSLATION MODULE
+
+Convert environmental scores into:
+
+Outputs:
+Delay Risk (%)
+Cost Overrun Risk (%)
+Covenant Breach Risk (%)
+Reputational Risk (Low / Medium / High)
+Example mapping:
+If Environmental Risk > 70:
+  Delay Risk = High (60–80%)
+If Data Confidence < 50:
+  Increase all risks by 20%
+4. DECISION ENGINE (CRITICAL)
+
+Return:
+
+FINAL OUTPUT:
+PROCEED
+CONDITION
+DECLINE
+Logic:
+If Risk < 40 → PROCEED
+
+If 40–70 → CONDITION
+
+If >70 → DECLINE
+CONDITION OUTPUT MUST INCLUDE:
+Required monitoring
+Required lab validation
+Required covenants
+5. DASHBOARD UI
+
+Must include:
+
+A. Risk Score Panel
+Overall Risk Score (big number)
+Subscores (bar chart)
+B. Risk Breakdown
+Environmental
+Infrastructure
+Human Exposure
+Regulatory
+C. Financial Translation
+
+Cards:
+
+Delay Risk
+Cost Risk
+Covenant Risk
+D. Decision Output
+
+Large visual:
+
+Green → Proceed
+Yellow → Condition
+Red → Decline
+E. Intelligence Insight Box
+
+Auto-generated:
+
+Example:
+
+High flood and coastal exposure combined with low data confidence increases uncertainty in project viability. Independent monitoring and lab validation required prior to investment.
+
+6. DATA MODEL
+
+Tables:
+
+projects
+id
+name
+country
+type
+risk_inputs
+project_id
+flood
+contamination
+etc.
+risk_scores
+project_id
+environmental_score
+infrastructure_score
+etc.
+7. OPTIONAL (IF TIME)
+MAP VIEW
+Show project location
+Overlay:
+flood risk zones
+coastal exposure
+
+(Mock data is fine)
+
+UX REQUIREMENTS
+Clean, minimal, investment-grade look
+No clutter
+Dark theme preferred
+Fast response (no lag)
+CRITICAL DESIGN RULES
+
+DO NOT:
+
+Use ESG language
+Use generic SaaS dashboards
+Overcomplicate UI
+
+DO:
+
+Make it feel like a decision tool for investors
+Use clear labels
+Show cause → effect → decision
+OUTPUT REQUIREMENTS
+Full working app (frontend + backend)
+Clear API routes
+Sample seeded data
+One example project pre-loaded
+FINAL PURPOSE
+
+This demo should make a decision-maker immediately understand:
+
+👉 ESL can convert environmental reality into investment-grade intelligence
+
+👉 This is NOT consulting — this is decision infrastructure
+
+AFTER YOU BUILD
+
+We will next:
+
+Add:
+monitoring data feeds
+lab integration layer
+regional dataset simulation
+Turn this into:
+
+👉 a live pitch tool for IDB / IFC / funds

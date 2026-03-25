@@ -1,22 +1,22 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ESL Environmental Intelligence Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Project operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +24,80 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectWithAnalysis"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create and analyze a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectInput"
+      responses:
+        "201":
+          description: Project created with analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithAnalysis"
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project with full analysis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project with analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithAnalysis"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +107,179 @@ components:
           type: string
       required:
         - status
-
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    CreateProjectInput:
+      type: object
+      required:
+        - name
+        - country
+        - projectType
+        - floodRisk
+        - coastalExposure
+        - contaminationRisk
+        - regulatoryComplexity
+        - communitySensitivity
+        - waterStress
+      properties:
+        name:
+          type: string
+        country:
+          type: string
+          default: Jamaica
+        projectType:
+          type: string
+          enum: [Solar, Port, Hotel, Industrial, Agriculture]
+        floodRisk:
+          type: number
+          minimum: 0
+          maximum: 10
+        coastalExposure:
+          type: number
+          minimum: 0
+          maximum: 10
+        contaminationRisk:
+          type: number
+          minimum: 0
+          maximum: 10
+        regulatoryComplexity:
+          type: number
+          minimum: 0
+          maximum: 10
+        communitySensitivity:
+          type: number
+          minimum: 0
+          maximum: 10
+        waterStress:
+          type: number
+          minimum: 0
+          maximum: 10
+        hasLabData:
+          type: boolean
+          default: false
+        hasMonitoringData:
+          type: boolean
+          default: false
+        isIFCAligned:
+          type: boolean
+          default: false
+    RiskScores:
+      type: object
+      required:
+        - environmentalRisk
+        - infrastructureRisk
+        - humanExposureRisk
+        - regulatoryRisk
+        - dataConfidence
+        - overallRisk
+      properties:
+        environmentalRisk:
+          type: number
+        infrastructureRisk:
+          type: number
+        humanExposureRisk:
+          type: number
+        regulatoryRisk:
+          type: number
+        dataConfidence:
+          type: number
+        overallRisk:
+          type: number
+    FinancialRisk:
+      type: object
+      required:
+        - delayRiskPercent
+        - costOverrunPercent
+        - covenantBreachPercent
+        - reputationalRisk
+      properties:
+        delayRiskPercent:
+          type: number
+        costOverrunPercent:
+          type: number
+        covenantBreachPercent:
+          type: number
+        reputationalRisk:
+          type: string
+          enum: [Low, Medium, High]
+    Decision:
+      type: object
+      required:
+        - outcome
+        - insight
+      properties:
+        outcome:
+          type: string
+          enum: [PROCEED, CONDITION, DECLINE]
+        conditions:
+          type: array
+          items:
+            type: string
+        insight:
+          type: string
+    ProjectWithAnalysis:
+      type: object
+      required:
+        - id
+        - name
+        - country
+        - projectType
+        - inputs
+        - riskScores
+        - financialRisk
+        - decision
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        projectType:
+          type: string
+        inputs:
+          type: object
+          required:
+            - floodRisk
+            - coastalExposure
+            - contaminationRisk
+            - regulatoryComplexity
+            - communitySensitivity
+            - waterStress
+            - hasLabData
+            - hasMonitoringData
+            - isIFCAligned
+          properties:
+            floodRisk:
+              type: number
+            coastalExposure:
+              type: number
+            contaminationRisk:
+              type: number
+            regulatoryComplexity:
+              type: number
+            communitySensitivity:
+              type: number
+            waterStress:
+              type: number
+            hasLabData:
+              type: boolean
+            hasMonitoringData:
+              type: boolean
+            isIFCAligned:
+              type: boolean
+        riskScores:
+          $ref: "#/components/schemas/RiskScores"
+        financialRisk:
+          $ref: "#/components/schemas/FinancialRisk"
+        decision:
+          $ref: "#/components/schemas/Decision"
+        createdAt:
+          type: string
+          format: date-time
