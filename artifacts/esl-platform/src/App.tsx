@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import NewProject from "@/pages/new-project";
 import ProjectDetail from "@/pages/project-detail";
+import PortfolioManager from "@/pages/portfolio-manager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/new" component={NewProject} />
       <Route path="/project/:id" component={ProjectDetail} />
+      <Route path="/portfolios" component={PortfolioManager} />
       <Route component={NotFound} />
     </Switch>
   );

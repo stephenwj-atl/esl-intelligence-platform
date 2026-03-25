@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Api
-  version: 0.2.0
+  version: 0.3.0
   description: ESL Environmental Intelligence Platform API
 servers:
   - url: /api
@@ -13,6 +13,8 @@ tags:
     description: Project operations
   - name: portfolio
     description: Portfolio analytics
+  - name: portfolios
+    description: Portfolio management
 paths:
   /healthz:
     get:
@@ -130,6 +132,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /projects/{id}/risk-history:
+    get:
+      operationId: getProjectRiskHistory
+      tags: [projects]
+      summary: Get simulated risk history for a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Risk history entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RiskHistoryEntry"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /portfolio/summary:
     get:
       operationId: getPortfolioSummary
@@ -154,6 +182,175 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PortfolioOptimization"
+  /portfolio/intelligence:
+    get:
+      operationId: getCrossProjectIntelligence
+      tags: [portfolio]
+      summary: Get cross-project intelligence patterns
+      responses:
+        "200":
+          description: Cross-project intelligence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrossProjectIntelligence"
+  /portfolio/confidence:
+    get:
+      operationId: getDataConfidenceIndex
+      tags: [portfolio]
+      summary: Get portfolio-wide data confidence index
+      responses:
+        "200":
+          description: Data confidence index
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataConfidenceIndex"
+  /portfolio/decision:
+    get:
+      operationId: getPortfolioDecision
+      tags: [portfolio]
+      summary: Get portfolio-level investment decision
+      responses:
+        "200":
+          description: Portfolio decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioDecision"
+  /portfolios:
+    get:
+      operationId: listPortfolios
+      tags: [portfolios]
+      summary: List all portfolios
+      responses:
+        "200":
+          description: List of portfolios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortfolioWithProjects"
+    post:
+      operationId: createPortfolio
+      tags: [portfolios]
+      summary: Create a new portfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePortfolioInput"
+      responses:
+        "201":
+          description: Portfolio created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioWithProjects"
+  /portfolios/{id}:
+    get:
+      operationId: getPortfolio
+      tags: [portfolios]
+      summary: Get a portfolio with its projects
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Portfolio with projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioWithProjects"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deletePortfolio
+      tags: [portfolios]
+      summary: Delete a portfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /portfolios/{id}/projects:
+    post:
+      operationId: addProjectToPortfolio
+      tags: [portfolios]
+      summary: Add a project to a portfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddProjectToPortfolioInput"
+      responses:
+        "201":
+          description: Project added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioWithProjects"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /portfolios/{id}/projects/{projectId}:
+    delete:
+      operationId: removeProjectFromPortfolio
+      tags: [portfolios]
+      summary: Remove a project from a portfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioWithProjects"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -194,7 +391,6 @@ components:
           enum: [Solar, Port, Hotel, Industrial, Agriculture]
         investmentAmount:
           type: number
-          description: Investment amount in millions USD
         floodRisk:
           type: number
           minimum: 0
@@ -411,6 +607,19 @@ components:
               $ref: "#/components/schemas/FinancialRisk"
             decision:
               $ref: "#/components/schemas/Decision"
+    RiskHistoryEntry:
+      type: object
+      required:
+        - month
+        - overallRisk
+        - dataConfidence
+      properties:
+        month:
+          type: integer
+        overallRisk:
+          type: number
+        dataConfidence:
+          type: number
     PortfolioSummary:
       type: object
       required:
@@ -532,3 +741,172 @@ components:
                 type: string
               riskImpact:
                 type: number
+    CrossProjectIntelligence:
+      type: object
+      required:
+        - patterns
+        - insights
+      properties:
+        patterns:
+          type: array
+          items:
+            type: object
+            required:
+              - category
+              - finding
+              - affectedProjects
+              - riskImpact
+            properties:
+              category:
+                type: string
+              finding:
+                type: string
+              affectedProjects:
+                type: array
+                items:
+                  type: string
+              riskImpact:
+                type: string
+                enum: [low, medium, high]
+        insights:
+          type: array
+          items:
+            type: string
+    DataConfidenceIndex:
+      type: object
+      required:
+        - overallScore
+        - labValidationPercent
+        - monitoringPercent
+        - ifcAlignedPercent
+        - projectsWithLowConfidence
+        - insight
+      properties:
+        overallScore:
+          type: number
+        labValidationPercent:
+          type: number
+        monitoringPercent:
+          type: number
+        ifcAlignedPercent:
+          type: number
+        projectsWithLowConfidence:
+          type: integer
+        insight:
+          type: string
+    PortfolioDecision:
+      type: object
+      required:
+        - outcome
+        - weightedRisk
+        - confidenceIndex
+        - highRiskCapitalPercent
+        - conditions
+        - insight
+      properties:
+        outcome:
+          type: string
+          enum: [PROCEED_WITH_PORTFOLIO, PROCEED_WITH_CONDITIONS, REBALANCE_PORTFOLIO, REDUCE_EXPOSURE]
+        weightedRisk:
+          type: number
+        confidenceIndex:
+          type: number
+        highRiskCapitalPercent:
+          type: number
+        conditions:
+          type: array
+          items:
+            type: string
+        insight:
+          type: string
+    CreatePortfolioInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    AddProjectToPortfolioInput:
+      type: object
+      required:
+        - projectId
+        - investmentAmount
+        - stage
+      properties:
+        projectId:
+          type: integer
+        investmentAmount:
+          type: number
+        stage:
+          type: string
+          enum: [Early, Pre-IC, Approved, Post-Close]
+    PortfolioProjectEntry:
+      type: object
+      required:
+        - id
+        - projectId
+        - projectName
+        - projectType
+        - country
+        - investmentAmount
+        - stage
+        - riskScore
+        - dataConfidence
+        - decision
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        projectName:
+          type: string
+        projectType:
+          type: string
+        country:
+          type: string
+        investmentAmount:
+          type: number
+        stage:
+          type: string
+        riskScore:
+          type: number
+        dataConfidence:
+          type: number
+        decision:
+          type: string
+    PortfolioWithProjects:
+      type: object
+      required:
+        - id
+        - name
+        - projects
+        - metrics
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/PortfolioProjectEntry"
+        metrics:
+          type: object
+          required:
+            - totalInvestment
+            - weightedRisk
+            - avgConfidence
+            - projectCount
+          properties:
+            totalInvestment:
+              type: number
+            weightedRisk:
+              type: number
+            avgConfidence:
+              type: number
+            projectCount:
+              type: integer
+        createdAt:
+          type: string
+          format: date-time

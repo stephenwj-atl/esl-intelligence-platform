@@ -1,15 +1,17 @@
 import { useRoute, useLocation } from "wouter";
-import { useGetProject, useDeleteProject, useRunScenario } from "@workspace/api-client-react";
+import { useGetProject, useDeleteProject, useRunScenario, useGetProjectRiskHistory } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Card, Button, Badge, AnimatedContainer } from "@/components/ui";
 import { formatPercent, formatCurrency, getRiskColor, getRiskBgColor } from "@/lib/utils";
 import { 
   ArrowLeft, Trash2, ShieldCheck, AlertTriangle, XCircle, 
   Droplet, Factory, Users, Gavel, Loader2, Target,
-  TrendingUp, CalendarX, DollarSign, ActivitySquare, Wand2, ArrowRight
+  TrendingUp, TrendingDown, CalendarX, DollarSign, ActivitySquare, Wand2, ArrowRight,
+  Clock
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  LineChart, Line, Legend
 } from "recharts";
 import { useState } from "react";
 
@@ -21,6 +23,7 @@ export default function ProjectDetail() {
   const { data: project, isLoading, isError } = useGetProject(id);
   const { mutate: deleteProject, isPending: isDeleting } = useDeleteProject();
   const { mutate: runScenario, isPending: isRunningScenario, data: scenarioResult } = useRunScenario();
+  const { data: riskHistory } = useGetProjectRiskHistory(id);
 
   const [toggles, setToggles] = useState({
     hasMonitoringData: false,
@@ -139,7 +142,7 @@ export default function ProjectDetail() {
           </Button>
         </AnimatedContainer>
 
-        {/* DECISION BANNER */}
+        {/* Decision Banner */}
         <AnimatedContainer delay={0.1}>
           <div className={`rounded-2xl border ${dConf.border} ${dConf.bg} p-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden backdrop-blur-md transition-all duration-500`}>
             {isScenarioMode && (
@@ -174,7 +177,7 @@ export default function ProjectDetail() {
                   <ul className="space-y-2">
                     {decision.conditions.map((cond, idx) => (
                       <li key={idx} className="flex items-start text-sm text-foreground/80">
-                        <span className="text-warning mr-2 mt-0.5">•</span> {cond}
+                        <span className="text-warning mr-2 mt-0.5">&bull;</span> {cond}
                       </li>
                     ))}
                   </ul>
@@ -184,7 +187,7 @@ export default function ProjectDetail() {
           </div>
         </AnimatedContainer>
 
-        {/* SCENARIO PANEL */}
+        {/* Scenario Panel */}
         <AnimatedContainer delay={0.15}>
           <Card className="p-6 border-primary/30 bg-gradient-to-r from-background to-primary/5">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -232,8 +235,67 @@ export default function ProjectDetail() {
           </Card>
         </AnimatedContainer>
 
+        {/* Risk History Chart */}
+        {riskHistory && riskHistory.length > 0 && (
+          <AnimatedContainer delay={0.18}>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-2 flex items-center">
+                <Clock className="w-5 h-5 mr-2 text-primary" /> Risk Monitoring Timeline
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">Simulated 12-month risk trajectory showing impact of monitoring and validation improvements.</p>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={riskHistory} margin={{ top: 10, right: 30, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke="#71717a" 
+                      fontSize={12} 
+                      tickLine={false} 
+                      axisLine={false}
+                      tickFormatter={(v) => `M${v}`}
+                    />
+                    <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }}
+                      labelFormatter={(v) => `Month ${v}`}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="overallRisk" 
+                      stroke="#f43f5e" 
+                      strokeWidth={2} 
+                      dot={{ fill: '#f43f5e', r: 3 }}
+                      name="Risk Score"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="dataConfidence" 
+                      stroke="#06b6d4" 
+                      strokeWidth={2} 
+                      dot={{ fill: '#06b6d4', r: 3 }}
+                      name="Data Confidence"
+                      strokeDasharray="5 5"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex items-center gap-6 text-xs text-muted-foreground border-t border-border/50 pt-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5 bg-[#f43f5e]" />
+                  Risk drops as monitoring data is added over time
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5 bg-[#06b6d4] border-dashed" />
+                  Confidence improves with data validation milestones
+                </div>
+              </div>
+            </Card>
+          </AnimatedContainer>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           {/* Main Risk Scores */}
           <AnimatedContainer delay={0.2} className="lg:col-span-2 space-y-8">
             <Card className="p-6">
@@ -269,9 +331,8 @@ export default function ProjectDetail() {
             </div>
           </AnimatedContainer>
 
-          {/* Side Panel: Overall & Financials */}
+          {/* Side Panel */}
           <AnimatedContainer delay={0.3} className="space-y-8">
-            
             <Card className="p-8 text-center relative overflow-hidden transition-all duration-500">
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
               <div className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">Overall Risk Score</div>
@@ -336,7 +397,6 @@ export default function ProjectDetail() {
                 </div>
               </div>
             </Card>
-
           </AnimatedContainer>
         </div>
       </div>

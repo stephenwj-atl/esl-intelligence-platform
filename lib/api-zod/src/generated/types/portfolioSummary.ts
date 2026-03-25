@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 import type { PortfolioSummaryCapitalByRiskLevel } from "./portfolioSummaryCapitalByRiskLevel";
 import type { PortfolioSummaryRiskDistributionItem } from "./portfolioSummaryRiskDistributionItem";

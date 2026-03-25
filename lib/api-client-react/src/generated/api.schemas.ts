@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 export interface HealthStatus {
   status: string;
@@ -28,7 +28,6 @@ export interface CreateProjectInput {
   name: string;
   country: string;
   projectType: CreateProjectInputProjectType;
-  /** Investment amount in millions USD */
   investmentAmount: number;
   /**
    * @minimum 0
@@ -183,6 +182,12 @@ export interface ScenarioResult {
   after: ScenarioResultAfter;
 }
 
+export interface RiskHistoryEntry {
+  month: number;
+  overallRisk: number;
+  dataConfidence: number;
+}
+
 export type PortfolioSummaryRiskDistributionItem = {
   bucket: string;
   count: number;
@@ -240,4 +245,101 @@ export interface PortfolioOptimization {
   optimizedPortfolioRisk: number;
   riskReductionPercent: number;
   recommendations: PortfolioOptimizationRecommendationsItem[];
+}
+
+export type CrossProjectIntelligencePatternsItemRiskImpact =
+  (typeof CrossProjectIntelligencePatternsItemRiskImpact)[keyof typeof CrossProjectIntelligencePatternsItemRiskImpact];
+
+export const CrossProjectIntelligencePatternsItemRiskImpact = {
+  low: "low",
+  medium: "medium",
+  high: "high",
+} as const;
+
+export type CrossProjectIntelligencePatternsItem = {
+  category: string;
+  finding: string;
+  affectedProjects: string[];
+  riskImpact: CrossProjectIntelligencePatternsItemRiskImpact;
+};
+
+export interface CrossProjectIntelligence {
+  patterns: CrossProjectIntelligencePatternsItem[];
+  insights: string[];
+}
+
+export interface DataConfidenceIndex {
+  overallScore: number;
+  labValidationPercent: number;
+  monitoringPercent: number;
+  ifcAlignedPercent: number;
+  projectsWithLowConfidence: number;
+  insight: string;
+}
+
+export type PortfolioDecisionOutcome =
+  (typeof PortfolioDecisionOutcome)[keyof typeof PortfolioDecisionOutcome];
+
+export const PortfolioDecisionOutcome = {
+  PROCEED_WITH_PORTFOLIO: "PROCEED_WITH_PORTFOLIO",
+  PROCEED_WITH_CONDITIONS: "PROCEED_WITH_CONDITIONS",
+  REBALANCE_PORTFOLIO: "REBALANCE_PORTFOLIO",
+  REDUCE_EXPOSURE: "REDUCE_EXPOSURE",
+} as const;
+
+export interface PortfolioDecision {
+  outcome: PortfolioDecisionOutcome;
+  weightedRisk: number;
+  confidenceIndex: number;
+  highRiskCapitalPercent: number;
+  conditions: string[];
+  insight: string;
+}
+
+export interface CreatePortfolioInput {
+  name: string;
+}
+
+export type AddProjectToPortfolioInputStage =
+  (typeof AddProjectToPortfolioInputStage)[keyof typeof AddProjectToPortfolioInputStage];
+
+export const AddProjectToPortfolioInputStage = {
+  Early: "Early",
+  "Pre-IC": "Pre-IC",
+  Approved: "Approved",
+  "Post-Close": "Post-Close",
+} as const;
+
+export interface AddProjectToPortfolioInput {
+  projectId: number;
+  investmentAmount: number;
+  stage: AddProjectToPortfolioInputStage;
+}
+
+export interface PortfolioProjectEntry {
+  id: number;
+  projectId: number;
+  projectName: string;
+  projectType: string;
+  country: string;
+  investmentAmount: number;
+  stage: string;
+  riskScore: number;
+  dataConfidence: number;
+  decision: string;
+}
+
+export type PortfolioWithProjectsMetrics = {
+  totalInvestment: number;
+  weightedRisk: number;
+  avgConfidence: number;
+  projectCount: number;
+};
+
+export interface PortfolioWithProjects {
+  id: number;
+  name: string;
+  projects: PortfolioProjectEntry[];
+  metrics: PortfolioWithProjectsMetrics;
+  createdAt: string;
 }

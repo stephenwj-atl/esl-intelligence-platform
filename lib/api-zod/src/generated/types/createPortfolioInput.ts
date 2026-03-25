@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.3.0
  */
 
-export type PortfolioSummaryCapitalByRiskLevel = {
-  low: number;
-  medium: number;
-  high: number;
-};
+export interface CreatePortfolioInput {
+  name: string;
+}

@@ -5,13 +5,10 @@
  * ESL Environmental Intelligence Platform API
  * OpenAPI spec version: 0.3.0
  */
+import type { AddProjectToPortfolioInputStage } from "./addProjectToPortfolioInputStage";
 
-export interface RiskAlert {
+export interface AddProjectToPortfolioInput {
   projectId: number;
-  projectName: string;
-  riskScore: number;
-  confidence: number;
   investmentAmount: number;
-  issue: string;
-  action: string;
+  stage: AddProjectToPortfolioInputStage;
 }

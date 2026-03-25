@@ -1,4 +1,4 @@
-import { db, projectsTable } from "@workspace/db";
+import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 function clamp(val: number, min: number, max: number): number {
@@ -107,11 +107,48 @@ function analyzeProject(inputs: {
   return { riskScores, financialRisk, decision: { outcome, conditions, insight } };
 }
 
+function generateRiskHistory(projectId: number, baseRisk: number, baseConfidence: number, hasMonitoring: boolean) {
+  const entries = [];
+  let risk = baseRisk;
+  let confidence = baseConfidence;
+
+  for (let month = 1; month <= 12; month++) {
+    if (month === 3 && !hasMonitoring) {
+      risk = Math.max(risk - 3, risk * 0.95);
+    }
+    if (month === 4) {
+      confidence = Math.min(confidence + 5, 100);
+      risk = Math.max(risk - 2, 10);
+    }
+    if (month === 6) {
+      confidence = Math.min(confidence + 10, 100);
+      risk = Math.max(risk - 5, 10);
+    }
+    if (month === 9) {
+      confidence = Math.min(confidence + 5, 100);
+      risk = Math.max(risk - 3, 10);
+    }
+
+    const jitter = (Math.random() - 0.5) * 4;
+    entries.push({
+      projectId,
+      month,
+      overallRisk: Math.round(Math.max(10, Math.min(100, risk + jitter)) * 10) / 10,
+      dataConfidence: Math.round(Math.min(100, confidence) * 10) / 10,
+    });
+  }
+
+  return entries;
+}
+
 async function seed() {
   console.log("Clearing existing data...");
+  await db.execute(sql`TRUNCATE TABLE risk_history RESTART IDENTITY CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE portfolio_projects RESTART IDENTITY CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE portfolios RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE projects RESTART IDENTITY CASCADE`);
 
-  console.log("Seeding portfolio data...");
+  console.log("Seeding projects...");
 
   const sampleProjects = [
     {
@@ -179,9 +216,10 @@ async function seed() {
     },
   ];
 
+  const insertedProjects = [];
   for (const proj of sampleProjects) {
     const analysis = analyzeProject(proj);
-    await db.insert(projectsTable).values({
+    const [inserted] = await db.insert(projectsTable).values({
       ...proj,
       environmentalRisk: analysis.riskScores.environmentalRisk,
       infrastructureRisk: analysis.riskScores.infrastructureRisk,
@@ -196,11 +234,47 @@ async function seed() {
       decisionOutcome: analysis.decision.outcome,
       decisionConditions: analysis.decision.conditions,
       decisionInsight: analysis.decision.insight,
-    });
-    console.log(`  ${proj.name} → ${analysis.decision.outcome} (Risk: ${analysis.riskScores.overallRisk}, $${proj.investmentAmount}M)`);
+    }).returning();
+    insertedProjects.push({ ...inserted, ...proj, analysis });
+    console.log(`  ${proj.name} -> ${analysis.decision.outcome} (Risk: ${analysis.riskScores.overallRisk}, $${proj.investmentAmount}M)`);
   }
 
-  console.log("\nPortfolio seeded with 7 projects!");
+  console.log("\nSeeding risk history...");
+  for (const proj of insertedProjects) {
+    const history = generateRiskHistory(
+      proj.id,
+      proj.analysis.riskScores.overallRisk,
+      proj.analysis.riskScores.dataConfidence,
+      proj.hasMonitoringData
+    );
+    for (const entry of history) {
+      await db.insert(riskHistoryTable).values(entry);
+    }
+    console.log(`  ${proj.name}: 12 months of history`);
+  }
+
+  console.log("\nSeeding portfolio...");
+  const [portfolio] = await db.insert(portfoliosTable).values({
+    name: "Caribbean Energy Fund",
+  }).returning();
+  console.log(`  Created portfolio: ${portfolio.name}`);
+
+  const stages = ["Approved", "Pre-IC", "Early", "Early", "Pre-IC", "Approved", "Early"];
+  for (let i = 0; i < insertedProjects.length; i++) {
+    const proj = insertedProjects[i];
+    await db.insert(portfolioProjectsTable).values({
+      portfolioId: portfolio.id,
+      projectId: proj.id,
+      investmentAmount: proj.investmentAmount,
+      stage: stages[i],
+    });
+    console.log(`  Added ${proj.name} to portfolio (${stages[i]}, $${proj.investmentAmount}M)`);
+  }
+
+  console.log("\nSeeding complete!");
+  console.log(`  ${insertedProjects.length} projects`);
+  console.log(`  ${insertedProjects.length * 12} risk history entries`);
+  console.log(`  1 portfolio with ${insertedProjects.length} assignments`);
   process.exit(0);
 }
 

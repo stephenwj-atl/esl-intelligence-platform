@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 import type { CreateProjectInputProjectType } from "./createProjectInputProjectType";
 
@@ -11,7 +11,6 @@ export interface CreateProjectInput {
   name: string;
   country: string;
   projectType: CreateProjectInputProjectType;
-  /** Investment amount in millions USD */
   investmentAmount: number;
   /**
    * @minimum 0

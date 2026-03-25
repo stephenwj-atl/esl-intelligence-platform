@@ -6,12 +6,15 @@
  * OpenAPI spec version: 0.3.0
  */
 
-export interface RiskAlert {
+export interface PortfolioProjectEntry {
+  id: number;
   projectId: number;
   projectName: string;
-  riskScore: number;
-  confidence: number;
+  projectType: string;
+  country: string;
   investmentAmount: number;
-  issue: string;
-  action: string;
+  stage: string;
+  riskScore: number;
+  dataConfidence: number;
+  decision: string;
 }

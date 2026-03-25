@@ -3,26 +3,39 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 
+export * from "./addProjectToPortfolioInput";
+export * from "./addProjectToPortfolioInputStage";
+export * from "./createPortfolioInput";
 export * from "./createProjectInput";
 export * from "./createProjectInputProjectType";
+export * from "./crossProjectIntelligence";
+export * from "./crossProjectIntelligencePatternsItem";
+export * from "./crossProjectIntelligencePatternsItemRiskImpact";
+export * from "./dataConfidenceIndex";
 export * from "./decision";
 export * from "./decisionOutcome";
 export * from "./errorResponse";
 export * from "./financialRisk";
 export * from "./financialRiskReputationalRisk";
 export * from "./healthStatus";
+export * from "./portfolioDecision";
+export * from "./portfolioDecisionOutcome";
 export * from "./portfolioOptimization";
 export * from "./portfolioOptimizationRecommendationsItem";
 export * from "./portfolioOptimizationRecommendationsItemAction";
+export * from "./portfolioProjectEntry";
 export * from "./portfolioSummary";
 export * from "./portfolioSummaryCapitalByRiskLevel";
 export * from "./portfolioSummaryRiskDistributionItem";
+export * from "./portfolioWithProjects";
+export * from "./portfolioWithProjectsMetrics";
 export * from "./projectWithAnalysis";
 export * from "./projectWithAnalysisInputs";
 export * from "./riskAlert";
+export * from "./riskHistoryEntry";
 export * from "./riskScores";
 export * from "./scenarioInput";
 export * from "./scenarioResult";

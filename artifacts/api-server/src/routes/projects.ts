@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { CreateProjectBody, GetProjectParams, DeleteProjectParams, RunScenarioParams, RunScenarioBody } from "@workspace/api-zod";
-import { db, projectsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { CreateProjectBody, GetProjectParams, DeleteProjectParams, RunScenarioParams, RunScenarioBody, GetProjectRiskHistoryParams } from "@workspace/api-zod";
+import { db, projectsTable, riskHistoryTable } from "@workspace/db";
+import { eq, asc } from "drizzle-orm";
 import { analyzeProject } from "../lib/risk-engine";
 
 const router: IRouter = Router();
@@ -183,6 +183,32 @@ router.post("/projects/:id/scenario", async (req, res) => {
   const after = analyzeProject(afterInputs);
 
   res.json({ before, after });
+});
+
+router.get("/projects/:id/risk-history", async (req, res) => {
+  const parsed = GetProjectRiskHistoryParams.safeParse({ id: req.params.id });
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid project ID" });
+    return;
+  }
+
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, parsed.data.id));
+  if (!project) {
+    res.status(404).json({ message: "Project not found" });
+    return;
+  }
+
+  const history = await db
+    .select({
+      month: riskHistoryTable.month,
+      overallRisk: riskHistoryTable.overallRisk,
+      dataConfidence: riskHistoryTable.dataConfidence,
+    })
+    .from(riskHistoryTable)
+    .where(eq(riskHistoryTable.projectId, parsed.data.id))
+    .orderBy(asc(riskHistoryTable.month));
+
+  res.json(history);
 });
 
 export default router;

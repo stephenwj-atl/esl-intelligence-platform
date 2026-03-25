@@ -169,4 +169,251 @@ router.get("/portfolio/optimize", async (_req, res) => {
   });
 });
 
+router.get("/portfolio/intelligence", async (_req, res) => {
+  const projects = await db.select().from(projectsTable);
+
+  if (projects.length === 0) {
+    res.json({ patterns: [], insights: [] });
+    return;
+  }
+
+  const patterns: Array<{
+    category: string;
+    finding: string;
+    affectedProjects: string[];
+    riskImpact: string;
+  }> = [];
+
+  const byCountry = new Map<string, typeof projects>();
+  for (const p of projects) {
+    const list = byCountry.get(p.country) || [];
+    list.push(p);
+    byCountry.set(p.country, list);
+  }
+
+  for (const [country, countryProjects] of byCountry) {
+    if (countryProjects.length >= 2) {
+      const avgRisk = countryProjects.reduce((s, p) => s + p.overallRisk, 0) / countryProjects.length;
+      if (avgRisk > 50) {
+        patterns.push({
+          category: "Geographic Concentration",
+          finding: `${countryProjects.length} projects in ${country} with average risk of ${Math.round(avgRisk)}. Geographic concentration amplifies systemic risk.`,
+          affectedProjects: countryProjects.map(p => p.name),
+          riskImpact: avgRisk > 60 ? "high" : "medium",
+        });
+      }
+    }
+  }
+
+  const byType = new Map<string, typeof projects>();
+  for (const p of projects) {
+    const list = byType.get(p.projectType) || [];
+    list.push(p);
+    byType.set(p.projectType, list);
+  }
+
+  for (const [type, typeProjects] of byType) {
+    if (typeProjects.length >= 2) {
+      const avgRisk = typeProjects.reduce((s, p) => s + p.overallRisk, 0) / typeProjects.length;
+      const highCoastal = typeProjects.filter(p => p.coastalExposure > 5);
+      if (highCoastal.length >= 2) {
+        patterns.push({
+          category: "Sector Risk Pattern",
+          finding: `${type} projects in coastal zones show ${Math.round(((avgRisk - 30) / 30) * 100)}% higher risk than baseline. ${highCoastal.length} of ${typeProjects.length} ${type} projects have elevated coastal exposure.`,
+          affectedProjects: highCoastal.map(p => p.name),
+          riskImpact: avgRisk > 55 ? "high" : "medium",
+        });
+      }
+    }
+  }
+
+  const noMonitoring = projects.filter(p => !p.hasMonitoringData);
+  if (noMonitoring.length >= 2) {
+    const avgRiskNoMon = noMonitoring.reduce((s, p) => s + p.overallRisk, 0) / noMonitoring.length;
+    const withMonitoring = projects.filter(p => p.hasMonitoringData);
+    const avgRiskWithMon = withMonitoring.length > 0
+      ? withMonitoring.reduce((s, p) => s + p.overallRisk, 0) / withMonitoring.length
+      : 0;
+    patterns.push({
+      category: "Data Quality Gap",
+      finding: `Projects without monitoring data show average risk of ${Math.round(avgRiskNoMon)} vs ${Math.round(avgRiskWithMon)} for monitored projects. ${noMonitoring.length} projects lack monitoring.`,
+      affectedProjects: noMonitoring.map(p => p.name),
+      riskImpact: "high",
+    });
+  }
+
+  const noLab = projects.filter(p => !p.hasLabData);
+  if (noLab.length >= 2) {
+    patterns.push({
+      category: "Validation Deficit",
+      finding: `${noLab.length} of ${projects.length} projects lack independent laboratory validation. This undermines data confidence across ${Math.round(noLab.length / projects.length * 100)}% of the portfolio.`,
+      affectedProjects: noLab.map(p => p.name),
+      riskImpact: "medium",
+    });
+  }
+
+  const highFlood = projects.filter(p => p.floodRisk > 5 && p.coastalExposure > 5);
+  if (highFlood.length >= 2) {
+    patterns.push({
+      category: "Climate Vulnerability",
+      finding: `${highFlood.length} projects face compounding flood and coastal risk. Combined exposure creates systemic vulnerability to climate events.`,
+      affectedProjects: highFlood.map(p => p.name),
+      riskImpact: "high",
+    });
+  }
+
+  const insights: string[] = [];
+
+  const totalCapital = projects.reduce((s, p) => s + p.investmentAmount, 0);
+  const highRiskCapital = projects.filter(p => p.overallRisk > 70).reduce((s, p) => s + p.investmentAmount, 0);
+  if (highRiskCapital > 0) {
+    insights.push(`$${Math.round(highRiskCapital)}M (${Math.round(highRiskCapital / totalCapital * 100)}%) of capital is allocated to high-risk projects exceeding decline thresholds.`);
+  }
+
+  const lowConfProjects = projects.filter(p => p.dataConfidence < 60);
+  if (lowConfProjects.length > 0) {
+    insights.push(`${lowConfProjects.length} projects have data confidence below 60%, adding uncertainty penalties to risk calculations.`);
+  }
+
+  const solarCoastal = projects.filter(p => p.projectType === "Solar" && p.coastalExposure > 5);
+  if (solarCoastal.length > 0) {
+    insights.push(`Solar projects in coastal zones show ${Math.round(solarCoastal.reduce((s, p) => s + p.overallRisk, 0) / solarCoastal.length)}% average risk — consider inland alternatives.`);
+  }
+
+  const noIFC = projects.filter(p => !p.isIFCAligned);
+  if (noIFC.length > projects.length * 0.5) {
+    insights.push(`${Math.round(noIFC.length / projects.length * 100)}% of portfolio not aligned with IFC Performance Standards — limits international financing options.`);
+  }
+
+  res.json({ patterns, insights });
+});
+
+router.get("/portfolio/confidence", async (_req, res) => {
+  const projects = await db.select().from(projectsTable);
+
+  if (projects.length === 0) {
+    res.json({
+      overallScore: 0,
+      labValidationPercent: 0,
+      monitoringPercent: 0,
+      ifcAlignedPercent: 0,
+      projectsWithLowConfidence: 0,
+      insight: "No projects in portfolio.",
+    });
+    return;
+  }
+
+  const labCount = projects.filter(p => p.hasLabData).length;
+  const monCount = projects.filter(p => p.hasMonitoringData).length;
+  const ifcCount = projects.filter(p => p.isIFCAligned).length;
+  const lowConfCount = projects.filter(p => p.dataConfidence < 60).length;
+
+  const labPct = Math.round(labCount / projects.length * 100);
+  const monPct = Math.round(monCount / projects.length * 100);
+  const ifcPct = Math.round(ifcCount / projects.length * 100);
+
+  const overallScore = Math.round(projects.reduce((s, p) => s + p.dataConfidence, 0) / projects.length * 10) / 10;
+
+  const insightParts: string[] = [];
+  if (overallScore < 60) {
+    insightParts.push(`Portfolio confidence is LOW at ${overallScore}%.`);
+  } else if (overallScore < 75) {
+    insightParts.push(`Portfolio confidence is MODERATE at ${overallScore}%.`);
+  } else {
+    insightParts.push(`Portfolio confidence is STRONG at ${overallScore}%.`);
+  }
+
+  if (lowConfCount > 0) {
+    insightParts.push(`Risk is elevated due to low data confidence across ${Math.round(lowConfCount / projects.length * 100)}% of assets.`);
+  }
+  if (monPct < 60) {
+    insightParts.push(`Only ${monPct}% of projects have monitoring data — a critical gap for ongoing risk assessment.`);
+  }
+  if (ifcPct < 50) {
+    insightParts.push(`Only ${ifcPct}% of projects are IFC-aligned — limiting access to international development financing.`);
+  }
+
+  res.json({
+    overallScore,
+    labValidationPercent: labPct,
+    monitoringPercent: monPct,
+    ifcAlignedPercent: ifcPct,
+    projectsWithLowConfidence: lowConfCount,
+    insight: insightParts.join(" "),
+  });
+});
+
+router.get("/portfolio/decision", async (_req, res) => {
+  const projects = await db.select().from(projectsTable);
+
+  if (projects.length === 0) {
+    res.json({
+      outcome: "PROCEED_WITH_PORTFOLIO",
+      weightedRisk: 0,
+      confidenceIndex: 0,
+      highRiskCapitalPercent: 0,
+      conditions: [],
+      insight: "No projects in portfolio.",
+    });
+    return;
+  }
+
+  const totalCapital = projects.reduce((s, p) => s + p.investmentAmount, 0);
+  const weightedRisk = totalCapital > 0
+    ? projects.reduce((s, p) => s + p.overallRisk * p.investmentAmount, 0) / totalCapital
+    : 0;
+  const confidenceIndex = projects.reduce((s, p) => s + p.dataConfidence, 0) / projects.length;
+  const highRiskCapital = projects.filter(p => p.overallRisk > 70).reduce((s, p) => s + p.investmentAmount, 0);
+  const highRiskCapitalPercent = totalCapital > 0 ? Math.round(highRiskCapital / totalCapital * 100) : 0;
+
+  let outcome: string;
+  const conditions: string[] = [];
+
+  if (weightedRisk > 65 || highRiskCapitalPercent > 40) {
+    outcome = "REDUCE_EXPOSURE";
+    conditions.push("Immediate reduction of high-risk asset exposure required");
+    conditions.push("Capital reallocation to lower-risk assets recommended");
+    if (highRiskCapitalPercent > 40) {
+      conditions.push(`${highRiskCapitalPercent}% of capital in high-risk tier exceeds 25% threshold`);
+    }
+  } else if (weightedRisk > 55 || highRiskCapitalPercent > 25) {
+    outcome = "REBALANCE_PORTFOLIO";
+    conditions.push("Portfolio rebalancing recommended to reduce concentration risk");
+    if (confidenceIndex < 60) {
+      conditions.push("Data confidence improvement needed across portfolio");
+    }
+    conditions.push("Quarterly risk reassessment required");
+  } else if (weightedRisk > 40 || confidenceIndex < 60) {
+    outcome = "PROCEED_WITH_CONDITIONS";
+    if (confidenceIndex < 60) {
+      conditions.push("Enhance data confidence through monitoring and lab validation");
+    }
+    conditions.push("Semi-annual portfolio risk review required");
+    const declineProjects = projects.filter(p => p.decisionOutcome === "DECLINE");
+    if (declineProjects.length > 0) {
+      conditions.push(`Address ${declineProjects.length} project(s) with DECLINE signals`);
+    }
+  } else {
+    outcome = "PROCEED_WITH_PORTFOLIO";
+  }
+
+  const insightParts: string[] = [];
+  insightParts.push(`Portfolio weighted risk: ${Math.round(weightedRisk * 10) / 10}/100.`);
+  insightParts.push(`Data confidence index: ${Math.round(confidenceIndex * 10) / 10}%.`);
+  if (highRiskCapitalPercent > 0) {
+    insightParts.push(`${highRiskCapitalPercent}% of capital ($${Math.round(highRiskCapital)}M) in high-risk tier.`);
+  }
+  const proceedCount = projects.filter(p => p.decisionOutcome === "PROCEED").length;
+  insightParts.push(`${proceedCount} of ${projects.length} projects carry PROCEED signals.`);
+
+  res.json({
+    outcome,
+    weightedRisk: Math.round(weightedRisk * 10) / 10,
+    confidenceIndex: Math.round(confidenceIndex * 10) / 10,
+    highRiskCapitalPercent,
+    conditions,
+    insight: insightParts.join(" "),
+  });
+});
+
 export default router;

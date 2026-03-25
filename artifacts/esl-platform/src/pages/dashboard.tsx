@@ -3,12 +3,16 @@ import { Link, useLocation } from "wouter";
 import { 
   useListProjects, 
   useGetPortfolioSummary, 
-  useGetPortfolioOptimization 
+  useGetPortfolioOptimization,
+  useGetCrossProjectIntelligence,
+  useGetDataConfidenceIndex,
+  useGetPortfolioDecision,
 } from "@workspace/api-client-react";
 import { 
   Plus, Activity, AlertTriangle, ShieldCheck, 
   DollarSign, Loader2, ArrowRight, TrendingDown,
-  Target, Info, ChevronRight, Zap
+  Target, Info, ChevronRight, Zap, Brain, Database,
+  Shield, TrendingUp, Crosshair, Globe, Layers, BarChart3
 } from "lucide-react";
 import { Layout } from "@/components/layout";
 import { Card, Button, Badge, AnimatedContainer } from "@/components/ui";
@@ -23,6 +27,9 @@ export default function Dashboard() {
   const { data: projects, isLoading: projectsLoading } = useListProjects();
   const { data: summary, isLoading: summaryLoading } = useGetPortfolioSummary();
   const { data: optimization, isLoading: optimizeLoading } = useGetPortfolioOptimization();
+  const { data: intelligence } = useGetCrossProjectIntelligence();
+  const { data: confidenceIndex } = useGetDataConfidenceIndex();
+  const { data: portfolioDecision } = useGetPortfolioDecision();
 
   const [showOptimization, setShowOptimization] = useState(false);
 
@@ -70,9 +77,9 @@ export default function Dashboard() {
   }));
 
   const pieData = [
-    { name: 'Low Risk', value: summary.capitalByRiskLevel.low, color: '#10b981' }, // green
-    { name: 'Medium Risk', value: summary.capitalByRiskLevel.medium, color: '#f59e0b' }, // amber
-    { name: 'High Risk', value: summary.capitalByRiskLevel.high, color: '#f43f5e' }, // red
+    { name: 'Low Risk', value: summary.capitalByRiskLevel.low, color: '#10b981' },
+    { name: 'Medium Risk', value: summary.capitalByRiskLevel.medium, color: '#f59e0b' },
+    { name: 'High Risk', value: summary.capitalByRiskLevel.high, color: '#f43f5e' },
   ].filter(d => d.value > 0);
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -92,10 +99,18 @@ export default function Dashboard() {
     return null;
   };
 
+  const decisionColors: Record<string, { bg: string; border: string; text: string; badge: "success" | "warning" | "destructive" | "outline" }> = {
+    PROCEED_WITH_PORTFOLIO: { bg: "bg-success/5", border: "border-success/30", text: "text-success", badge: "success" },
+    PROCEED_WITH_CONDITIONS: { bg: "bg-warning/5", border: "border-warning/30", text: "text-warning", badge: "warning" },
+    REBALANCE_PORTFOLIO: { bg: "bg-warning/5", border: "border-warning/30", text: "text-warning", badge: "warning" },
+    REDUCE_EXPOSURE: { bg: "bg-destructive/5", border: "border-destructive/30", text: "text-destructive", badge: "destructive" },
+  };
+
+  const pdConf = portfolioDecision ? decisionColors[portfolioDecision.outcome] || decisionColors.REDUCE_EXPOSURE : null;
+
   return (
     <Layout>
       <div className="space-y-6 pb-12">
-        {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">Portfolio Command Center</h1>
@@ -119,7 +134,44 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 1. Summary Strip */}
+        {/* Portfolio Decision Banner */}
+        {portfolioDecision && pdConf && (
+          <AnimatedContainer delay={0.05}>
+            <div className={`rounded-xl border ${pdConf.border} ${pdConf.bg} p-5 flex flex-col md:flex-row items-center gap-4`}>
+              <div className={`p-3 rounded-full bg-background border ${pdConf.border} shrink-0`}>
+                <Shield className={`w-6 h-6 ${pdConf.text}`} />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
+                  <span className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-bold">Portfolio Decision</span>
+                  <Badge variant={pdConf.badge}>
+                    {portfolioDecision.outcome.replace(/_/g, ' ')}
+                  </Badge>
+                </div>
+                <p className="text-sm text-foreground/80 mt-1">{portfolioDecision.insight}</p>
+                {portfolioDecision.conditions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {portfolioDecision.conditions.map((c, i) => (
+                      <span key={i} className="text-xs bg-background/60 border border-white/5 px-2 py-1 rounded text-muted-foreground">{c}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-4 shrink-0">
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">Weighted Risk</div>
+                  <div className={`font-mono font-bold text-lg ${getRiskColor(portfolioDecision.weightedRisk)}`}>{portfolioDecision.weightedRisk.toFixed(1)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground">High-Risk Capital</div>
+                  <div className="font-mono font-bold text-lg text-destructive">{portfolioDecision.highRiskCapitalPercent}%</div>
+                </div>
+              </div>
+            </div>
+          </AnimatedContainer>
+        )}
+
+        {/* Summary Strip */}
         <AnimatedContainer delay={0.1}>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-5 flex flex-col justify-center">
@@ -147,7 +199,7 @@ export default function Dashboard() {
           </div>
         </AnimatedContainer>
 
-        {/* Optional Optimization Panel */}
+        {/* Optimization Panel */}
         {showOptimization && optimization && (
           <AnimatedContainer delay={0.1}>
             <Card className="p-6 border-primary/40 bg-primary/5">
@@ -170,7 +222,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {optimization.recommendations.map((rec, i) => (
                   <div key={i} className="bg-background/80 border border-border p-4 rounded-xl">
@@ -191,7 +242,7 @@ export default function Dashboard() {
           </AnimatedContainer>
         )}
 
-        {/* 2. Core Visual Row */}
+        {/* Core Visual Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <AnimatedContainer delay={0.2} className="lg:col-span-2">
             <Card className="p-6 h-[450px] flex flex-col">
@@ -199,7 +250,6 @@ export default function Dashboard() {
                 <Target className="w-4 h-4 mr-2" /> Risk vs Confidence Matrix
               </h3>
               <div className="flex-1 min-h-0 relative">
-                {/* Quadrant Labels */}
                 <div className="absolute top-2 left-2 text-[10px] text-muted-foreground font-mono bg-background/50 p-1 rounded z-10">High Risk / High Confidence</div>
                 <div className="absolute top-2 right-2 text-[10px] text-muted-foreground font-mono bg-background/50 p-1 rounded z-10">Low Risk / High Confidence</div>
                 <div className="absolute bottom-6 left-2 text-[10px] text-destructive font-mono font-bold bg-destructive/10 border border-destructive/20 p-1 rounded z-10">DANGER ZONE (Low Conf)</div>
@@ -228,7 +278,7 @@ export default function Dashboard() {
               </div>
               <div className="text-xs text-muted-foreground mt-2 border-t border-border/50 pt-2 flex items-center">
                 <Info className="w-3 h-3 mr-1" />
-                <strong>Insight:</strong> Bubble size represents capital allocation. Assets in the bottom-left require immediate data validation to confirm actual risk exposure.
+                <strong>Insight:</strong> Bubble size represents capital allocation. Assets in the bottom-left require immediate data validation.
               </div>
             </Card>
           </AnimatedContainer>
@@ -241,16 +291,7 @@ export default function Dashboard() {
               <div className="flex-1 flex items-center justify-center min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                      stroke="none"
-                    >
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" stroke="none">
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
@@ -274,14 +315,47 @@ export default function Dashboard() {
           </AnimatedContainer>
         </div>
 
-        {/* 3. Secondary Row */}
+        {/* Data Confidence Index + Risk Distribution Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Data Confidence Index */}
+          {confidenceIndex && (
+            <AnimatedContainer delay={0.35}>
+              <Card className="p-6 h-full">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6 flex items-center">
+                  <Database className="w-4 h-4 mr-2" /> Data Confidence Index
+                </h3>
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="text-center">
+                    <div className={`text-5xl font-display font-black ${confidenceIndex.overallScore >= 75 ? 'text-success' : confidenceIndex.overallScore >= 60 ? 'text-warning' : 'text-destructive'}`}>
+                      {confidenceIndex.overallScore.toFixed(0)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">Portfolio Score</div>
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <ConfidenceBar label="Lab Validation" value={confidenceIndex.labValidationPercent} />
+                    <ConfidenceBar label="Monitoring Data" value={confidenceIndex.monitoringPercent} />
+                    <ConfidenceBar label="IFC Aligned" value={confidenceIndex.ifcAlignedPercent} />
+                  </div>
+                </div>
+                <div className="bg-background/50 border border-white/5 rounded-lg p-3 text-xs text-muted-foreground">
+                  <Info className="w-3 h-3 inline mr-1 text-primary" />
+                  {confidenceIndex.insight}
+                </div>
+                {confidenceIndex.projectsWithLowConfidence > 0 && (
+                  <div className="mt-3 text-xs text-destructive font-semibold">
+                    {confidenceIndex.projectsWithLowConfidence} project(s) below confidence threshold
+                  </div>
+                )}
+              </Card>
+            </AnimatedContainer>
+          )}
+
           <AnimatedContainer delay={0.4}>
-             <Card className="p-6 h-full">
+            <Card className="p-6 h-full flex flex-col">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6 flex items-center">
-                <Activity className="w-4 h-4 mr-2" /> Risk Distribution
+                <BarChart3 className="w-4 h-4 mr-2" /> Risk Distribution
               </h3>
-              <div className="h-64">
+              <div className="flex-1 min-h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={summary.riskDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
@@ -290,54 +364,111 @@ export default function Dashboard() {
                     <RechartsTooltip content={<CustomTooltip />} cursor={{fill: '#27272a', opacity: 0.4}} />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={50}>
                       {summary.riskDistribution.map((entry, index) => {
-                        const isHigh = index >= 3; // 60-80, 80-100
-                        const isMed = index === 2; // 40-60
+                        const isHigh = index >= 3;
+                        const isMed = index === 2;
                         return <Cell key={`cell-${index}`} fill={isHigh ? '#f43f5e' : isMed ? '#f59e0b' : '#10b981'} />;
                       })}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-             </Card>
-          </AnimatedContainer>
-
-          <AnimatedContainer delay={0.5}>
-            <Card className="p-6 h-full flex flex-col">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center">
-                <AlertTriangle className="w-4 h-4 mr-2 text-warning" /> Top Risk Alerts
-              </h3>
-              <div className="flex-1 space-y-4 overflow-y-auto">
-                {summary.alerts.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">No high-risk alerts detected.</div>
-                ) : (
-                  summary.alerts.slice(0, 3).map((alert, i) => (
-                    <div key={i} className="p-4 rounded-xl border border-destructive/30 bg-destructive/5 relative overflow-hidden group cursor-pointer hover:bg-destructive/10 transition-colors" onClick={() => setLocation(`/project/${alert.projectId}`)}>
-                      <div className="absolute top-0 left-0 w-1 h-full bg-destructive" />
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="font-bold text-foreground">{alert.projectName}</div>
-                        <div className="text-xs font-mono font-semibold bg-background px-2 py-0.5 rounded text-destructive border border-destructive/20">
-                          Risk: {alert.riskScore.toFixed(1)}
-                        </div>
-                      </div>
-                      <p className="text-xs text-foreground/70 mb-3">{alert.issue}</p>
-                      <div className="flex items-center justify-between text-xs border-t border-destructive/10 pt-2">
-                        <span className="font-semibold text-destructive flex items-center"><TrendingDown className="w-3 h-3 mr-1" /> Action: {alert.action}</span>
-                        <span className="text-muted-foreground font-mono">Exp: {formatCurrency(alert.investmentAmount)}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
             </Card>
           </AnimatedContainer>
         </div>
 
-        {/* 4. Project Table */}
+        {/* Cross-Project Intelligence */}
+        {intelligence && intelligence.patterns.length > 0 && (
+          <AnimatedContainer delay={0.45}>
+            <Card className="p-6">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6 flex items-center">
+                <Brain className="w-4 h-4 mr-2 text-primary" /> Cross-Project Intelligence
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {intelligence.patterns.map((pattern, i) => (
+                  <div key={i} className={`p-4 rounded-xl border ${pattern.riskImpact === 'high' ? 'border-destructive/30 bg-destructive/5' : 'border-warning/30 bg-warning/5'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {pattern.category === 'Geographic Concentration' && <Globe className="w-4 h-4 text-muted-foreground" />}
+                        {pattern.category === 'Sector Risk Pattern' && <Layers className="w-4 h-4 text-muted-foreground" />}
+                        {pattern.category === 'Data Quality Gap' && <Database className="w-4 h-4 text-muted-foreground" />}
+                        {pattern.category === 'Validation Deficit' && <Crosshair className="w-4 h-4 text-muted-foreground" />}
+                        {pattern.category === 'Climate Vulnerability' && <AlertTriangle className="w-4 h-4 text-muted-foreground" />}
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{pattern.category}</span>
+                      </div>
+                      <Badge variant={pattern.riskImpact === 'high' ? 'destructive' : 'warning'} className="text-[10px]">
+                        {pattern.riskImpact.toUpperCase()}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-foreground/80 mt-2 leading-relaxed">{pattern.finding}</p>
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {pattern.affectedProjects.slice(0, 3).map((name, j) => (
+                        <span key={j} className="text-[10px] bg-background/60 px-1.5 py-0.5 rounded text-muted-foreground">{name}</span>
+                      ))}
+                      {pattern.affectedProjects.length > 3 && (
+                        <span className="text-[10px] text-muted-foreground">+{pattern.affectedProjects.length - 3} more</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {intelligence.insights.length > 0 && (
+                <div className="border-t border-border/50 pt-4 space-y-2">
+                  {intelligence.insights.map((insight, i) => (
+                    <div key={i} className="flex items-start text-xs text-foreground/70">
+                      <Crosshair className="w-3 h-3 text-primary mr-2 mt-0.5 shrink-0" />
+                      {insight}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </AnimatedContainer>
+        )}
+
+        {/* Alerts Row */}
+        <AnimatedContainer delay={0.5}>
+          <Card className="p-6">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center">
+              <AlertTriangle className="w-4 h-4 mr-2 text-warning" /> Top Risk Alerts
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {summary.alerts.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8 col-span-3">No high-risk alerts detected.</div>
+              ) : (
+                summary.alerts.slice(0, 3).map((alert, i) => (
+                  <div key={i} className="p-4 rounded-xl border border-destructive/30 bg-destructive/5 relative overflow-hidden group cursor-pointer hover:bg-destructive/10 transition-colors" onClick={() => setLocation(`/project/${alert.projectId}`)}>
+                    <div className="absolute top-0 left-0 w-1 h-full bg-destructive" />
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="font-bold text-foreground">{alert.projectName}</div>
+                      <div className="text-xs font-mono font-semibold bg-background px-2 py-0.5 rounded text-destructive border border-destructive/20">
+                        Risk: {alert.riskScore.toFixed(1)}
+                      </div>
+                    </div>
+                    <p className="text-xs text-foreground/70 mb-3">{alert.issue}</p>
+                    <div className="flex items-center justify-between text-xs border-t border-destructive/10 pt-2">
+                      <span className="font-semibold text-destructive flex items-center"><TrendingDown className="w-3 h-3 mr-1" /> {alert.action}</span>
+                      <span className="text-muted-foreground font-mono">{formatCurrency(alert.investmentAmount)}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </AnimatedContainer>
+
+        {/* Project Table */}
         <AnimatedContainer delay={0.6}>
           <Card className="overflow-hidden">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-card/80">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Asset Inventory</h3>
-              <Badge variant="outline" className="font-mono">{projects.length} Assets</Badge>
+              <div className="flex items-center gap-3">
+                <Link href="/portfolios">
+                  <Button variant="outline" size="sm" className="text-xs">
+                    <Layers className="w-3 h-3 mr-1" /> Portfolio Manager
+                  </Button>
+                </Link>
+                <Badge variant="outline" className="font-mono">{projects.length} Assets</Badge>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
@@ -401,8 +532,24 @@ export default function Dashboard() {
             </div>
           </Card>
         </AnimatedContainer>
-
       </div>
     </Layout>
+  );
+}
+
+function ConfidenceBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-mono font-semibold text-foreground">{value}%</span>
+      </div>
+      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+        <div 
+          className={`h-full rounded-full transition-all duration-1000 ${value >= 70 ? 'bg-success' : value >= 50 ? 'bg-warning' : 'bg-destructive'}`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
   );
 }

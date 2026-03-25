@@ -1,0 +1,160 @@
+NEW MODULES (V2)
+1. PORTFOLIO MANAGEMENT MODULE
+UI
+
+Add a Portfolio Page
+
+User can:
+
+Create a portfolio
+Add multiple projects
+Assign:
+Investment Amount ($)
+Stage:
+Early
+Pre-IC
+Approved
+Post-Close
+Portfolio Table
+
+Columns:
+
+Project Name
+Risk Score
+Data Confidence
+Decision
+Investment Amount
+Risk Rank
+2. PORTFOLIO RISK ENGINE
+
+Calculate:
+
+Portfolio Metrics:
+Weighted Risk Score
+Total Exposure at Risk ($)
+High-Risk Capital (%)
+Data Confidence Index
+Example Logic:
+Weighted Risk = Σ (Project Risk * Investment Size) / Total Investment
+Exposure at Risk = 
+Sum of investments where Risk > 70
+3. CAPITAL ALLOCATION ENGINE (CRITICAL)
+
+This is what makes the system powerful.
+
+Objective:
+
+Show:
+
+👉 how capital should be reallocated to reduce risk
+
+Outputs:
+Recommended portfolio adjustments
+Capital shift suggestions
+Example:
+Reduce exposure to Project A (High Risk)
+
+Increase allocation to Project B (Moderate Risk, High Confidence)
+Add:
+
+“Optimized Portfolio Scenario”
+
+Recalculate:
+
+New risk score
+Reduced exposure
+Improved confidence
+4. CROSS-PROJECT INTELLIGENCE
+
+This is the beginning of your data moat.
+
+Identify patterns:
+Projects in same country
+Same project type
+Same risk profile
+Output:
+
+Insight Examples:
+
+“Solar projects in coastal zones show 25% higher risk”
+“Projects without monitoring data consistently show elevated uncertainty”
+
+This must be auto-generated using simple rules.
+
+5. DATA CONFIDENCE INDEX (VERY IMPORTANT)
+
+Across portfolio:
+
+% of projects with lab validation
+% with monitoring
+% aligned with standards
+Output:
+Portfolio Confidence Score = 62%
+Insight:
+
+Portfolio risk is elevated due to low data confidence across 40% of assets
+
+6. DECISION LAYER (UPGRADED)
+
+Add:
+
+Portfolio-Level Decisions
+Proceed with Portfolio
+Proceed with Conditions
+Rebalance Portfolio
+Reduce Exposure
+7. DASHBOARD (NEW MAIN SCREEN)
+A. Portfolio Summary
+Total Investment
+Average Risk
+Exposure at Risk
+Confidence Score
+B. Risk Distribution Chart
+Histogram of project risk scores
+C. Capital Allocation Chart
+Pie chart of capital by:
+risk tier
+D. Risk vs Confidence Scatter Plot
+
+X-axis: Risk
+Y-axis: Confidence
+
+👉 THIS IS VERY IMPORTANT VISUALLY
+
+8. SCENARIO ENGINE (POWER FEATURE)
+
+User can:
+
+Adjust:
+risk inputs
+add monitoring
+add lab validation
+
+System recalculates:
+
+project score
+portfolio score
+Show:
+Before vs After
+9. SIMULATED MONITORING LAYER
+
+Add simple time-series:
+
+project risk over time
+
+Example:
+
+Month 1 → Risk 65  
+Month 6 → Risk 52 (after monitoring added)
+10. DATA MODEL ADDITIONS
+
+Add tables:
+
+portfolios
+id
+name
+portfolio_projects
+portfolio_id
+project_id
+investment_amount
+stage

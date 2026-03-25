@@ -1,12 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle } from "lucide-react";
+import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   const navItems = [
-    { href: "/", label: "Portfolio", icon: LayoutDashboard },
+    { href: "/", label: "Command Center", icon: LayoutDashboard },
+    { href: "/portfolios", label: "Portfolios", icon: Layers },
     { href: "/new", label: "New Analysis", icon: Plus },
   ];
 

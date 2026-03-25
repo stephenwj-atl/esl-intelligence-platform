@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -17,12 +17,19 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddProjectToPortfolioInput,
+  CreatePortfolioInput,
   CreateProjectInput,
+  CrossProjectIntelligence,
+  DataConfidenceIndex,
   ErrorResponse,
   HealthStatus,
+  PortfolioDecision,
   PortfolioOptimization,
   PortfolioSummary,
+  PortfolioWithProjects,
   ProjectWithAnalysis,
+  RiskHistoryEntry,
   ScenarioInput,
   ScenarioResult,
 } from "./api.schemas";
@@ -531,6 +538,94 @@ export const useRunScenario = <
 };
 
 /**
+ * @summary Get simulated risk history for a project
+ */
+export const getGetProjectRiskHistoryUrl = (id: number) => {
+  return `/api/projects/${id}/risk-history`;
+};
+
+export const getProjectRiskHistory = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RiskHistoryEntry[]> => {
+  return customFetch<RiskHistoryEntry[]>(getGetProjectRiskHistoryUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProjectRiskHistoryQueryKey = (id: number) => {
+  return [`/api/projects/${id}/risk-history`] as const;
+};
+
+export const getGetProjectRiskHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProjectRiskHistory>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectRiskHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProjectRiskHistoryQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProjectRiskHistory>>
+  > = ({ signal }) => getProjectRiskHistory(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProjectRiskHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProjectRiskHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProjectRiskHistory>>
+>;
+export type GetProjectRiskHistoryQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get simulated risk history for a project
+ */
+
+export function useGetProjectRiskHistory<
+  TData = Awaited<ReturnType<typeof getProjectRiskHistory>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProjectRiskHistory>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProjectRiskHistoryQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get portfolio-level summary metrics
  */
 export const getGetPortfolioSummaryUrl = () => {
@@ -680,3 +775,745 @@ export function useGetPortfolioOptimization<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get cross-project intelligence patterns
+ */
+export const getGetCrossProjectIntelligenceUrl = () => {
+  return `/api/portfolio/intelligence`;
+};
+
+export const getCrossProjectIntelligence = async (
+  options?: RequestInit,
+): Promise<CrossProjectIntelligence> => {
+  return customFetch<CrossProjectIntelligence>(
+    getGetCrossProjectIntelligenceUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetCrossProjectIntelligenceQueryKey = () => {
+  return [`/api/portfolio/intelligence`] as const;
+};
+
+export const getGetCrossProjectIntelligenceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCrossProjectIntelligence>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCrossProjectIntelligence>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCrossProjectIntelligenceQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCrossProjectIntelligence>>
+  > = ({ signal }) =>
+    getCrossProjectIntelligence({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCrossProjectIntelligence>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCrossProjectIntelligenceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCrossProjectIntelligence>>
+>;
+export type GetCrossProjectIntelligenceQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get cross-project intelligence patterns
+ */
+
+export function useGetCrossProjectIntelligence<
+  TData = Awaited<ReturnType<typeof getCrossProjectIntelligence>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCrossProjectIntelligence>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCrossProjectIntelligenceQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get portfolio-wide data confidence index
+ */
+export const getGetDataConfidenceIndexUrl = () => {
+  return `/api/portfolio/confidence`;
+};
+
+export const getDataConfidenceIndex = async (
+  options?: RequestInit,
+): Promise<DataConfidenceIndex> => {
+  return customFetch<DataConfidenceIndex>(getGetDataConfidenceIndexUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDataConfidenceIndexQueryKey = () => {
+  return [`/api/portfolio/confidence`] as const;
+};
+
+export const getGetDataConfidenceIndexQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDataConfidenceIndex>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDataConfidenceIndex>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDataConfidenceIndexQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDataConfidenceIndex>>
+  > = ({ signal }) => getDataConfidenceIndex({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDataConfidenceIndex>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDataConfidenceIndexQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDataConfidenceIndex>>
+>;
+export type GetDataConfidenceIndexQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get portfolio-wide data confidence index
+ */
+
+export function useGetDataConfidenceIndex<
+  TData = Awaited<ReturnType<typeof getDataConfidenceIndex>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDataConfidenceIndex>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDataConfidenceIndexQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get portfolio-level investment decision
+ */
+export const getGetPortfolioDecisionUrl = () => {
+  return `/api/portfolio/decision`;
+};
+
+export const getPortfolioDecision = async (
+  options?: RequestInit,
+): Promise<PortfolioDecision> => {
+  return customFetch<PortfolioDecision>(getGetPortfolioDecisionUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPortfolioDecisionQueryKey = () => {
+  return [`/api/portfolio/decision`] as const;
+};
+
+export const getGetPortfolioDecisionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPortfolioDecision>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioDecision>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPortfolioDecisionQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPortfolioDecision>>
+  > = ({ signal }) => getPortfolioDecision({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioDecision>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPortfolioDecisionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPortfolioDecision>>
+>;
+export type GetPortfolioDecisionQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get portfolio-level investment decision
+ */
+
+export function useGetPortfolioDecision<
+  TData = Awaited<ReturnType<typeof getPortfolioDecision>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioDecision>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPortfolioDecisionQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all portfolios
+ */
+export const getListPortfoliosUrl = () => {
+  return `/api/portfolios`;
+};
+
+export const listPortfolios = async (
+  options?: RequestInit,
+): Promise<PortfolioWithProjects[]> => {
+  return customFetch<PortfolioWithProjects[]>(getListPortfoliosUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListPortfoliosQueryKey = () => {
+  return [`/api/portfolios`] as const;
+};
+
+export const getListPortfoliosQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPortfolios>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPortfolios>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListPortfoliosQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPortfolios>>> = ({
+    signal,
+  }) => listPortfolios({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPortfolios>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListPortfoliosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPortfolios>>
+>;
+export type ListPortfoliosQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all portfolios
+ */
+
+export function useListPortfolios<
+  TData = Awaited<ReturnType<typeof listPortfolios>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listPortfolios>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListPortfoliosQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new portfolio
+ */
+export const getCreatePortfolioUrl = () => {
+  return `/api/portfolios`;
+};
+
+export const createPortfolio = async (
+  createPortfolioInput: CreatePortfolioInput,
+  options?: RequestInit,
+): Promise<PortfolioWithProjects> => {
+  return customFetch<PortfolioWithProjects>(getCreatePortfolioUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPortfolioInput),
+  });
+};
+
+export const getCreatePortfolioMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPortfolio>>,
+    TError,
+    { data: BodyType<CreatePortfolioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPortfolio>>,
+  TError,
+  { data: BodyType<CreatePortfolioInput> },
+  TContext
+> => {
+  const mutationKey = ["createPortfolio"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPortfolio>>,
+    { data: BodyType<CreatePortfolioInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPortfolio(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePortfolioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPortfolio>>
+>;
+export type CreatePortfolioMutationBody = BodyType<CreatePortfolioInput>;
+export type CreatePortfolioMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new portfolio
+ */
+export const useCreatePortfolio = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPortfolio>>,
+    TError,
+    { data: BodyType<CreatePortfolioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPortfolio>>,
+  TError,
+  { data: BodyType<CreatePortfolioInput> },
+  TContext
+> => {
+  return useMutation(getCreatePortfolioMutationOptions(options));
+};
+
+/**
+ * @summary Get a portfolio with its projects
+ */
+export const getGetPortfolioUrl = (id: number) => {
+  return `/api/portfolios/${id}`;
+};
+
+export const getPortfolio = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PortfolioWithProjects> => {
+  return customFetch<PortfolioWithProjects>(getGetPortfolioUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPortfolioQueryKey = (id: number) => {
+  return [`/api/portfolios/${id}`] as const;
+};
+
+export const getGetPortfolioQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPortfolio>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPortfolio>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPortfolioQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPortfolio>>> = ({
+    signal,
+  }) => getPortfolio(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolio>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPortfolioQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPortfolio>>
+>;
+export type GetPortfolioQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a portfolio with its projects
+ */
+
+export function useGetPortfolio<
+  TData = Awaited<ReturnType<typeof getPortfolio>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPortfolio>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPortfolioQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delete a portfolio
+ */
+export const getDeletePortfolioUrl = (id: number) => {
+  return `/api/portfolios/${id}`;
+};
+
+export const deletePortfolio = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeletePortfolioUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeletePortfolioMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePortfolio>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePortfolio>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deletePortfolio"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePortfolio>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deletePortfolio(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePortfolioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePortfolio>>
+>;
+
+export type DeletePortfolioMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a portfolio
+ */
+export const useDeletePortfolio = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePortfolio>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePortfolio>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeletePortfolioMutationOptions(options));
+};
+
+/**
+ * @summary Add a project to a portfolio
+ */
+export const getAddProjectToPortfolioUrl = (id: number) => {
+  return `/api/portfolios/${id}/projects`;
+};
+
+export const addProjectToPortfolio = async (
+  id: number,
+  addProjectToPortfolioInput: AddProjectToPortfolioInput,
+  options?: RequestInit,
+): Promise<PortfolioWithProjects> => {
+  return customFetch<PortfolioWithProjects>(getAddProjectToPortfolioUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addProjectToPortfolioInput),
+  });
+};
+
+export const getAddProjectToPortfolioMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectToPortfolio>>,
+    TError,
+    { id: number; data: BodyType<AddProjectToPortfolioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addProjectToPortfolio>>,
+  TError,
+  { id: number; data: BodyType<AddProjectToPortfolioInput> },
+  TContext
+> => {
+  const mutationKey = ["addProjectToPortfolio"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addProjectToPortfolio>>,
+    { id: number; data: BodyType<AddProjectToPortfolioInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addProjectToPortfolio(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddProjectToPortfolioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addProjectToPortfolio>>
+>;
+export type AddProjectToPortfolioMutationBody =
+  BodyType<AddProjectToPortfolioInput>;
+export type AddProjectToPortfolioMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Add a project to a portfolio
+ */
+export const useAddProjectToPortfolio = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addProjectToPortfolio>>,
+    TError,
+    { id: number; data: BodyType<AddProjectToPortfolioInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addProjectToPortfolio>>,
+  TError,
+  { id: number; data: BodyType<AddProjectToPortfolioInput> },
+  TContext
+> => {
+  return useMutation(getAddProjectToPortfolioMutationOptions(options));
+};
+
+/**
+ * @summary Remove a project from a portfolio
+ */
+export const getRemoveProjectFromPortfolioUrl = (
+  id: number,
+  projectId: number,
+) => {
+  return `/api/portfolios/${id}/projects/${projectId}`;
+};
+
+export const removeProjectFromPortfolio = async (
+  id: number,
+  projectId: number,
+  options?: RequestInit,
+): Promise<PortfolioWithProjects> => {
+  return customFetch<PortfolioWithProjects>(
+    getRemoveProjectFromPortfolioUrl(id, projectId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getRemoveProjectFromPortfolioMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeProjectFromPortfolio>>,
+    TError,
+    { id: number; projectId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeProjectFromPortfolio>>,
+  TError,
+  { id: number; projectId: number },
+  TContext
+> => {
+  const mutationKey = ["removeProjectFromPortfolio"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeProjectFromPortfolio>>,
+    { id: number; projectId: number }
+  > = (props) => {
+    const { id, projectId } = props ?? {};
+
+    return removeProjectFromPortfolio(id, projectId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveProjectFromPortfolioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeProjectFromPortfolio>>
+>;
+
+export type RemoveProjectFromPortfolioMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Remove a project from a portfolio
+ */
+export const useRemoveProjectFromPortfolio = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeProjectFromPortfolio>>,
+    TError,
+    { id: number; projectId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeProjectFromPortfolio>>,
+  TError,
+  { id: number; projectId: number },
+  TContext
+> => {
+  return useMutation(getRemoveProjectFromPortfolioMutationOptions(options));
+};

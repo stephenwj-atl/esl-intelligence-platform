@@ -3,7 +3,7 @@
  * Do not edit manually.
  * Api
  * ESL Environmental Intelligence Platform API
- * OpenAPI spec version: 0.2.0
+ * OpenAPI spec version: 0.3.0
  */
 import * as zod from "zod";
 
@@ -93,7 +93,7 @@ export const CreateProjectBody = zod.object({
     "Industrial",
     "Agriculture",
   ]),
-  investmentAmount: zod.number().describe("Investment amount in millions USD"),
+  investmentAmount: zod.number(),
   floodRisk: zod
     .number()
     .min(createProjectBodyFloodRiskMin)
@@ -285,6 +285,22 @@ export const RunScenarioResponse = zod.object({
 });
 
 /**
+ * @summary Get simulated risk history for a project
+ */
+export const GetProjectRiskHistoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetProjectRiskHistoryResponseItem = zod.object({
+  month: zod.number(),
+  overallRisk: zod.number(),
+  dataConfidence: zod.number(),
+});
+export const GetProjectRiskHistoryResponse = zod.array(
+  GetProjectRiskHistoryResponseItem,
+);
+
+/**
  * @summary Get portfolio-level summary metrics
  */
 export const GetPortfolioSummaryResponse = zod.object({
@@ -340,4 +356,172 @@ export const GetPortfolioOptimizationResponse = zod.object({
       riskImpact: zod.number(),
     }),
   ),
+});
+
+/**
+ * @summary Get cross-project intelligence patterns
+ */
+export const GetCrossProjectIntelligenceResponse = zod.object({
+  patterns: zod.array(
+    zod.object({
+      category: zod.string(),
+      finding: zod.string(),
+      affectedProjects: zod.array(zod.string()),
+      riskImpact: zod.enum(["low", "medium", "high"]),
+    }),
+  ),
+  insights: zod.array(zod.string()),
+});
+
+/**
+ * @summary Get portfolio-wide data confidence index
+ */
+export const GetDataConfidenceIndexResponse = zod.object({
+  overallScore: zod.number(),
+  labValidationPercent: zod.number(),
+  monitoringPercent: zod.number(),
+  ifcAlignedPercent: zod.number(),
+  projectsWithLowConfidence: zod.number(),
+  insight: zod.string(),
+});
+
+/**
+ * @summary Get portfolio-level investment decision
+ */
+export const GetPortfolioDecisionResponse = zod.object({
+  outcome: zod.enum([
+    "PROCEED_WITH_PORTFOLIO",
+    "PROCEED_WITH_CONDITIONS",
+    "REBALANCE_PORTFOLIO",
+    "REDUCE_EXPOSURE",
+  ]),
+  weightedRisk: zod.number(),
+  confidenceIndex: zod.number(),
+  highRiskCapitalPercent: zod.number(),
+  conditions: zod.array(zod.string()),
+  insight: zod.string(),
+});
+
+/**
+ * @summary List all portfolios
+ */
+export const ListPortfoliosResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  projects: zod.array(
+    zod.object({
+      id: zod.number(),
+      projectId: zod.number(),
+      projectName: zod.string(),
+      projectType: zod.string(),
+      country: zod.string(),
+      investmentAmount: zod.number(),
+      stage: zod.string(),
+      riskScore: zod.number(),
+      dataConfidence: zod.number(),
+      decision: zod.string(),
+    }),
+  ),
+  metrics: zod.object({
+    totalInvestment: zod.number(),
+    weightedRisk: zod.number(),
+    avgConfidence: zod.number(),
+    projectCount: zod.number(),
+  }),
+  createdAt: zod.date(),
+});
+export const ListPortfoliosResponse = zod.array(ListPortfoliosResponseItem);
+
+/**
+ * @summary Create a new portfolio
+ */
+export const CreatePortfolioBody = zod.object({
+  name: zod.string(),
+});
+
+/**
+ * @summary Get a portfolio with its projects
+ */
+export const GetPortfolioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPortfolioResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  projects: zod.array(
+    zod.object({
+      id: zod.number(),
+      projectId: zod.number(),
+      projectName: zod.string(),
+      projectType: zod.string(),
+      country: zod.string(),
+      investmentAmount: zod.number(),
+      stage: zod.string(),
+      riskScore: zod.number(),
+      dataConfidence: zod.number(),
+      decision: zod.string(),
+    }),
+  ),
+  metrics: zod.object({
+    totalInvestment: zod.number(),
+    weightedRisk: zod.number(),
+    avgConfidence: zod.number(),
+    projectCount: zod.number(),
+  }),
+  createdAt: zod.date(),
+});
+
+/**
+ * @summary Delete a portfolio
+ */
+export const DeletePortfolioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Add a project to a portfolio
+ */
+export const AddProjectToPortfolioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddProjectToPortfolioBody = zod.object({
+  projectId: zod.number(),
+  investmentAmount: zod.number(),
+  stage: zod.enum(["Early", "Pre-IC", "Approved", "Post-Close"]),
+});
+
+/**
+ * @summary Remove a project from a portfolio
+ */
+export const RemoveProjectFromPortfolioParams = zod.object({
+  id: zod.coerce.number(),
+  projectId: zod.coerce.number(),
+});
+
+export const RemoveProjectFromPortfolioResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  projects: zod.array(
+    zod.object({
+      id: zod.number(),
+      projectId: zod.number(),
+      projectName: zod.string(),
+      projectType: zod.string(),
+      country: zod.string(),
+      investmentAmount: zod.number(),
+      stage: zod.string(),
+      riskScore: zod.number(),
+      dataConfidence: zod.number(),
+      decision: zod.string(),
+    }),
+  ),
+  metrics: zod.object({
+    totalInvestment: zod.number(),
+    weightedRisk: zod.number(),
+    avgConfidence: zod.number(),
+    projectCount: zod.number(),
+  }),
+  createdAt: zod.date(),
 });
