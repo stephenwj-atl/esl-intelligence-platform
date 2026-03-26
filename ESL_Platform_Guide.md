@@ -1,461 +1,758 @@
 # ESL Environmental Intelligence Platform
+
 ## Complete Platform Guide, User Manual & Demo Script
 
 ---
 
-# PART 1: WHAT WE BUILT
+## Table of Contents
 
-## The Problem
-
-Caribbean development finance institutions, commercial banks, and insurers face a fundamental gap: environmental risk is invisible in their capital allocation process. Projects are approved with generic due diligence. Environmental issues surface late -- during construction or post-close -- when they are 10x more expensive to address. Risk is underpriced. Insurance claims spike. Covenant breaches escalate. Capital is misallocated.
-
-## The Solution
-
-ESL Intelligence is a **Bloomberg Terminal for environmental risk** -- a decision intelligence platform that transforms raw environmental data into structured investment signals, financial impact projections, and institutional governance workflows.
-
-The platform operates across five layers:
-
-| Layer | Function |
-|-------|----------|
-| **Risk Intelligence** | Algorithmic scoring of environmental, infrastructure, human exposure, and regulatory risk |
-| **Portfolio Analytics** | Cross-project pattern recognition, capital optimization, and portfolio-level decision signals |
-| **Institutional Governance** | IFC-aligned frameworks, covenant tracking, ESAP management, monitoring, and audit trails |
-| **Regional Authority** | Caribbean Risk Index across 14 countries, sector benchmarking, and data coverage intelligence |
-| **Financial Impact** | Loan pricing adjustments, insurance premium impacts, capital constraints, and "with vs. without" ESL comparison |
-
----
-
-# PART 2: USER MANUAL -- EVERY PANEL EXPLAINED
+1. [Executive Summary](#1-executive-summary)
+2. [Platform Overview](#2-platform-overview)
+3. [Navigation & Layout](#3-navigation--layout)
+4. [Portfolio Command Center (Dashboard)](#4-portfolio-command-center)
+5. [Project Intelligence View](#5-project-intelligence-view)
+6. [Capital Deployment Intelligence](#6-capital-deployment-intelligence)
+7. [Authority Index (Regional Intelligence)](#7-authority-index)
+8. [Portfolio Manager](#8-portfolio-manager)
+9. [New Analysis (Project Creation)](#9-new-analysis)
+10. [Risk Scoring Methodology](#10-risk-scoring-methodology)
+11. [Financial Calculation Logic](#11-financial-calculation-logic)
+12. [Capital Mode Engine](#12-capital-mode-engine)
+13. [Governance Framework](#13-governance-framework)
+14. [API Reference](#14-api-reference)
+15. [Database Schema](#15-database-schema)
+16. [Demo Script](#16-demo-script)
+17. [Sample Portfolio Data](#17-sample-portfolio-data)
 
 ---
 
-## 1. PORTFOLIO COMMAND CENTER (Dashboard)
+## 1. Executive Summary
 
-**What it is:** The institutional portfolio overview -- the first screen an investment officer sees every morning. It aggregates intelligence across all projects into a single decision surface.
+The ESL Environmental Intelligence Platform is a Bloomberg Terminal-style decision intelligence system for environmental risk in Caribbean development finance. It converts raw environmental data into:
 
-### 1.1 Portfolio Decision Banner
-- **What it shows:** The system's aggregate recommendation for the entire portfolio (e.g., "REDUCE EXPOSURE", "PROCEED WITH PORTFOLIO")
-- **Key numbers:** Weighted portfolio risk score and high-risk capital percentage
-- **Connects to:** Every individual project's risk score feeds into this aggregate
+- **Investment decision signals** (PROCEED / CONDITION / DECLINE)
+- **Capital structuring recommendations** (Loan / Grant / Blended)
+- **Financial impact quantification** (rate adjustments, insurance uplift, lifetime cost)
+- **Deployment readiness assessments** (READY / CONDITIONALLY READY / NOT READY)
+- **Institutional governance lifecycle management** (covenants, ESAP, monitoring, audit trails)
 
-### 1.2 Summary Strip (4 KPIs)
-| Card | What It Tells You |
-|------|-------------------|
-| **Total Capital** | Aggregate committed capital across all projects |
-| **Avg Risk Score** | Weighted portfolio risk (0-100, where <40 is safe, 40-70 needs conditions, >70 is decline territory) |
-| **Exposure at Risk** | Dollar amount allocated to high-risk projects -- this is the number that keeps credit committees up at night |
-| **Confidence Score** | Data quality aggregate -- how much you can trust the risk numbers |
+The platform serves development banks, climate funds, institutional investors, and environmental regulators across the Caribbean region.
 
-### 1.3 Risk vs. Confidence Matrix
-- **What it is:** A scatter plot where each bubble is a project. X-axis = risk, Y-axis = data confidence, bubble size = capital deployed
-- **Why it matters:** The bottom-left quadrant ("Danger Zone") shows projects that are high-risk AND low-confidence -- the worst combination. These need immediate attention
-- **Connects to:** Click any bubble to navigate to that project's detail page
+**What this system answers at a glance:**
 
-### 1.4 Capital Allocation (Pie Chart)
-- Shows capital distribution across Low, Medium, and High risk tiers
-- **Connects to:** The Capital Constraint Engine on the Financial Impact tab (25% max high-risk allocation policy)
-
-### 1.5 Data Confidence Index
-- Breaks down data quality across three dimensions: Lab Validation %, Monitoring Data %, IFC Alignment %
-- **Why it matters:** Low confidence inflates risk scores via the uncertainty penalty (+10-20% on overall risk) and adds financing cost penalties (+0.5%)
-
-### 1.6 Cross-Project Intelligence
-- AI-driven pattern recognition across the portfolio
-- Identifies: Geographic Concentration, Sector Risk Patterns, Data Quality Gaps, Validation Deficits, Climate Vulnerability clusters
-- **Connects to:** Regional Authority dashboard for market-level context
-
-### 1.7 Portfolio Governance Section
-| Card | What It Tracks |
-|------|----------------|
-| **ESAP Completion** | % of Environmental & Social Action Plan items completed |
-| **Covenant Compliance** | % of environmental covenants met vs. total |
-| **Active Breaches** | Count of covenant breaches + ESAP overdue items requiring escalation |
-| **Monitoring Events** | Total site visits, lab results, and community surveys logged |
-
-- **Connects to:** Individual project Covenants, ESAP, and Monitoring tabs
-
-### 1.8 Portfolio Financial Impact
-- **Additional Financing Cost:** Total extra interest paid across the portfolio due to environmental risk
-- **Insurance Uplift:** Total additional insurance premiums
-- **Total Environmental Risk Cost:** Combined financing + insurance cost over 10-year horizon
-- **Capital Constraint:** Whether the portfolio exceeds the 25% high-risk allocation policy limit
-- **Connects to:** Each project's Financial Impact tab for per-asset breakdown
-
-### 1.9 "With vs. Without ESL Intelligence" Panel
-- Side-by-side comparison showing what happens with traditional due diligence vs. the ESL platform
-- **Without ESL:** Underpriced risk, late-stage environmental discoveries, generic covenants, higher total cost
-- **With ESL:** Precision pricing, pre-investment detection, structured covenants, lower total cost
-- **Net Savings:** The total dollar savings and ROI multiple
-- **Why it matters:** This is the single most powerful sales panel. It shows the platform pays for itself
-
-### 1.10 Asset Inventory Table
-- Every project listed with: Risk Score, Confidence, Capital, Decision Signal
-- Click any row to navigate to full project analysis
+- What should we do with this capital?
+- What structure is required?
+- What are the financial consequences?
+- What must happen next?
 
 ---
 
-## 2. PROJECT DETAIL PAGE
+## 2. Platform Overview
 
-**What it is:** The deep-dive intelligence report for a single project. This is what goes into the investment committee memo.
+### Technology Stack
 
-### 2.1 Investment Decision Signal (Header)
-- Giant, color-coded banner: **PROCEED** (green), **CONDITION** (amber), or **DECLINE** (red)
-- Shows the overall risk score and data confidence percentage
-- **Decision Logic:**
-  - Risk < 40 = PROCEED
-  - Risk 40-70 = CONDITION (with auto-generated requirements)
-  - Risk > 70 = DECLINE
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React + Vite + Tailwind CSS + Recharts + Framer Motion |
+| Backend | Express 5 (TypeScript) |
+| Database | PostgreSQL + Drizzle ORM |
+| Validation | Zod |
+| Routing | wouter |
+| State | React Query + React Context |
+| Monorepo | pnpm workspaces |
 
-### 2.2 Breach / Escalation Alert
-- If any covenants are breached, ESAP items are overdue, or monitoring escalations exist, they appear here as a red alert banner
-- Includes a recommended action (e.g., "Escalate to Investment Officer for review")
-- **Connects to:** Covenants tab, ESAP tab, Monitoring tab
+### Design Language
 
----
-
-### Tab: Risk Overview
-
-#### What-If Scenario Analysis
-- Four toggles: Add Monitoring, Lab Validation, IFC Alignment, Mitigate Hazards
-- Click "Run Simulation" to see how each intervention changes the risk profile
-- Before/after comparisons appear next to every risk score
-- **Connects to:** Financial Impact tab's scenario section (shows dollar savings from same mitigations)
-
-#### Risk Monitoring Timeline
-- 12-month projected trajectory of Risk Score and Data Confidence
-- Shows how risk changes over time with the project's current data profile
-
-#### Risk Topology Breakdown
-- Bar chart showing four risk pillars: Environmental, Infrastructure, Human Exposure, Regulatory
-- Each has a color-coded sub-card with the individual score
-
-#### Financial Translation
-- **Delay Risk %:** Probability of timeline slippage due to environmental issues
-- **Cost Overrun %:** Projected budget impact
-- **Covenant Breach Probability:** Likelihood of triggering environmental covenant conditions
-- **Reputational Risk:** Low / Medium / High qualitative rating
+- Dark charcoal/black background
+- Cyan/teal primary accent color
+- White text with muted secondary text
+- Institutional Bloomberg Terminal aesthetic
+- Monospace fonts for data values
+- Investment amounts in millions USD (e.g., $25M)
 
 ---
 
-### Tab: Framework Alignment
-- Checks the project against three international standards: IFC Performance Standards, Equator Principles, IDB Invest Environmental Standards
-- Shows compliance status (Aligned, Partial, Gap) with specific gap descriptions and severity levels
-- **Why it matters:** DFIs require framework alignment for financing eligibility
+## 3. Navigation & Layout
 
----
+### Global Header
 
-### Tab: Covenants
-- Auto-generated environmental covenants based on the project's risk triggers
-- Each covenant shows: Category, Trigger Condition, Current Status (Pending / In Progress / Met / Breach)
-- Status can be updated by authorized users
-- **Connects to:** Dashboard breach alerts; Audit Trail logs all status changes
+Every page displays a persistent header containing:
 
----
+- **ESL Intelligence** logo and brand (top-left)
+- **Capital Mode Switch** — three-segment control: LOAN | GRANT | BLENDED (center)
+- **Portfolio name** — displays the active portfolio (e.g., "Caribbean Energy Fund")
+- **System status** indicator (e.g., "System Nominal")
+- **User avatar** (top-right)
 
-### Tab: ESAP (Environmental & Social Action Plan)
-- Structured action items with: Priority, Owner, Deadline, Status, Evidence
-- Items auto-generated from risk analysis (e.g., "Conduct Phase II environmental site assessment")
-- Status tracking: Not Started / In Progress / Complete / Overdue
-- **Connects to:** Dashboard ESAP completion %; breach alerts for overdue items
+### Sidebar Navigation
 
----
-
-### Tab: Monitoring
-- Log of all monitoring events: Site Visits, Lab Tests, Community Surveys, Regulatory Inspections, Incident Reports
-- Each event has: Type, Date, Status (Pass/Fail/Escalated), Description, Findings
-- Monitoring events feed into the Data Confidence score
-- **Connects to:** Dashboard monitoring event count; Audit Trail
-
----
-
-### Tab: Audit Trail
-- Immutable record of every action taken on the project: covenant updates, ESAP changes, monitoring events, status changes
-- Shows: Timestamp, Action Type, User, Details
-- **Why it matters:** Institutional accountability and regulatory compliance
-
----
-
-### Tab: Financial Impact
-- **Loan Pricing Adjustment:** Base Rate (8%) + Risk Premium (0.5-1.5%) + Confidence Penalty (0.5% if confidence < 50%) = Final Rate
-- **Insurance Premium Impact:** Base Premium (1% of project value) adjusted for coastal exposure, flood risk, and overall risk
-- **Covenant Requirements:** HIGH / MEDIUM / LOW severity with specific compliance requirements
-- **Capital Constraint Engine:** Shows whether this project pushes the portfolio past the 25% high-risk allocation limit
-- **Total Financial Effect:** Combined 10-year lifetime cost of environmental risk for this single project
-- **Financial Scenario (Expandable):** Shows before/after financing rate, insurance premium, and total savings if mitigations are applied
-- **Connects to:** Risk Overview scenario analysis (same mitigations, financial lens); Dashboard portfolio financial aggregation
-
----
-
-### Tab: Benchmark
-- **Percentile Ranking:** Where this project sits vs. all others (e.g., "Top 14% highest-risk assets")
-- **vs. Regional Baseline:** Project risk compared to its country's average risk index
-- **vs. Sector Baseline:** Project risk compared to sector average (e.g., Port sector avg: 66.5)
-- **Regional Dataset Averages:** Country-specific environmental metrics (Coastal Risk, Flood Risk, Contamination, Water Stress, Infrastructure)
-- **Connects to:** Authority Dashboard for full regional context
-
----
-
-### Tab: Report
-- Institutional-grade document generator
-- Produces Pre-IC or Post-Close reports with: Decision rationale, Risk methodology, Framework alignment summary, Covenant requirements, Recommended conditions
-- **Why it matters:** This is what goes to the investment committee
-
----
-
-## 3. AUTHORITY DASHBOARD
-
-**What it is:** The regional intelligence command center. This is where ESL transforms from a project tool into a market intelligence platform.
-
-### 3.1 Caribbean Environmental Risk Index (CERI)
-- Weighted composite score across 14 Caribbean markets (currently 56.3)
-- Shows: Average confidence, total countries covered, active projects
-- **Why it matters:** This is proprietary -- no one else has this index
-
-### 3.2 Data Moat -- Defensibility Signal
-- Five metrics that demonstrate the platform's information advantage: Projects Analyzed, Lab Samples, Monitoring Points, Countries Covered, Data Points
-- **Why it matters:** The more data the platform collects, the more accurate and valuable it becomes. This is the moat
-
-### 3.3 Country Risk Index (Bar Chart)
-- Horizontal bars ranking all 14 countries by composite risk score
-- Countries colored by confidence level
-
-### 3.4 Data Coverage
-- Percentage breakdown: High Confidence (43%), Medium Confidence (50%), Low Confidence (7%)
-- "Data scarcity = opportunity" -- low-confidence markets represent untapped intelligence positioning
-
-### 3.5 Caribbean Market Index Table
-- Full table with: Country, Risk Index, Infrastructure Score, Water Stress Score, Confidence %, Status (High Risk / Moderate / Low Risk)
-- **Click any country** to expand a 5-year risk trend chart (2021-2025)
-- **Connects to:** Project Benchmark tab uses these indices for comparison
-
-### 3.6 Sector Risk Benchmarks
-- Risk bars for each sector: Mining (71.3), Port (66.5), Hotel (52.5), Solar (48.9), Agriculture (43.1), Wind (42.9)
-- Shows sample sizes for credibility
-- **Connects to:** Project Benchmark tab's sector comparison
-
-### 3.7 Intelligence Insights
-- Automated insight cards with severity badges (High / Medium)
-- Examples: Flood risk correlations, data quality patterns, water stress alerts, sector risk concentrations
-- **Connects to:** Cross-Project Intelligence on the Dashboard
-
----
-
-## 4. NEW ENVIRONMENTAL ASSESSMENT
-
-**What it is:** The project intake form. Takes ~2 minutes to complete.
-
-### Inputs Required:
-1. **Basic Info:** Project name, country, type (Solar/Wind/Port/Hotel/Mining/Agriculture), investment amount
-2. **Risk Factors (0-10 sliders):** Flood risk, coastal exposure, contamination, water stress, regulatory complexity, community sensitivity
-3. **Data Standards (toggles):** Lab validation, monitoring data, IFC alignment
-
-### What Happens on Submit:
-The risk engine runs immediately and generates: 4 risk pillar scores, overall risk score, data confidence index, financial impact projections, investment decision signal, enforceable conditions, and an intelligence narrative. The user is redirected to the full Project Detail page.
-
----
-
-## 5. PORTFOLIO MANAGER
-
-**What it is:** Administrative interface for organizing projects into portfolios.
-
-- Create named portfolios
-- Assign projects with custom investment amounts and stages (Early, Pre-IC, Approved, Post-Close)
-- View portfolio-level weighted risk and total investment
-- **Connects to:** Dashboard summary metrics aggregate across the active portfolio
-
----
-
-# PART 3: HOW PANELS CONNECT
-
-```
-NEW PROJECT FORM
-    |
-    v
-RISK ENGINE (auto-calculates on creation)
-    |
-    +---> PROJECT DETAIL (9 tabs: risk, governance, financial, benchmark, report)
-    |         |
-    |         +---> Financial Impact tab uses risk scores for loan/insurance/covenant calculations
-    |         +---> Benchmark tab compares to Regional Authority data
-    |         +---> Governance tabs (Framework, Covenants, ESAP, Monitoring) feed Dashboard governance KPIs
-    |         +---> Scenario simulation on Risk Overview shows risk reduction
-    |         +---> Financial Scenario shows corresponding cost savings
-    |
-    +---> DASHBOARD aggregates all projects
-    |         |
-    |         +---> Portfolio Decision = weighted aggregate of all project decisions
-    |         +---> Portfolio Financial Impact = sum of all project financial impacts
-    |         +---> "With vs Without ESL" = portfolio-level cost comparison
-    |         +---> Cross-Project Intelligence = pattern recognition across projects
-    |         +---> Governance KPIs = aggregated covenant/ESAP/monitoring metrics
-    |
-    +---> AUTHORITY DASHBOARD (regional context)
-              |
-              +---> Country Risk Index = independent regional dataset (14 countries, 2021-2025)
-              +---> Sector Benchmarks = industry-level risk baselines
-              +---> These feed into Project Benchmark tab comparisons
-              +---> CERI = the platform's proprietary market intelligence index
-```
-
-**Key Insight:** Data flows UP from individual projects to portfolio aggregates to regional intelligence. Context flows DOWN from regional benchmarks to project-level comparisons. The financial layer translates everything into dollars.
-
----
-
-# PART 4: DEMO SCRIPT
-
-## Pre-Demo Setup
-- Have the platform loaded to the Dashboard
-- Ensure at least 5-7 projects are in the system (the seed data provides 7 across Jamaica, Trinidad, Barbados, Guyana, Dominican Republic, Belize, Puerto Rico)
-
----
-
-## THE DEMO (20 minutes)
-
-### Opening (2 min)
-**Say:** "Let me show you something. This is your portfolio right now."
-
-**Show:** Dashboard. Point to the Portfolio Decision Banner.
-
-**Say:** "Your system is telling you to reduce exposure. $130M deployed, $97M of that is in high-risk assets. 41% of your capital is in projects that would score 'DECLINE' under systematic environmental review. Your policy limit is 25%. You're 16 points over."
-
-*Pause. Let that land.*
-
----
-
-### Act 1: The Problem Project (5 min)
-**Click:** Montego Bay Port Expansion (Risk: 76.9)
-
-**Say:** "This is your highest-risk asset. $35 million. The system has already made the call: DECLINE."
-
-**Point to:** The breach alert banner.
-
-**Say:** "Four active issues. A covenant breach on contamination assessment. An overdue ESAP item. Two monitoring escalations. These aren't hypotheticals -- these are enforceable conditions being tracked in real time."
-
-**Click:** Financial Impact tab.
-
-**Say:** "Here's what this project is costing you. The base financing rate is 8%. Environmental risk adds 1.5%. Low data confidence adds another half point. You're at 10% -- 2 full points above base. Insurance? $350,000 base premium adjusted to $490,000. That's $140,000 per year in additional premium because of environmental exposure."
-
-**Point to:** Total Financial Effect.
-
-**Say:** "$8.4 million in additional lifetime cost on a single $35M project. That's a 24% environmental risk tax."
-
-**Click:** The "Financial Scenario: With Mitigation" expander.
-
-**Say:** "But look what happens when you add monitoring and lab validation. Rate drops from 10% to 9%. Premium drops. Total savings: over $3 million. The monitoring program that generates those savings costs a fraction of that. It pays for itself."
-
----
-
-### Act 2: The Portfolio View (5 min)
-**Navigate back to:** Dashboard. Scroll to Portfolio Financial Impact.
-
-**Say:** "Now zoom out to portfolio level. Across all 7 projects: $11.9 million in additional financing cost. $2 million in insurance uplift. $13.9 million total environmental risk cost over 10 years."
-
-**Scroll to:** "With vs. Without ESL Intelligence" panel.
-
-**Say:** "This is the slide for your board. Without systematic environmental intelligence -- traditional due diligence -- your estimated cost is $24 million. Late-stage discoveries, underpriced risk, reactive management. With ESL, that drops to $13.9 million. That's $10.1 million in savings. The platform doesn't just identify risk -- it reduces your cost of capital."
-
-*Pause.*
-
-**Say:** "I want to be clear: this isn't a reporting tool. This is a capital allocation engine that happens to use environmental data."
-
----
-
-### Act 3: The Intelligence Layer (4 min)
-**Scroll to:** Cross-Project Intelligence.
-
-**Say:** "The system is identifying patterns you can't see in spreadsheets. Geographic concentration -- 7 projects in Jamaica, all sharing the same systemic coastal risk. Sector risk -- your port projects show 116% higher risk than baseline. Data quality gap -- projects without monitoring data show 62% higher average risk than monitored ones."
-
-**Click:** Authority Index in the sidebar.
-
-**Say:** "This is our regional intelligence layer. We index 14 Caribbean markets. Haiti at 87.6, Cayman Islands at 36.8. This isn't public data -- this is our proprietary Caribbean Environmental Risk Index built from 285 data points, 4,500 lab samples, and 585 monitoring points."
-
-**Point to:** Data Moat section.
-
-**Say:** "This is the moat. Every project analyzed, every lab sample collected, every monitoring event logged -- it makes the index more accurate. No one else has this. And the more institutions that use it, the stronger it gets."
-
----
-
-### Act 4: Governance (2 min)
-**Navigate to:** A project detail page. Click through the governance tabs quickly.
-
-**Say:** "Every project gets automatic framework alignment against IFC, Equator Principles, and IDB Invest standards. Auto-generated covenants with real-time tracking. An Environmental Action Plan with owners, deadlines, and evidence requirements. A monitoring log. And an immutable audit trail. This is the governance infrastructure that institutional investors and DFIs require. It's built in, not bolted on."
-
----
-
-### Act 5: New Project (2 min)
-**Click:** "+ New Asset" on the Dashboard.
-
-**Say:** "Creating a new assessment takes two minutes."
-
-**Fill in quickly:** "Santo Domingo Solar Park", Dominican Republic, Solar, $25M. Set flood risk to 6, coastal to 4, contamination to 3. Toggle "Lab Validation" on.
-
-**Submit.**
-
-**Say:** "Instant. Decision signal, risk breakdown, financial impact, framework alignment, covenants -- all generated in real time. No consultants. No 6-week assessment cycle. Immediate, structured intelligence."
-
----
-
-### The Close (2 min)
-
-**Navigate back to Dashboard.**
-
-**Say:** "Let me summarize what you're looking at:"
-
-"**One:** An environmental risk engine that scores every project across four dimensions with a data-adjusted confidence model."
-
-"**Two:** A portfolio analytics layer that identifies systemic patterns, concentration risks, and optimization opportunities."
-
-"**Three:** A full institutional governance stack -- covenants, action plans, monitoring, audit trails -- all auto-generated and tracked."
-
-"**Four:** A regional intelligence authority indexing 14 Caribbean markets with proprietary benchmarking data."
-
-"**Five:** A financial impact engine that translates every environmental data point into dollars -- loan pricing, insurance premiums, covenant severity, and capital constraints."
-
-"The question isn't whether environmental risk affects your portfolio. It's whether you can afford not to see it."
-
-*End.*
-
----
-
-# APPENDIX: RISK CALCULATION METHODOLOGY
-
-## Risk Score Bands
-| Overall Risk | Decision | Rate Adjustment |
-|-------------|----------|-----------------|
-| < 40 | PROCEED | +0.0% |
-| 40 - 59 | CONDITION | +0.5% |
-| 60 - 75 | CONDITION/DECLINE | +1.0% |
-| > 75 | DECLINE | +1.5% |
-
-## Risk Pillar Weights
-| Pillar | Components |
-|--------|-----------|
-| Environmental (25%) | Flood (0.25) + Contamination (0.25) + Water (0.20) + Coastal (0.30) |
-| Infrastructure (25%) | Flood (0.35) + Coastal (0.35) + Regulatory (0.30) |
-| Human Exposure (25%) | Community (0.50) + Contamination (0.50) |
-| Regulatory (25%) | Regulatory (0.60) + Community (0.25) + Contamination (0.15) |
-
-## Data Confidence Model
-| Data Source | Confidence Contribution |
-|------------|------------------------|
-| Baseline (no data) | 40% |
-| + Lab Validation | +20% |
-| + Monitoring Data | +20% |
-| + IFC Alignment | +20% |
-| Maximum | 100% |
-
-**Uncertainty Penalty:** If confidence < 50%, overall risk is inflated by 20%. If confidence < 70%, inflated by 10%.
-
-## Insurance Premium Multipliers
-| Trigger | Premium Increase |
-|---------|-----------------|
-| Coastal Exposure > 7 | +25% |
-| Flood Risk > 7 | +20% |
-| Overall Risk > 70 | +15% |
-
-## Covenant Severity
-| Condition | Level | Requirements |
+| Menu Item | Route | Description |
 |-----------|-------|-------------|
-| Risk > 70 AND Confidence < 60 | HIGH | Independent monitoring, lab validation, quarterly reporting, annual audit |
-| Risk >= 50 | MEDIUM | Semi-annual monitoring, annual environmental report |
-| Risk < 50 | LOW | Standard annual reporting |
+| Command Center | `/` | Portfolio-level dashboard |
+| Authority Index | `/authority` | Regional intelligence across Caribbean markets |
+| Portfolios | `/portfolios` | Portfolio management interface |
+| New Analysis | `/new` | Create a new project assessment |
+
+---
+
+## 4. Portfolio Command Center
+
+**Route:** `/` (Dashboard)
+
+The Command Center is the primary landing page — a portfolio-level intelligence dashboard that aggregates risk, financial, governance, and capital deployment data across all projects.
+
+### 4.1 Role Selector
+
+A dropdown in the header allows switching between three user perspectives:
+
+- **Analyst** — full data access, detailed risk views
+- **Investment Officer** — decision-focused, capital allocation view
+- **Admin** — governance and compliance focus
+
+### 4.2 Portfolio Decision Banner
+
+The top banner provides an immediate portfolio-level decision signal:
+
+| Decision | Condition | Color |
+|----------|-----------|-------|
+| PROCEED WITH PORTFOLIO | Weighted risk < 50 | Green |
+| REBALANCE | Risk 50-65 | Yellow |
+| REDUCE EXPOSURE | Risk > 65 | Red |
+
+Displays: narrative explanation, weighted risk score, high-risk capital percentage.
+
+### 4.3 Summary Strip
+
+Four key portfolio metrics displayed in a horizontal strip:
+
+- **Total Capital** — sum of all project investment amounts
+- **Weighted Risk** — capital-weighted average risk score
+- **Exposure at Risk** — capital in high-risk projects (>70 risk)
+- **Confidence Score** — average data confidence across portfolio
+
+### 4.4 Visualizations
+
+- **Risk vs. Confidence Scatter Matrix** — plots every project by risk (Y-axis) vs. confidence (X-axis), color-coded by risk tier, sized by investment amount
+- **Capital Allocation Pie Chart** — portfolio capital split by risk category (Low/Medium/High)
+- **Risk Distribution Histogram** — bar chart of projects across risk ranges
+- **Data Confidence Index** — progress bars for Lab Data, Monitoring, and IFC Alignment percentages
+
+### 4.5 Cross-Project Intelligence
+
+Automated pattern detection across the portfolio, including:
+
+- Geographic Concentration risk
+- Sector Risk clustering
+- Data Quality Gaps
+- Validation Deficits
+- Climate Vulnerability patterns
+
+### 4.6 Portfolio Governance Section
+
+- **ESAP Completion %** — percentage of environmental/social action plan items completed
+- **Covenant Compliance %** — percentage of covenants met
+- **Active Breaches** — count of current covenant breaches
+- **Monitoring Events** — total monitoring events recorded
+- **Breach & Escalation Alerts** — list of active breaches with severity
+
+### 4.7 Capital Deployment Intelligence Panel
+
+Added in V5.5, this panel aggregates capital structuring data across the portfolio:
+
+- **Capital Mix** — breakdown of Loan/Grant/Blended project counts and capital percentages with a stacked bar
+- **Deployment Readiness** — Ready/Conditional/Not Ready project counts with a segmented bar
+- **Capital Efficiency** — percentage of capital at risk, total dollar exposure, key risk drivers
+- **Structuring Insights** — auto-generated text insights (e.g., "2 projects require grant-first structuring", "3 projects viable for direct lending")
+
+### 4.8 Financial Intelligence Panels
+
+- **Portfolio Risk Cost** — total additional financing cost, insurance uplift, and combined risk cost
+- **ESL vs. Traditional Comparison** — side-by-side: total cost without ESL intelligence vs. with ESL, showing savings, ROI multiple, and specific issues avoided
+- **Asset Inventory Table** — sortable table of all projects with risk score, confidence, decision signal, and investment amount
+- **Portfolio Optimization** — expandable panel with specific rebalancing recommendations
+
+---
+
+## 5. Project Intelligence View
+
+**Route:** `/project/:id`
+
+Each project has a deep intelligence view organized into 8 tabs. The page header shows:
+
+- Project name, type badge, country, and investment amount
+- **Investment Decision Signal** — large PROCEED / CONDITION / DECLINE banner with risk score and confidence
+- **Breach / Escalation Alert** — red alert banner if active breaches detected
+
+### 5.1 Capital Decision Summary
+
+At the top of the Overview tab sits the **Capital Decision Summary** — a single-glance decision card that answers four questions:
+
+1. **What should we do?** — Core Decision: the system-recommended capital mode (Loan, Grant, or Blended) based on the risk engine, not the user-selected mode
+2. **What structure is required?** — Mode-specific recommendation:
+   - *Loan:* covenant level, conditions precedent count, monitoring requirement
+   - *Grant:* phased disbursement, validation gates, phase completion status
+   - *Blended:* grant percentage, loan triggers, transition milestones
+3. **What happens financially?** — Mode-specific financial/impact consequence:
+   - *Loan:* rate adjustment, insurance uplift, lifetime cost
+   - *Grant:* delivery risk level, impact efficiency %, disbursement risk
+   - *Blended:* grant de-risk %, loan viability, projected savings
+4. **What must happen next?** — Numbered action items derived from the recommended mode's requirements
+
+Additional elements:
+- **Deployment Status Badge** — READY (green) / CONDITIONALLY READY (yellow) / NOT READY (red)
+- **Before/After Comparison** — inline panel showing rate and premium with vs. without intervention, plus total projected savings
+- **Key Constraints** — auto-generated constraint list (confidence gaps, monitoring gaps, concentration breaches)
+- **Decision Explainability** — expandable "Why this decision?" section showing underlying risk drivers and narrative explanation of the recommendation logic
+
+### 5.2 Overview Tab
+
+Below the Capital Decision Summary:
+
+- **7-Indicator Strip** — Capital Mode, Deployment Readiness, Confidence %, ESAP Progress %, Monitoring Status, Last Monitoring Event date, IFC Alignment
+- **Risk Topology Chart** — bar chart of four risk subscores (Environmental, Infrastructure, Human Exposure, Regulatory)
+- **Financial Translation Panel** — translates risk into financial terms: Delay Risk %, Cost Overrun %, Covenant Trigger %, Reputational Risk %
+
+### 5.3 Risk Tab
+
+- **What-If Scenario Analysis** — toggle cards for hypothetical changes (add monitoring, add lab data, IFC alignment, reduce risk inputs)
+- Each toggle shows before/after comparison of risk score with green/red delta indicators
+- **Risk Monitoring Timeline** — 12-month historical chart of risk score and confidence trends
+
+### 5.4 Financial Tab
+
+- **Loan Pricing** — base rate + risk premium + confidence penalty = final rate
+- **Insurance Impact** — base premium, adjusted premium, multiplier, and contributing factors
+- **Covenant Requirements** — level (LOW/MEDIUM/HIGH) with specific requirements listed
+- **Capital Constraint** — high-risk allocation vs. policy limit, breach indicator
+- **Lifetime Cost** — total additional financing cost + insurance uplift over loan term
+
+### 5.5 Impact Tab
+
+Mode-aware impact assessment (responds to global capital mode switch):
+
+- **Impact Delivery Risk** — HIGH/MEDIUM/LOW with driver list (flood exposure, coastal vulnerability, etc.)
+- **Impact Efficiency Score** — 0-100 score with progress bar and adjustment factors
+- **Monitoring Intensity** — STANDARD/ELEVATED/HIGH with specific monitoring requirements
+- **Disbursement Risk** — LOW/MODERATE/ELEVATED with contributing factors
+
+### 5.6 Structure Tab
+
+Capital structuring view that switches display based on global capital mode:
+
+**Loan Mode:**
+- Risk-adjusted rate, loan viability indicator, covenant level
+- Conditions precedent (numbered list)
+- Covenant requirements with "Required for loan covenant" badges
+- Risk mitigation requirements (if any)
+
+**Grant Mode:**
+- Grant requirement status (REQUIRED/OPTIONAL), phase completion progress
+- Grant purpose statement
+- Disbursement Phases — three-phase structure:
+  - Phase 1: Baseline Validation (30% allocation)
+  - Phase 2: Monitoring Infrastructure (40% allocation)
+  - Phase 3: Performance Verification (30% allocation)
+- Each phase shows conditions with "Required for grant release" badges
+
+**Blended Mode:**
+- Grant Required indicator, grant/loan percentage split, loan viability
+- Grant purpose statement
+- Loan Activation Triggers — what must happen before commercial capital
+- Transition Milestones — ESAP completion, monitoring trends, independent assessment
+- Blended Finance Logic — visual flow diagram: Grant Phase (de-risk) -> Loan Phase (deploy)
+
+### 5.7 Monitoring Tab
+
+- Table of monitoring events with columns: Date, Type, Result, Status, Findings, Capital Tags
+- Capital Tags column shows mode-relevant tags: "Required for grant release", "Required for loan covenant", "Grant disbursement hold"
+
+### 5.8 Audit Trail Tab
+
+- Chronological log of all governance actions for the project
+- Shows: action, user, details, timestamp
+
+### 5.9 Report Tab
+
+- Generates an institutional-format report for the project
+- Downloadable assessment summary
+
+---
+
+## 6. Capital Deployment Intelligence
+
+### Capital Mode Switch
+
+The three-segment control in the global header (LOAN | GRANT | BLENDED) controls the platform's view lens. It is available on every page.
+
+- **Loan** — traditional lending view: rate adjustments, covenants, conditions precedent
+- **Grant** — grant/climate fund view: disbursement phases, impact risk, delivery efficiency
+- **Blended** — hybrid view: grant-first de-risking, loan triggers, transition milestones
+
+### System-Recommended Mode
+
+The system independently calculates a recommended capital mode for each project based on:
+
+| Condition | Recommended Mode |
+|-----------|-----------------|
+| Risk > 70 AND Confidence < 50 | **Grant** |
+| Risk > 60 OR Confidence < 60 | **Blended** |
+| Otherwise | **Loan** |
+
+The Capital Decision Summary always shows the system recommendation, regardless of the user-selected mode.
+
+### Deployment Readiness
+
+Each project receives a deployment readiness assessment:
+
+| Status | Condition |
+|--------|-----------|
+| **READY** | Risk < 70 AND Confidence >= 50 AND has monitoring data |
+| **CONDITIONALLY READY** | Risk < 70 OR Confidence >= 50 |
+| **NOT READY** | Risk >= 70 AND Confidence < 50 AND no monitoring |
+
+---
+
+## 7. Authority Index
+
+**Route:** `/authority`
+
+The Authority Index is a regional intelligence dashboard spanning 14 Caribbean markets.
+
+### 7.1 Caribbean Environmental Risk Index (CERI)
+
+- Composite weighted risk score across all Caribbean markets
+- Average confidence percentage
+- Country count and active project count
+
+### 7.2 Data Moat — Defensibility Signal
+
+Quantifies the platform's proprietary data advantage:
+
+- Projects Analyzed (127)
+- Lab Samples (4,500)
+- Monitoring Points (585)
+- Countries Covered (14)
+- Data Points (285)
+
+### 7.3 Country Risk Index
+
+- Horizontal bar chart ranking all 14 Caribbean countries by composite environmental risk
+- Expandable country detail with 12-month trend charts
+- Countries include: Jamaica, Trinidad & Tobago, Barbados, Bahamas, Haiti, Suriname, Dominican Republic, Guyana, Belize, Antigua, St. Lucia, Grenada, St. Vincent, Dominica
+
+### 7.4 Data Coverage
+
+- Breakdown of data confidence levels across the region: High, Medium, Low confidence percentages
+
+### 7.5 Sector Benchmarking
+
+- Sector-by-sector risk comparison with trend indicators
+- Covers: Solar, Port, Hotel, Industrial, Agriculture, Infrastructure
+
+### 7.6 Intelligence Insights
+
+- Auto-generated regional insights and pattern alerts
+- Categorized by type: Warning, Opportunity, Trend, Gap
+
+---
+
+## 8. Portfolio Manager
+
+**Route:** `/portfolios`
+
+### 8.1 Portfolio Management
+
+- **Create Portfolio** — "New Portfolio" button to create named portfolio groupings
+- **Delete Portfolio** — remove portfolio (with confirmation)
+- **Portfolio Header** — shows name, project count, total capital, weighted risk
+
+### 8.2 Project Assignment Table
+
+Each portfolio displays its assigned projects in a table:
+
+| Column | Description |
+|--------|-------------|
+| Project | Project name with risk-color indicator bar |
+| Type | Project type badge (Solar, Port, Hotel, etc.) |
+| Stage | Pipeline stage: Early, Pre-IC, Approved, Post-Close |
+| Investment | Investment amount in millions |
+| Risk Score | Color-coded risk score |
+| Confidence | Data confidence percentage |
+| Decision | PROCEED / CONDITION / DECLINE badge |
+
+- **Add Project** button — assign existing projects to portfolio
+- Click any project row to navigate to its detail view
+
+---
+
+## 9. New Analysis
+
+**Route:** `/new`
+
+Create a new project assessment by entering:
+
+### Input Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| Project Name | Text | Name of the development project |
+| Country | Select | Caribbean country location |
+| Project Type | Select | Solar, Port, Hotel, Industrial, Agriculture |
+| Investment Amount | Number | Investment size in millions USD |
+| Flood Risk | Slider (0-10) | Flood exposure rating |
+| Coastal Exposure | Slider (0-10) | Coastal vulnerability rating |
+| Water Stress | Slider (0-10) | Water scarcity/quality rating |
+| Contamination Risk | Slider (0-10) | Soil/water contamination rating |
+| Regulatory Complexity | Slider (0-10) | Regulatory burden rating |
+| Has Lab Data | Toggle | Whether lab validation data exists |
+| Has Monitoring Data | Toggle | Whether environmental monitoring is deployed |
+| Is IFC Aligned | Toggle | Whether project meets IFC Performance Standards |
+
+On submission, the risk engine automatically computes all scores, generates the decision signal, and creates the project with full financial analysis.
+
+---
+
+## 10. Risk Scoring Methodology
+
+### Risk Subscores (0-100 each)
+
+| Subscore | Inputs | Weight |
+|----------|--------|--------|
+| Environmental Risk | Flood risk, coastal exposure, contamination risk | Primary |
+| Infrastructure Risk | Water stress, contamination risk | Secondary |
+| Human Exposure Risk | Water stress, regulatory complexity | Secondary |
+| Regulatory Risk | Regulatory complexity, coastal exposure | Secondary |
+
+### Overall Risk (0-100)
+
+Weighted composite of all four subscores with uncertainty penalties applied when data confidence is low.
+
+### Decision Thresholds
+
+| Risk Range | Decision | Meaning |
+|------------|----------|---------|
+| 0 - 39 | **PROCEED** | Risk profile supports standard due diligence |
+| 40 - 70 | **CONDITION** | Requires specific mitigation measures |
+| 71 - 100 | **DECLINE** | Risk exceeds acceptable thresholds |
+
+### Data Confidence (0-100%)
+
+Base confidence starts at 40% and increases:
+
+| Data Source | Confidence Bonus |
+|-------------|-----------------|
+| Lab Data available | +20% |
+| Monitoring Data available | +20% |
+| IFC Aligned | +20% |
+
+Maximum confidence: 100% (all three sources present).
+
+---
+
+## 11. Financial Calculation Logic
+
+### Loan Pricing
+
+| Component | Calculation |
+|-----------|-------------|
+| Base Rate | 8.0% |
+| Risk Premium (40-60 risk) | +0.5% |
+| Risk Premium (60-75 risk) | +1.0% |
+| Risk Premium (>75 risk) | +1.5% |
+| Confidence Penalty (<50%) | +0.5% |
+| **Final Rate** | Base + Risk Premium + Confidence Penalty |
+
+### Insurance Premium
+
+| Component | Calculation |
+|-----------|-------------|
+| Base Premium | 1% of project value |
+| Coastal Exposure > 7 | +25% multiplier |
+| Flood Risk > 7 | +20% multiplier |
+| Overall Risk > 70 | +15% multiplier |
+
+### Covenant Level
+
+| Level | Condition |
+|-------|-----------|
+| HIGH | Risk > 70 AND Confidence < 60 |
+| MEDIUM | Risk >= 50 |
+| LOW | Otherwise |
+
+### Capital Constraint
+
+- Policy limit: 25% maximum allocation to high-risk projects
+- Breach triggered when high-risk capital exceeds 25% of total portfolio
+
+### Lifetime Cost
+
+Total additional financing cost (rate adjustment x project value x 10-year term) + insurance uplift (premium increase x 10 years).
+
+---
+
+## 12. Capital Mode Engine
+
+### Impact Intelligence (V5.5)
+
+**Impact Delivery Risk:**
+- HIGH: 3+ risk drivers identified (flood, coastal, contamination, regulatory, low confidence)
+- MEDIUM: 1-2 risk drivers
+- LOW: No significant drivers
+
+**Impact Efficiency Score (0-100):**
+- Base: 85
+- Penalties: Risk > 70 (-20), Risk > 50 (-10), Confidence < 50 (-15), Confidence < 70 (-8), Regulatory > 7 (-5)
+
+**Monitoring Intensity:**
+- HIGH: Risk > 70 OR Confidence < 50
+- ELEVATED: Risk > 50 OR Confidence < 70
+- STANDARD: Otherwise
+
+**Disbursement Risk:**
+- ELEVATED: Risk > 70 AND Confidence < 60
+- MODERATE: Risk > 60 OR Confidence < 50
+- LOW: Otherwise
+
+### Grant Structuring
+
+Three-phase disbursement model:
+
+| Phase | Name | Allocation | Gate |
+|-------|------|------------|------|
+| 1 | Baseline Validation | 30% | Lab data validated |
+| 2 | Monitoring Infrastructure | 40% | Monitoring system installed |
+| 3 | Performance Verification | 30% | IFC alignment confirmed |
+
+### Blended Finance
+
+| Component | Logic |
+|-----------|-------|
+| Grant % | Risk > 70: 40%, Risk > 50: 25%, Otherwise: 15% |
+| Loan Viability | Risk > 75: NOT VIABLE, Risk > 60: CONDITIONAL, Otherwise: VIABLE |
+| Triggers | Risk threshold, monitoring establishment, confidence threshold |
+
+---
+
+## 13. Governance Framework
+
+### Framework Alignment
+
+Tracks compliance with international environmental frameworks:
+
+- IFC Performance Standards
+- Equator Principles
+- TCFD Recommendations
+- EU Taxonomy
+
+Each framework alignment records: standard, compliance status, gap description, and severity level.
+
+### Covenants
+
+Investment covenant tracking with statuses: Pending, In Progress, Met, Breach.
+
+Categories include environmental monitoring, reporting, mitigation, and compliance covenants.
+
+### ESAP (Environmental & Social Action Plan)
+
+Action item tracking with statuses: Not Started, In Progress, Complete, Overdue.
+
+Each item records: action description, responsible party, deadline, evidence documentation.
+
+### Monitoring Events
+
+Structured monitoring event log with:
+
+- Event types: Site Visit, Lab Result, Sensor Reading, Compliance Check, Incident
+- Results: Normal, Warning, Critical, Breach
+- Findings narrative
+- Capital Tags: "Required for grant release", "Required for loan covenant", "Grant disbursement hold"
+
+### Audit Trail
+
+Complete chronological log of all governance actions across the system. Every covenant update, ESAP change, monitoring event, and status transition is recorded with user attribution and timestamps.
+
+---
+
+## 14. API Reference
+
+### Core Project APIs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/healthz` | Health check |
+| GET | `/api/projects` | List all projects |
+| POST | `/api/projects` | Create project with risk analysis |
+| GET | `/api/projects/:id` | Get project detail |
+| DELETE | `/api/projects/:id` | Delete project |
+| POST | `/api/projects/:id/scenario` | What-if scenario analysis |
+| GET | `/api/projects/:id/risk-history` | 12-month risk history |
+
+### Portfolio APIs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/portfolio/summary` | Portfolio-level metrics |
+| GET | `/api/portfolio/optimize` | Optimization recommendations |
+| GET | `/api/portfolio/intelligence` | Cross-project patterns |
+| GET | `/api/portfolio/confidence` | Data confidence index |
+| GET | `/api/portfolio/decision` | Portfolio decision signal |
+| GET | `/api/portfolios` | List portfolios |
+| POST | `/api/portfolios` | Create portfolio |
+| GET | `/api/portfolios/:id` | Get portfolio with projects |
+| DELETE | `/api/portfolios/:id` | Delete portfolio |
+| POST | `/api/portfolios/:id/projects` | Add project to portfolio |
+| DELETE | `/api/portfolios/:id/projects/:projectId` | Remove project |
+
+### Governance APIs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/projects/:id/framework-alignment` | Framework alignment records |
+| GET | `/api/projects/:id/covenants` | Project covenants |
+| PATCH | `/api/covenants/:id` | Update covenant status |
+| GET | `/api/projects/:id/esap` | ESAP action items |
+| PATCH | `/api/esap/:id` | Update ESAP item |
+| POST | `/api/projects/:id/monitoring` | Add monitoring event |
+| GET | `/api/projects/:id/monitoring` | Get monitoring events |
+| GET | `/api/projects/:id/audit-log` | Project audit log |
+| GET | `/api/audit-log` | Global audit log |
+| GET | `/api/governance/summary` | Portfolio governance KPIs |
+| GET | `/api/projects/:id/report` | Generate institutional report |
+
+### Regional/Authority APIs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/regional/data` | Regional dataset query |
+| GET | `/api/regional/indices` | Caribbean Risk Index (all) |
+| GET | `/api/regional/indices/:country` | Single country trend |
+| GET | `/api/regional/benchmarks/sector` | Sector benchmarking |
+| GET | `/api/regional/benchmarks/project/:id` | Project vs. region |
+| GET | `/api/regional/benchmarks/portfolio` | Portfolio vs. baseline |
+| GET | `/api/regional/confidence` | Regional data coverage |
+| GET | `/api/regional/insights` | Intelligence insights |
+| GET | `/api/regional/authority-summary` | Authority dashboard data |
+
+### Financial/Capital APIs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/financial/project/:id` | Project financial impact |
+| GET | `/api/financial/portfolio` | Portfolio financial aggregation |
+| GET | `/api/financial/comparison` | ESL vs. Traditional comparison |
+| GET | `/api/financial/scenario/:id` | Mitigation scenario |
+| GET | `/api/financial/project/:id/structure` | Capital structure |
+| GET | `/api/financial/project/:id/impact` | Impact assessment |
+| GET | `/api/financial/portfolio/deployment` | Portfolio deployment data |
+
+---
+
+## 15. Database Schema
+
+| Table | Purpose |
+|-------|---------|
+| `projects` | Project inputs, computed risk scores, financial risks, decisions |
+| `portfolios` | Named portfolio groupings |
+| `portfolio_projects` | Project-to-portfolio assignments with stage and investment |
+| `risk_history` | Monthly risk/confidence snapshots (12-month timeline) |
+| `covenants` | Investment covenant tracking per project |
+| `esap_items` | ESAP action items per project |
+| `monitoring_events` | Monitoring event log per project |
+| `audit_logs` | Governance audit trail |
+| `framework_alignments` | Framework alignment records per project |
+| `financial_impacts` | Cached financial impact calculations |
+
+---
+
+## 16. Demo Script
+
+### Demo Setup
+
+The platform comes pre-loaded with a sample portfolio: **Caribbean Energy Fund** containing 7 projects totaling $130M across Jamaica.
+
+### Scene 1: Portfolio Command Center (2 minutes)
+
+1. **Open the platform** — the Command Center loads immediately
+2. **Point to the Portfolio Decision Banner** — "The system is recommending REDUCE EXPOSURE because weighted risk is 55.9 with 41% of capital in high-risk tier"
+3. **Scan the Summary Strip** — "$130M total capital, 55.9 weighted risk, $53M at risk, 67.1% average confidence"
+4. **Highlight the Scatter Matrix** — "Each bubble is a project. X-axis is confidence, Y-axis is risk. Green bubbles bottom-right are safe. Red bubbles top-left need attention"
+5. **Scroll to Capital Deployment Intelligence** — "The system automatically categorizes: 59% of capital is loan-eligible, 41% requires grant structuring. 4 projects are deployment-ready, 2 are not"
+6. **Show the Capital Efficiency panel** — "41% of capital is at risk due to low data confidence and high environmental uncertainty"
+
+### Scene 2: The Good Project — Kingston Solar Farm (2 minutes)
+
+1. **Click Kingston Solar Farm** from the asset table (or navigate to `/project/1`)
+2. **Point to the Decision Signal** — "PROCEED with a 25.6 risk score and 100% confidence — this is a clean project"
+3. **Read the Capital Decision Summary** — "System recommends Loan Mode, READY for deployment, $0 additional cost, no constraints. Next actions: proceed with standard due diligence"
+4. **Click the Risk tab** — "All four risk subscores are low. The What-If toggles show minimal improvement because the project is already clean"
+5. **Click the Financial tab** — "No rate adjustment needed, no insurance uplift. This project passes straight through"
+
+### Scene 3: The Problem Project — Coastal Solar Phase II (2 minutes)
+
+1. **Navigate to `/project/4`** (or click from portfolio)
+2. **Point to the Decision Signal** — "DECLINE with a 71.0 risk score and only 40% confidence — this is a high-risk project with bad data"
+3. **Read the Capital Decision Summary** — "System recommends Grant mode, NOT READY for deployment. Key constraints: data confidence below threshold, high environmental exposure, elevated monitoring required"
+4. **Point to the Next Actions** — "The system tells us exactly what must happen: baseline data validation, independent environmental assessment, coastal resilience plan, and monitoring installation"
+5. **Click 'Why this decision?'** — "The explainability section shows the specific risk drivers: flood exposure 8/10, coastal vulnerability 7/10, low data confidence. This drives the grant-first recommendation"
+6. **Click the Before/After panel** — "If we intervene, rate drops from 9.5% to 8.5%, premium drops, saving $1.6M over the loan term"
+
+### Scene 4: Capital Mode Switching (1 minute)
+
+1. **Stay on Coastal Solar Phase II**
+2. **Click GRANT in the header** — "Switching to Grant mode"
+3. **Click the Impact tab** — "Now we see the grant-specific view: Impact Delivery Risk is HIGH, Impact Efficiency is 50%, Monitoring Intensity is HIGH, Disbursement Risk is ELEVATED"
+4. **Click the Structure tab** — "Three disbursement phases: Baseline Validation (30%), Monitoring Infrastructure (40%), Performance Verification (30%). Each phase has specific conditions that must be met before funds release"
+5. **Click BLENDED** — "Now the Structure tab shows a blended view: 40% grant to de-risk, then loan is conditional. The system shows specific loan activation triggers"
+
+### Scene 5: Governance in Action (1 minute)
+
+1. **Click the Monitoring tab** — "Every monitoring event is tagged with capital implications. 'Required for grant release' tells disbursement officers which events gate funding"
+2. **Click the Audit Trail tab** — "Complete audit log of every governance action. This is the institutional memory"
+
+### Scene 6: Authority Index (1 minute)
+
+1. **Navigate to Authority Index** (sidebar)
+2. **Point to the CERI** — "Caribbean Environmental Risk Index: 56.3 across 14 markets with 67.1% average confidence"
+3. **Show the Data Moat** — "127 projects analyzed, 4,500 lab samples, 585 monitoring points across 14 countries. This is our defensibility signal — no one else has this data"
+4. **Scroll to Country Risk Index** — "Haiti and Suriname are highest risk. Click any country to see the 12-month trend"
+
+### Scene 7: The Close (30 seconds)
+
+"This system does not just assess risk. It tells you:
+
+- **What capital structure to use** — loan, grant, or blended
+- **Whether you're ready to deploy** — with specific prerequisites
+- **What it costs if you get it wrong** — and how much you save with intervention
+- **What must happen next** — numbered action items, not analysis paralysis
+
+This is a capital deployment intelligence system. It is relevant to every loan, every grant, every blended finance structure, every climate fund, and every development bank operating in the Caribbean."
+
+---
+
+## 17. Sample Portfolio Data
+
+### Caribbean Energy Fund — 7 Projects, $130M Total
+
+| # | Project | Type | Country | Investment | Risk | Confidence | Decision | Recommended Mode |
+|---|---------|------|---------|------------|------|------------|----------|-----------------|
+| 1 | Kingston Solar Farm | Solar | Jamaica | $25M | 25.6 | 100% | PROCEED | Loan |
+| 2 | Montego Bay Port Expansion | Port | Jamaica | $35M | 76.9 | 40% | DECLINE | Grant |
+| 3 | Ocho Rios Resort Development | Hotel | Jamaica | $18M | 55.9 | 60% | CONDITION | Blended |
+| 4 | Coastal Solar Phase II | Solar | Jamaica | $18M | 71.0 | 40% | DECLINE | Grant |
+| 5 | Spanish Town Industrial Park | Industrial | Jamaica | $12M | 51.2 | 80% | CONDITION | Loan |
+| 6 | Negril Agricultural Hub | Agriculture | Jamaica | $8M | 36.7 | 100% | PROCEED | Loan |
+| 7 | Port Antonio Marina | Port | Jamaica | $14M | 50.6 | 60% | CONDITION | Blended |
+
+### Portfolio Pipeline Stages
+
+| Stage | Projects |
+|-------|----------|
+| Approved | Kingston Solar Farm |
+| Pre-IC | Montego Bay Port Expansion, Spanish Town Industrial Park |
+| Early | Ocho Rios Resort, Coastal Solar Phase II, Negril Agricultural Hub, Port Antonio Marina |
+
+---
+
+*Document Version: V5.5 — Capital Deployment Intelligence*
+*Platform: ESL Environmental Intelligence Platform*
+*Last Updated: March 2026*
