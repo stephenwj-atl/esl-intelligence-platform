@@ -10,8 +10,9 @@ import {
 import {
   Layers, CheckCircle, XCircle, Clock, AlertTriangle,
   ChevronDown, ChevronUp, ArrowRight, Shield, Gift, Building2,
-  Zap, TrendingDown, Activity, FileCheck, Loader2
+  Zap, TrendingDown, Activity, FileCheck, Loader2, Info
 } from "lucide-react";
+import { useCapitalMode } from "@/components/capital-mode-context";
 
 function fmtDollar(value: number): string {
   if (value === 0) return "$0";
@@ -38,6 +39,7 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
   const [data, setData] = useState<DecisionData>({ structure: null, impact: null, financial: null, scenario: null });
   const [loading, setLoading] = useState(true);
   const [explainOpen, setExplainOpen] = useState(false);
+  const { mode: capitalMode } = useCapitalMode();
 
   useEffect(() => {
     const fetches = [
@@ -80,7 +82,10 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
     );
   }
 
-  const decisionMode = structure.recommendedMode as "Loan" | "Grant" | "Blended";
+  const systemMode = structure.recommendedMode as "Loan" | "Grant" | "Blended";
+  const activeMode = capitalMode as "Loan" | "Grant" | "Blended";
+  const isOverride = activeMode !== systemMode;
+
   const rc = readinessCfg[structure.deploymentReadiness] || readinessCfg["NOT READY"];
   const ReadinessIcon = rc.icon;
 
@@ -91,13 +96,16 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
   if (impact?.deliveryRisk.level === "HIGH") constraints.push("High environmental exposure");
   if (financial?.capitalConstraint.breach) constraints.push("Portfolio capital concentration breach");
   if (impact?.disbursementRisk.level === "ELEVATED") constraints.push("Elevated disbursement risk");
-  if (structure.loan.riskMitigation.length > 0) constraints.push("Risk mitigation infrastructure required");
+  if (activeMode === "Loan" && !structure.loan.viable) constraints.push("Loan not viable at current risk level");
+  if (activeMode === "Loan" && structure.loan.riskMitigation.length > 0) constraints.push("Risk mitigation infrastructure required");
+  if (activeMode === "Grant" && !structure.grant.required) constraints.push("Grant not required — loan may be more efficient");
+  if (activeMode === "Blended" && !structure.blended.grantRequired) constraints.push("Blended structure not required at current risk");
 
   const nextActions: string[] = [];
-  if (decisionMode === "Loan") {
+  if (activeMode === "Loan") {
     structure.loan.conditionsPrecedent.forEach(cp => { if (nextActions.length < 4) nextActions.push(cp); });
     structure.loan.riskMitigation.forEach(rm => { if (nextActions.length < 4) nextActions.push(rm); });
-  } else if (decisionMode === "Grant") {
+  } else if (activeMode === "Grant") {
     const pendingPhases = structure.grant.disbursementPhases.filter(p => p.status !== "COMPLETE");
     if (pendingPhases.length > 0) {
       pendingPhases[0].conditions.forEach(c => { if (nextActions.length < 4) nextActions.push(c); });
@@ -112,7 +120,7 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
     nextActions.push("Execute capital deployment");
   }
 
-  const ModeIcon = decisionMode === "Loan" ? Building2 : decisionMode === "Grant" ? Gift : Layers;
+  const ModeIcon = activeMode === "Loan" ? Building2 : activeMode === "Grant" ? Gift : Layers;
 
   return (
     <Card className={`${rc.border} ${rc.bg} overflow-hidden`}>
@@ -128,6 +136,16 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
           </div>
         </div>
 
+        {isOverride && (
+          <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 text-xs">
+            <Info className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="text-muted-foreground">
+              Viewing as <span className="font-bold text-foreground">{activeMode}</span> mode.
+              System recommends <span className="font-bold text-primary">{systemMode}</span>.
+            </span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="space-y-4">
             <div>
@@ -137,9 +155,9 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                   <ModeIcon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-foreground">{decisionMode} Mode</div>
+                  <div className="text-lg font-bold text-foreground">{activeMode} Mode</div>
                   <div className="text-xs text-muted-foreground">
-                    System recommendation
+                    {isOverride ? "User selected" : "System recommendation"}
                   </div>
                 </div>
               </div>
@@ -148,7 +166,7 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 font-bold">Recommended Structure</div>
               <div className="bg-background/60 rounded-xl p-4 border border-border/30 space-y-2">
-                {decisionMode === "Loan" && (
+                {activeMode === "Loan" && (
                   <>
                     <StructureLine icon={Shield} text={`Proceed with ${structure.loan.covenantLevel.toLowerCase()} covenants`} />
                     {!structure.loan.viable && <StructureLine icon={XCircle} text="Loan not viable — consider grant or blended" alert />}
@@ -156,14 +174,14 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                     <StructureLine icon={Activity} text="Monitoring required pre-disbursement" />
                   </>
                 )}
-                {decisionMode === "Grant" && (
+                {activeMode === "Grant" && (
                   <>
                     <StructureLine icon={Gift} text="Phased disbursement required" />
                     <StructureLine icon={FileCheck} text="Validation required before Phase 2" />
                     <StructureLine icon={Activity} text={`${structure.grant.disbursementPhases.filter(p => p.status === "COMPLETE").length}/${structure.grant.disbursementPhases.length} phases complete`} />
                   </>
                 )}
-                {decisionMode === "Blended" && (
+                {activeMode === "Blended" && (
                   <>
                     <StructureLine icon={Gift} text={`Grant (${structure.blended.grantPercent}%) required to reduce environmental uncertainty`} />
                     <StructureLine icon={Building2} text="Loan viable after validation and monitoring" />
@@ -187,10 +205,10 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
           <div className="space-y-4">
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 font-bold">
-                {decisionMode === "Grant" ? "Impact Risk" : decisionMode === "Blended" ? "Combined Impact" : "Financial Impact"}
+                {activeMode === "Grant" ? "Impact Risk" : activeMode === "Blended" ? "Combined Impact" : "Financial Impact"}
               </div>
               <div className="bg-background/60 rounded-xl p-4 border border-border/30 space-y-3">
-                {decisionMode === "Loan" && financial && (
+                {activeMode === "Loan" && financial && (
                   <>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">Rate adjustment</span>
@@ -206,7 +224,7 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                     </div>
                   </>
                 )}
-                {decisionMode === "Grant" && impact && (
+                {activeMode === "Grant" && impact && (
                   <>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">Delivery risk</span>
@@ -233,7 +251,7 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                     )}
                   </>
                 )}
-                {decisionMode === "Blended" && (
+                {activeMode === "Blended" && (
                   <>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">Grant de-risk</span>
@@ -253,10 +271,10 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                     )}
                   </>
                 )}
-                {!financial && decisionMode === "Loan" && (
+                {!financial && activeMode === "Loan" && (
                   <div className="text-xs text-muted-foreground">Financial data unavailable</div>
                 )}
-                {!impact && decisionMode === "Grant" && (
+                {!impact && activeMode === "Grant" && (
                   <div className="text-xs text-muted-foreground">Impact data unavailable</div>
                 )}
               </div>
@@ -362,13 +380,21 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                   <div className="flex items-start gap-2 text-xs text-muted-foreground">
                     <ArrowRight className="w-3 h-3 mt-0.5 text-primary shrink-0" />
                     <span>
-                      {decisionMode === "Grant"
-                        ? "High risk combined with low confidence drives grant-first recommendation to de-risk before deployment"
-                        : decisionMode === "Blended"
-                          ? "Elevated risk or uncertainty requires blended approach — grant component reduces exposure before commercial lending"
-                          : "Risk and confidence within acceptable thresholds for direct commercial lending with standard covenants"}
+                      {activeMode === "Grant"
+                        ? "Grant-first approach de-risks before deployment — phased disbursement ensures accountability"
+                        : activeMode === "Blended"
+                          ? "Blended approach — grant component reduces exposure before commercial lending activates"
+                          : "Direct commercial lending with standard covenants — risk and confidence within acceptable thresholds"}
                     </span>
                   </div>
+                  {isOverride && (
+                    <div className="flex items-start gap-2 text-xs text-primary/80">
+                      <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                      <span>
+                        System recommends {systemMode} mode based on risk ({systemMode === "Grant" ? "Risk>70 + Confidence<50" : systemMode === "Blended" ? "Risk>60 OR Confidence<60" : "acceptable thresholds"})
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-start gap-2 text-xs text-muted-foreground">
                     <ArrowRight className="w-3 h-3 mt-0.5 text-primary shrink-0" />
                     <span>
