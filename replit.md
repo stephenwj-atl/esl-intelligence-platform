@@ -42,19 +42,11 @@ artifacts-monorepo/
 
 ## Key Features
 
-### Portfolio Command Center (Dashboard)
-- Portfolio Decision Banner (PROCEED_WITH_PORTFOLIO / REBALANCE / REDUCE_EXPOSURE)
-- Summary strip: Total Capital, Avg Risk, Exposure at Risk, Confidence Score
-- Risk vs Confidence Scatter Matrix (color-coded by risk, sized by investment)
-- Capital Allocation Pie Chart (by risk level)
-- Data Confidence Index with Lab/Monitoring/IFC progress bars
-- Risk Distribution Histogram
-- Cross-Project Intelligence (Geographic Concentration, Sector Risk, Data Quality Gap, Validation Deficit, Climate Vulnerability)
-- Top Risk Alerts Panel
-- Sortable Asset Inventory Table
-- Portfolio Optimization Panel with recommendations
-- **Portfolio Governance Section**: ESAP Completion %, Covenant Compliance %, Active Breaches count, Monitoring Events count, Breach & Escalation Alerts panel
+### Portfolio Command Center (Dashboard — 3-tab layout)
 - **Role Selector**: Analyst / Investment Officer / Admin selector in dashboard header
+- **Overview tab** (default): Portfolio Decision Banner, Summary strip (Total Capital, Avg Risk, Exposure at Risk, Confidence Score), Capital Deployment Intelligence (capital mix, readiness, efficiency), Top Risk Alerts, Asset Inventory Table
+- **Allocation tab**: Risk vs Confidence Scatter Matrix, Capital Allocation Pie Chart, Data Confidence Index, Risk Distribution Histogram, Portfolio Financial Impact (10-year projection), ESL With/Without Comparison
+- **Intelligence tab**: Cross-Project Intelligence patterns, Portfolio Governance (ESAP %, Covenant Compliance %, Breaches, Monitoring Events, Breach & Escalation Alerts), Regional Benchmark, Portfolio Optimization recommendations
 
 ### Portfolio Manager (/portfolios)
 - Portfolio CRUD (create, delete)
@@ -62,16 +54,17 @@ artifacts-monorepo/
 - Investment amount entry per project
 - Portfolio metrics (weighted risk, total investment, project count)
 
-### Project Intelligence View (8-tab interface)
-- **Capital Decision Summary** (top of Overview): Single-glance decision card showing Core Decision (system-recommended mode), Recommended Structure, Financial Impact / Impact Risk (mode-specific), Before/After comparison, Key Constraints, Next Required Actions, expandable Decision Explainability — uses `recommendedMode` as authoritative source
-- **Overview**: Capital Decision Summary, 7-indicator strip (Capital Mode, Deployment Readiness, Confidence, ESAP %, Monitoring, Last Event, IFC), Risk Topology chart, Financial Translation panel (delay/overrun/covenant/reputational risk)
-- **Risk**: What-If Scenario Analysis with toggles, Risk Monitoring Timeline, Framework Alignment, Covenants, ESAP
+### Project Intelligence View (10-tab interface)
+- **Decision** (default): Capital Decision Summary only — Core Decision (system-recommended mode), Recommended Structure, Financial Impact, Key Constraints, Next Required Actions, Before/After comparison, Decision Explainability. Uses `recommendedMode` as authoritative source.
+- **Structure**: Capital structure by mode — Loan (covenants, conditions precedent, risk mitigation), Grant (disbursement phases with conditions), Blended (grant/loan split, triggers, milestones)
 - **Financial**: Loan pricing, insurance, covenant level, capital constraints, lifetime cost (via FinancialImpactPanel)
 - **Impact**: Impact Delivery Risk (HIGH/MEDIUM/LOW with drivers), Impact Efficiency Score, Monitoring Intensity, Disbursement Risk — mode-aware (Grant/Loan/Blended)
-- **Structure**: Capital structure by mode — Loan (covenants, conditions precedent, risk mitigation), Grant (disbursement phases with conditions), Blended (grant/loan split, triggers, milestones)
-- **Monitoring**: Monitoring event log with Capital Tags ("Required for grant release", "Required for loan covenant", "Grant disbursement hold")
-- **Audit Trail**: Full audit log of all governance actions
+- **Drivers**: 6 driver cards with level indicators (Flood, Coastal, Water Stress, Contamination, Regulatory, Data Confidence), Risk Subscores bar chart, Financial Translation panel (delay/overrun/covenant/reputational)
+- **Evidence**: Data source status cards (Lab/Monitoring/IFC) with "Effect on Decision" panel, Framework Alignment, Covenants, ESAP
+- **Scenario**: Two-column layout — controls left (toggle cards + Run Simulation), before/after output right; Risk Monitoring Timeline below
+- **Monitoring**: Monitoring event log with Capital Tags
 - **Report**: Institutional report generation
+- **Audit**: Full audit log of all governance actions
 
 ### Risk Scoring Engine (`artifacts/api-server/src/lib/risk-engine.ts`)
 - Environmental, Infrastructure, Human Exposure, Regulatory risk subscores (0-100)

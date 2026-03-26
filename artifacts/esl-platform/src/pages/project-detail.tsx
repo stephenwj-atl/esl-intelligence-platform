@@ -7,7 +7,8 @@ import {
   ArrowLeft, Trash2, ShieldCheck, AlertTriangle, XCircle, 
   Droplet, Factory, Users, Gavel, Loader2, Target,
   TrendingUp, TrendingDown, CalendarX, DollarSign, ActivitySquare, Wand2, ArrowRight,
-  Clock, Shield, FileCheck, ClipboardList, Activity, History, FileText
+  Clock, Shield, FileCheck, ClipboardList, Activity, History, FileText,
+  Layers, CheckCircle, Beaker, Eye, FlaskConical, Gauge
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -19,24 +20,23 @@ import { ImpactTab } from "@/components/impact-tab";
 import { StructureTab } from "@/components/structure-tab";
 import { CapitalDecisionSummary } from "@/components/capital-decision-summary";
 import { useCapitalMode } from "@/components/capital-mode-context";
-import { financialApi, type ProjectStructure } from "@/lib/financial-api";
-import { governanceApi } from "@/lib/governance-api";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   FrameworkAlignmentTab, CovenantsTab, EsapTab, MonitoringTab,
   AuditTrailTab, ReportTab, BreachAlert
 } from "@/components/governance-tabs";
-import { Layers, CheckCircle } from "lucide-react";
 
 const TABS = [
-  { id: "overview", label: "Overview", icon: ActivitySquare },
-  { id: "risk", label: "Risk", icon: Target },
+  { id: "decision", label: "Decision", icon: ShieldCheck },
+  { id: "structure", label: "Structure", icon: Layers },
   { id: "financial", label: "Financial", icon: DollarSign },
   { id: "impact", label: "Impact", icon: Target },
-  { id: "structure", label: "Structure", icon: Layers },
+  { id: "drivers", label: "Drivers", icon: Gauge },
+  { id: "evidence", label: "Evidence", icon: FlaskConical },
+  { id: "scenario", label: "Scenario", icon: Wand2 },
   { id: "monitoring", label: "Monitoring", icon: Activity },
-  { id: "audit", label: "Audit Trail", icon: History },
   { id: "report", label: "Report", icon: FileText },
+  { id: "audit", label: "Audit", icon: History },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -50,24 +50,8 @@ export default function ProjectDetail() {
   const { mutate: deleteProject, isPending: isDeleting } = useDeleteProject();
   const { mutate: runScenario, isPending: isRunningScenario, data: scenarioResult } = useRunScenario();
   const { data: riskHistory } = useGetProjectRiskHistory(id);
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useState<TabId>("decision");
   const { mode: capitalMode } = useCapitalMode();
-  const [structureData, setStructureData] = useState<ProjectStructure | null>(null);
-  const [esapCompletion, setEsapCompletion] = useState<number | null>(null);
-  const [lastMonitoring, setLastMonitoring] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (id) {
-      financialApi.getProjectStructure(id).then(setStructureData).catch(() => {});
-      governanceApi.getEsap(id).then(items => {
-        const complete = items.filter((e: any) => e.status === "Complete").length;
-        setEsapCompletion(items.length > 0 ? Math.round((complete / items.length) * 100) : 0);
-      }).catch(() => {});
-      governanceApi.getMonitoring(id).then(events => {
-        if (events.length > 0) setLastMonitoring(events[0].date);
-      }).catch(() => {});
-    }
-  }, [id]);
 
   const [toggles, setToggles] = useState({
     hasMonitoringData: false,
@@ -146,21 +130,10 @@ export default function ProjectDetail() {
     }
   };
 
-  const renderComparison = (label: string, beforeVal: number, afterVal: number, isLowerBetter = true) => {
-    if (!isScenarioMode) return null;
-    const diff = afterVal - beforeVal;
-    if (diff === 0) return null;
-    
-    const isImprovement = isLowerBetter ? diff < 0 : diff > 0;
-    const colorClass = isImprovement ? 'text-success' : 'text-destructive';
-    
-    return (
-      <div className="flex items-center text-sm font-mono mt-1 bg-background/50 px-2 py-1 rounded inline-flex">
-        <span className="text-muted-foreground line-through mr-2">{beforeVal.toFixed(1)}</span>
-        <ArrowRight className="w-3 h-3 text-muted-foreground mr-2" />
-        <span className={colorClass}>{afterVal.toFixed(1)} ({diff > 0 ? '+' : ''}{diff.toFixed(1)})</span>
-      </div>
-    );
+  const getDriverLevel = (value: number, threshold: number) => {
+    if (value >= threshold * 0.7) return { label: "High", color: "text-destructive", bg: "bg-destructive/10" };
+    if (value >= threshold * 0.4) return { label: "Medium", color: "text-warning", bg: "bg-warning/10" };
+    return { label: "Low", color: "text-success", bg: "bg-success/10" };
   };
 
   return (
@@ -237,155 +210,313 @@ export default function ProjectDetail() {
         </AnimatedContainer>
 
         <AnimatedContainer delay={0.15}>
-          {activeTab === "overview" && (
+          {activeTab === "decision" && (
             <div className="space-y-6">
               <CapitalDecisionSummary projectId={id} />
-
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                <Card className="p-4 text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Capital Mode</div>
-                  <Badge variant="outline" className="font-mono">{capitalMode}</Badge>
-                </Card>
-                <Card className={`p-4 text-center ${structureData ? (structureData.deploymentReadiness === "READY" ? "border-success/20" : structureData.deploymentReadiness === "NOT READY" ? "border-destructive/20 bg-destructive/5" : "border-warning/20") : ""}`}>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Deployment</div>
-                  <Badge variant={structureData?.deploymentReadiness === "READY" ? "success" : structureData?.deploymentReadiness === "NOT READY" ? "destructive" : "warning"}>
-                    {structureData?.deploymentReadiness || "—"}
-                  </Badge>
-                </Card>
-                <Card className="p-4 text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Confidence</div>
-                  <div className={`text-2xl font-mono font-bold ${riskScores.dataConfidence >= 70 ? "text-success" : riskScores.dataConfidence >= 50 ? "text-warning" : "text-destructive"}`}>
-                    {riskScores.dataConfidence.toFixed(0)}%
-                  </div>
-                </Card>
-                <Card className="p-4 text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">ESAP</div>
-                  {esapCompletion !== null ? (
-                    <div className="text-2xl font-mono font-bold text-primary">{esapCompletion}%</div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </Card>
-                <Card className="p-4 text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Monitoring</div>
-                  <Badge variant={project.inputs.hasMonitoringData ? "success" : "warning"}>
-                    {project.inputs.hasMonitoringData ? "Active" : "Not Deployed"}
-                  </Badge>
-                </Card>
-                <Card className="p-4 text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Last Event</div>
-                  <span className="text-xs font-mono text-foreground/80">{lastMonitoring || "None"}</span>
-                </Card>
-                <Card className="p-4 text-center">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">IFC</div>
-                  <Badge variant={project.inputs.isIFCAligned ? "success" : "outline"}>
-                    {project.inputs.isIFCAligned ? "Aligned" : "No"}
-                  </Badge>
-                </Card>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                  <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center">
-                      <ActivitySquare className="w-5 h-5 mr-2 text-primary" /> Risk Topology
-                    </h3>
-                    <div className="h-52 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                          <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
-                          <Tooltip cursor={{fill: '#27272a', opacity: 0.4}} contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
-                          <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60} animationDuration={1000}>
-                            {chartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.value > 70 ? '#f43f5e' : entry.value > 40 ? '#f59e0b' : '#10b981'} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </Card>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <RiskSubCard title="Environmental" score={riskScores.environmentalRisk} prevScore={isScenarioMode ? project.riskScores.environmentalRisk : undefined} icon={Droplet} />
-                    <RiskSubCard title="Infrastructure" score={riskScores.infrastructureRisk} prevScore={isScenarioMode ? project.riskScores.infrastructureRisk : undefined} icon={Factory} />
-                    <RiskSubCard title="Human Exposure" score={riskScores.humanExposureRisk} prevScore={isScenarioMode ? project.riskScores.humanExposureRisk : undefined} icon={Users} />
-                    <RiskSubCard title="Regulatory" score={riskScores.regulatoryRisk} prevScore={isScenarioMode ? project.riskScores.regulatoryRisk : undefined} icon={Gavel} />
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <Card className="p-6 border-primary/20 bg-primary/5">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
-                      <TrendingUp className="w-5 h-5 mr-2" /> Financial Translation
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-foreground/80 flex items-center"><CalendarX className="w-4 h-4 mr-2 text-muted-foreground" /> Delay Risk</span>
-                          <div className="font-mono font-bold text-destructive">{formatPercent(financialRisk.delayRiskPercent)}</div>
-                        </div>
-                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                          <div className="h-full bg-destructive transition-all duration-1000" style={{ width: `${financialRisk.delayRiskPercent}%` }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-foreground/80 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-muted-foreground" /> Cost Overrun</span>
-                          <div className="font-mono font-bold text-warning">{formatPercent(financialRisk.costOverrunPercent)}</div>
-                        </div>
-                        <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                          <div className="h-full bg-warning transition-all duration-1000" style={{ width: `${financialRisk.costOverrunPercent}%` }} />
-                        </div>
-                      </div>
-                      <div className="pt-3 border-t border-border/50">
-                        <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-muted-foreground">Covenant Breach</span>
-                          <Badge variant="outline" className="font-mono">{formatPercent(financialRisk.covenantBreachPercent)}</Badge>
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                          <span className="text-sm text-muted-foreground">Reputational</span>
-                          <Badge variant={financialRisk.reputationalRisk === 'High' ? 'destructive' : financialRisk.reputationalRisk === 'Medium' ? 'warning' : 'success'}>
-                            {financialRisk.reputationalRisk}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </div>
             </div>
           )}
 
-          {activeTab === "risk" && (
-            <div className="space-y-8">
-              <Card className="p-6 border-primary/30 bg-gradient-to-r from-background to-primary/5">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold flex items-center text-primary">
-                      <Wand2 className="w-5 h-5 mr-2" /> What-If Scenario Analysis
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">Test the impact of mitigations and data validation on risk profile.</p>
-                  </div>
-                  <Button onClick={handleScenarioRun} disabled={isRunningScenario} className="w-full md:w-auto shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                    {isRunningScenario ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Simulating...</> : 'Run Simulation'}
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <ToggleCard active={toggles.hasMonitoringData || project.inputs.hasMonitoringData} disabled={project.inputs.hasMonitoringData} onClick={() => handleToggle('hasMonitoringData')} label="Add Monitoring" desc="+12mo baseline data" />
-                  <ToggleCard active={toggles.hasLabData || project.inputs.hasLabData} disabled={project.inputs.hasLabData} onClick={() => handleToggle('hasLabData')} label="Lab Validation" desc="Certified sampling" />
-                  <ToggleCard active={toggles.isIFCAligned || project.inputs.isIFCAligned} disabled={project.inputs.isIFCAligned} onClick={() => handleToggle('isIFCAligned')} label="IFC Alignment" desc="World Bank standards" />
-                  <ToggleCard active={toggles.reducedInputs} disabled={false} onClick={() => handleToggle('reducedInputs')} label="Mitigate Hazards" desc="Flood/Contamination eng." />
+          {activeTab === "structure" && <StructureTab projectId={id} />}
+
+          {activeTab === "financial" && <FinancialImpactPanel projectId={id} />}
+
+          {activeTab === "impact" && <ImpactTab projectId={id} />}
+
+          {activeTab === "drivers" && (
+            <div className="space-y-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-2">What is driving this outcome?</h3>
+                <p className="text-sm text-muted-foreground mb-6">These are the specific factors determining the risk score, capital mode, and decision signal.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  {(() => {
+                    const drivers = [
+                      { label: "Flood Exposure", value: project.inputs.floodRisk, max: 10, icon: Droplet },
+                      { label: "Coastal Exposure", value: project.inputs.coastalExposure, max: 10, icon: TrendingUp },
+                      { label: "Water Stress", value: project.inputs.waterStress, max: 10, icon: Droplet },
+                      { label: "Contamination Risk", value: project.inputs.contaminationRisk, max: 10, icon: Factory },
+                      { label: "Regulatory Complexity", value: project.inputs.regulatoryComplexity, max: 10, icon: Gavel },
+                      { label: "Data Confidence", value: riskScores.dataConfidence, max: 100, icon: Eye, inverted: true },
+                    ];
+                    return drivers.map((d, i) => {
+                      const pct = (d.value / d.max) * 100;
+                      const level = d.inverted
+                        ? (d.value < 50 ? { label: "Low", color: "text-destructive", bg: "bg-destructive/10" } : d.value < 70 ? { label: "Medium", color: "text-warning", bg: "bg-warning/10" } : { label: "High", color: "text-success", bg: "bg-success/10" })
+                        : getDriverLevel(d.value, d.max);
+                      const Icon = d.icon;
+                      return (
+                        <div key={i} className={`rounded-xl border p-4 ${level.bg} border-white/5`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Icon className={`w-4 h-4 ${level.color}`} />
+                              <span className="text-sm font-semibold text-foreground">{d.label}</span>
+                            </div>
+                            <Badge variant="outline" className={`${level.color} font-mono`}>{level.label}</Badge>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full transition-all duration-1000 ${level.color === "text-destructive" ? "bg-destructive" : level.color === "text-warning" ? "bg-warning" : "bg-success"}`} style={{ width: `${d.inverted ? 100 - pct : pct}%` }} />
+                            </div>
+                            <span className={`font-mono font-bold text-sm ${level.color}`}>{d.value}{d.max === 100 ? "%" : `/${d.max}`}</span>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </Card>
+
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-6 flex items-center">
+                  <ActivitySquare className="w-5 h-5 mr-2 text-primary" /> Risk Subscores
+                </h3>
+                <div className="h-52 w-full mb-6">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                      <XAxis dataKey="name" stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#71717a" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+                      <Tooltip cursor={{fill: '#27272a', opacity: 0.4}} contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60} animationDuration={1000}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.value > 70 ? '#f43f5e' : entry.value > 40 ? '#f59e0b' : '#10b981'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <RiskSubCard title="Environmental" score={riskScores.environmentalRisk} prevScore={isScenarioMode ? project.riskScores.environmentalRisk : undefined} icon={Droplet} />
+                  <RiskSubCard title="Infrastructure" score={riskScores.infrastructureRisk} prevScore={isScenarioMode ? project.riskScores.infrastructureRisk : undefined} icon={Factory} />
+                  <RiskSubCard title="Human Exposure" score={riskScores.humanExposureRisk} prevScore={isScenarioMode ? project.riskScores.humanExposureRisk : undefined} icon={Users} />
+                  <RiskSubCard title="Regulatory" score={riskScores.regulatoryRisk} prevScore={isScenarioMode ? project.riskScores.regulatoryRisk : undefined} icon={Gavel} />
+                </div>
+              </Card>
+
+              <Card className="p-6 border-primary/20 bg-primary/5">
+                <h3 className="text-lg font-semibold mb-4 flex items-center text-primary">
+                  <TrendingUp className="w-5 h-5 mr-2" /> Financial Translation
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">How these drivers translate into financial consequences.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-foreground/80 flex items-center"><CalendarX className="w-4 h-4 mr-2 text-muted-foreground" /> Delay Risk</span>
+                      <div className="font-mono font-bold text-destructive">{formatPercent(financialRisk.delayRiskPercent)}</div>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-destructive transition-all duration-1000" style={{ width: `${financialRisk.delayRiskPercent}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-foreground/80 flex items-center"><DollarSign className="w-4 h-4 mr-2 text-muted-foreground" /> Cost Overrun</span>
+                      <div className="font-mono font-bold text-warning">{formatPercent(financialRisk.costOverrunPercent)}</div>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                      <div className="h-full bg-warning transition-all duration-1000" style={{ width: `${financialRisk.costOverrunPercent}%` }} />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-muted-foreground">Covenant Breach Probability</span>
+                    <Badge variant="outline" className="font-mono">{formatPercent(financialRisk.covenantBreachPercent)}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-muted-foreground">Reputational Risk</span>
+                    <Badge variant={financialRisk.reputationalRisk === 'High' ? 'destructive' : financialRisk.reputationalRisk === 'Medium' ? 'warning' : 'success'}>
+                      {financialRisk.reputationalRisk}
+                    </Badge>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "evidence" && (
+            <div className="space-y-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-2">Data Sources & Validation Status</h3>
+                <p className="text-sm text-muted-foreground mb-4">Evidence base informing the risk assessment and decision signal.</p>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className={`rounded-xl border p-4 text-center ${project.inputs.hasLabData ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"}`}>
+                    <Beaker className={`w-6 h-6 mx-auto mb-2 ${project.inputs.hasLabData ? "text-success" : "text-destructive"}`} />
+                    <div className="text-sm font-semibold">{project.inputs.hasLabData ? "Validated" : "Not Available"}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Lab Data</div>
+                    <div className="text-xs text-muted-foreground mt-2">{project.inputs.hasLabData ? "+20% confidence" : "Missing: -20% confidence"}</div>
+                  </div>
+                  <div className={`rounded-xl border p-4 text-center ${project.inputs.hasMonitoringData ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"}`}>
+                    <Activity className={`w-6 h-6 mx-auto mb-2 ${project.inputs.hasMonitoringData ? "text-success" : "text-destructive"}`} />
+                    <div className="text-sm font-semibold">{project.inputs.hasMonitoringData ? "Active" : "Not Deployed"}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Monitoring Data</div>
+                    <div className="text-xs text-muted-foreground mt-2">{project.inputs.hasMonitoringData ? "+20% confidence" : "Missing: -20% confidence"}</div>
+                  </div>
+                  <div className={`rounded-xl border p-4 text-center ${project.inputs.isIFCAligned ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"}`}>
+                    <Shield className={`w-6 h-6 mx-auto mb-2 ${project.inputs.isIFCAligned ? "text-success" : "text-warning"}`} />
+                    <div className="text-sm font-semibold">{project.inputs.isIFCAligned ? "Aligned" : "Not Aligned"}</div>
+                    <div className="text-xs text-muted-foreground mt-1">IFC Standards</div>
+                    <div className="text-xs text-muted-foreground mt-2">{project.inputs.isIFCAligned ? "+20% confidence" : "Missing: -20% confidence"}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <h4 className="text-sm font-bold text-primary mb-3">Effect on Decision</h4>
+                  <div className="space-y-2">
+                    {!project.inputs.hasLabData && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                        <span>Risk increased due to missing lab validation — risk engine applies uncertainty penalty</span>
+                      </div>
+                    )}
+                    {!project.inputs.hasMonitoringData && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                        <span>Deployment readiness blocked — monitoring data required for READY status</span>
+                      </div>
+                    )}
+                    {!project.inputs.isIFCAligned && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                        <span>Confidence reduced — IFC alignment would unlock higher confidence and potentially lower rate</span>
+                      </div>
+                    )}
+                    {project.inputs.hasLabData && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                        <span>Risk reduced — lab validation provides verified environmental baseline</span>
+                      </div>
+                    )}
+                    {project.inputs.hasMonitoringData && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                        <span>Deployment readiness improved — monitoring data supports ongoing risk tracking</span>
+                      </div>
+                    )}
+                    {project.inputs.isIFCAligned && (
+                      <div className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                        <span>Confidence maximized — IFC alignment confirms international standard compliance</span>
+                      </div>
+                    )}
+                    {riskScores.dataConfidence < 50 && (
+                      <div className="flex items-start gap-2 text-sm mt-2 pt-2 border-t border-primary/20">
+                        <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                        <span className="font-semibold text-destructive">Confidence below 50% — triggers +0.5% rate penalty and pushes toward grant-first structuring</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+
+              <FrameworkAlignmentTab projectId={id} />
+              <CovenantsTab projectId={id} />
+              <EsapTab projectId={id} />
+            </div>
+          )}
+
+          {activeTab === "scenario" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="p-6 border-primary/30 bg-gradient-to-b from-background to-primary/5">
+                  <h3 className="text-lg font-semibold flex items-center text-primary mb-2">
+                    <Wand2 className="w-5 h-5 mr-2" /> Scenario Controls
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">Toggle mitigations to see their impact on risk, rate, and cost.</p>
+                  <div className="space-y-3 mb-6">
+                    <ToggleCard active={toggles.hasMonitoringData || project.inputs.hasMonitoringData} disabled={project.inputs.hasMonitoringData} onClick={() => handleToggle('hasMonitoringData')} label="Add Monitoring" desc="+12mo baseline data" />
+                    <ToggleCard active={toggles.hasLabData || project.inputs.hasLabData} disabled={project.inputs.hasLabData} onClick={() => handleToggle('hasLabData')} label="Lab Validation" desc="Certified sampling" />
+                    <ToggleCard active={toggles.isIFCAligned || project.inputs.isIFCAligned} disabled={project.inputs.isIFCAligned} onClick={() => handleToggle('isIFCAligned')} label="IFC Alignment" desc="World Bank standards" />
+                    <ToggleCard active={toggles.reducedInputs} disabled={false} onClick={() => handleToggle('reducedInputs')} label="Mitigate Hazards" desc="Flood/Contamination eng." />
+                  </div>
+                  <Button onClick={handleScenarioRun} disabled={isRunningScenario} className="w-full shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                    {isRunningScenario ? <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Simulating...</> : 'Run Simulation'}
+                  </Button>
+                </Card>
+
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Scenario Output</h3>
+                  {!isScenarioMode ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Wand2 className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground">Toggle controls and run simulation to see before/after comparison.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-xl border border-muted p-4 text-center bg-secondary/20">
+                          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Before</div>
+                          <div className={`text-3xl font-mono font-bold ${getRiskColor(project.riskScores.overallRisk)}`}>{project.riskScores.overallRisk.toFixed(1)}</div>
+                          <div className="text-xs text-muted-foreground mt-1">Risk Score</div>
+                          <div className="text-xs font-mono text-muted-foreground mt-2">{formatPercent(project.riskScores.dataConfidence)} confidence</div>
+                        </div>
+                        <div className="rounded-xl border border-primary/30 p-4 text-center bg-primary/5">
+                          <div className="text-xs text-primary uppercase tracking-wider mb-2 font-bold">After</div>
+                          <div className={`text-3xl font-mono font-bold ${getRiskColor(scenarioResult!.after.riskScores.overallRisk)}`}>{scenarioResult!.after.riskScores.overallRisk.toFixed(1)}</div>
+                          <div className="text-xs text-muted-foreground mt-1">Risk Score</div>
+                          <div className="text-xs font-mono text-primary mt-2">{formatPercent(scenarioResult!.after.riskScores.dataConfidence)} confidence</div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-success/20 bg-success/5 p-4">
+                        <div className="text-xs text-success uppercase tracking-wider font-bold mb-2">Impact</div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Risk Change</span>
+                            <span className={`font-mono font-bold ${scenarioResult!.after.riskScores.overallRisk < project.riskScores.overallRisk ? "text-success" : "text-destructive"}`}>
+                              {(scenarioResult!.after.riskScores.overallRisk - project.riskScores.overallRisk) > 0 ? "+" : ""}{(scenarioResult!.after.riskScores.overallRisk - project.riskScores.overallRisk).toFixed(1)} pts
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Decision</span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={project.decision.outcome === "PROCEED" ? "success" : project.decision.outcome === "CONDITION" ? "warning" : "destructive"} className="text-[10px]">{project.decision.outcome}</Badge>
+                              <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                              <Badge variant={scenarioResult!.after.decision.outcome === "PROCEED" ? "success" : scenarioResult!.after.decision.outcome === "CONDITION" ? "warning" : "destructive"} className="text-[10px]">{scenarioResult!.after.decision.outcome}</Badge>
+                            </div>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Confidence</span>
+                            <span className="font-mono font-bold text-primary">
+                              {formatPercent(project.riskScores.dataConfidence)} → {formatPercent(scenarioResult!.after.riskScores.dataConfidence)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Subscore Changes</div>
+                        {[
+                          { label: "Environmental", before: project.riskScores.environmentalRisk, after: scenarioResult!.after.riskScores.environmentalRisk },
+                          { label: "Infrastructure", before: project.riskScores.infrastructureRisk, after: scenarioResult!.after.riskScores.infrastructureRisk },
+                          { label: "Human Exposure", before: project.riskScores.humanExposureRisk, after: scenarioResult!.after.riskScores.humanExposureRisk },
+                          { label: "Regulatory", before: project.riskScores.regulatoryRisk, after: scenarioResult!.after.riskScores.regulatoryRisk },
+                        ].map((s, i) => {
+                          const diff = s.after - s.before;
+                          if (diff === 0) return null;
+                          return (
+                            <div key={i} className="flex justify-between items-center text-sm bg-secondary/20 rounded-lg px-3 py-2">
+                              <span className="text-foreground/80">{s.label}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground font-mono">{s.before.toFixed(1)}</span>
+                                <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                                <span className={`font-mono font-bold ${diff < 0 ? "text-success" : "text-destructive"}`}>{s.after.toFixed(1)}</span>
+                                <span className={`text-xs font-mono ${diff < 0 ? "text-success" : "text-destructive"}`}>({diff > 0 ? "+" : ""}{diff.toFixed(1)})</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </div>
 
               {riskHistory && riskHistory.length > 0 && (
                 <Card className="p-6">
                   <h3 className="text-lg font-semibold mb-2 flex items-center">
                     <Clock className="w-5 h-5 mr-2 text-primary" /> Risk Monitoring Timeline
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-6">Simulated 12-month risk trajectory showing impact of monitoring and validation improvements.</p>
+                  <p className="text-sm text-muted-foreground mb-6">12-month risk trajectory showing impact of monitoring and validation improvements.</p>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={riskHistory} margin={{ top: 10, right: 30, left: -10, bottom: 0 }}>
@@ -401,16 +532,9 @@ export default function ProjectDetail() {
                   </div>
                 </Card>
               )}
-
-              <FrameworkAlignmentTab projectId={id} />
-              <CovenantsTab projectId={id} />
-              <EsapTab projectId={id} />
             </div>
           )}
 
-          {activeTab === "financial" && <FinancialImpactPanel projectId={id} />}
-          {activeTab === "impact" && <ImpactTab projectId={id} />}
-          {activeTab === "structure" && <StructureTab projectId={id} />}
           {activeTab === "monitoring" && <MonitoringTab projectId={id} />}
           {activeTab === "audit" && <AuditTrailTab projectId={id} />}
           {activeTab === "report" && <ReportTab projectId={id} />}
@@ -422,46 +546,48 @@ export default function ProjectDetail() {
 
 function RiskSubCard({ title, score, prevScore, icon: Icon }: { title: string, score: number, prevScore?: number, icon: any }) {
   const diff = prevScore !== undefined ? score - prevScore : 0;
-  const isBetter = diff < 0;
-  
   return (
-    <div className={`p-4 rounded-xl border ${getRiskBgColor(score)} flex flex-col justify-center transition-all duration-500`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center">
-          <div className="p-2 rounded-lg bg-background/50 border border-white/5 mr-3">
-            <Icon className={`w-5 h-5 ${getRiskColor(score)} transition-colors duration-500`} />
-          </div>
-          <span className="font-semibold text-foreground/90">{title}</span>
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+          <Icon className="w-4 h-4 text-muted-foreground" /> {title}
         </div>
+        <div className={`text-xl font-mono font-bold ${getRiskColor(score)}`}>{score.toFixed(1)}</div>
       </div>
-      <div className="flex items-end justify-between">
-        <div className={`text-2xl font-display font-bold ${getRiskColor(score)} transition-colors duration-500`}>
-          {score.toFixed(1)}
+      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+        <div className={`h-full transition-all duration-1000 rounded-full ${score > 70 ? 'bg-destructive' : score > 40 ? 'bg-warning' : 'bg-success'}`} style={{ width: `${score}%` }} />
+      </div>
+      {diff !== 0 && (
+        <div className={`text-xs font-mono mt-2 ${diff < 0 ? 'text-success' : 'text-destructive'}`}>
+          {diff > 0 ? '+' : ''}{diff.toFixed(1)} from baseline
         </div>
-        {prevScore !== undefined && diff !== 0 && (
-          <div className={`text-xs font-mono font-bold flex items-center bg-background/50 px-2 py-1 rounded ${isBetter ? 'text-success' : 'text-destructive'}`}>
-            {isBetter ? <TrendingDown className="w-3 h-3 mr-1"/> : <TrendingUp className="w-3 h-3 mr-1"/>}
-            {Math.abs(diff).toFixed(1)}
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </Card>
   );
 }
 
-function ToggleCard({ active, disabled, onClick, label, desc }: { active: boolean, disabled: boolean, onClick: () => void, label: string, desc: string }) {
+function ToggleCard({ active, disabled, onClick, label, desc }: { active: boolean; disabled: boolean; onClick: () => void; label: string; desc: string }) {
   return (
-    <div 
-      onClick={disabled ? undefined : onClick}
-      className={`p-3 rounded-lg border text-left transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-secondary/20' : 'cursor-pointer hover:bg-primary/5'} ${active && !disabled ? 'border-primary bg-primary/10 shadow-[0_0_10px_rgba(6,182,212,0.1)]' : 'border-border/50 bg-background/50'}`}
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full text-left rounded-xl border p-4 transition-all ${
+        active 
+          ? 'border-primary/50 bg-primary/10 shadow-[0_0_20px_rgba(6,182,212,0.15)]' 
+          : 'border-border/50 bg-card/50 hover:border-primary/30'
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     >
-      <div className="flex items-center justify-between mb-1">
-        <div className="text-sm font-bold text-foreground">{label}</div>
-        <div className={`w-4 h-4 rounded-full flex items-center justify-center border ${active ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'}`}>
-          {active && <ShieldCheck className="w-3 h-3" />}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-bold text-sm text-foreground">{label}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{desc}</div>
+        </div>
+        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+          active ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+        }`}>
+          {active && <CheckCircle className="w-3 h-3 text-primary-foreground" />}
         </div>
       </div>
-      <div className="text-xs text-muted-foreground">{desc}</div>
-    </div>
+    </button>
   );
 }

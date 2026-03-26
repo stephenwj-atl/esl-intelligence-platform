@@ -1,0 +1,210 @@
+PART 2 — UI RESTRUCTURE (DO THIS FIRST)
+MASTER UI UPDATE PROMPT (REPLIT)
+OBJECTIVE
+
+Refactor UI to:
+
+reduce cognitive load
+sequence information
+surface decisions first
+restore scenario testing as a core feature
+1. PROJECT VIEW — NEW TAB STRUCTURE (MANDATORY)
+
+Replace current tabs with:
+
+Decision | Structure | Financial | Impact | Drivers | Evidence | Scenario | Monitoring | Reports | Audit
+WHY:
+“Risk” is too abstract → becomes “Drivers”
+“Framework” becomes “Evidence”
+“Scenario” becomes its own tab (VERY IMPORTANT)
+2. TAB PRIORITY (CRITICAL)
+DEFAULT OPEN TAB:
+
+👉 Decision
+
+TAB 1 — DECISION (ONLY SUMMARY)
+
+Contains ONLY:
+
+Capital Decision Summary
+Deployment readiness
+Key constraints
+Next action
+
+👉 No charts
+👉 No tables
+👉 No noise
+
+TAB 2 — STRUCTURE
+Loan / Grant / Blended logic
+covenants
+disbursement phases
+
+👉 This is “how we act”
+
+TAB 3 — FINANCIAL
+rate adjustment
+insurance
+portfolio impact
+TAB 4 — IMPACT
+delivery risk
+efficiency
+monitoring intensity
+TAB 5 — DRIVERS (RENAMED FROM RISK)
+
+Instead of:
+
+❌ “Risk Score”
+
+Show:
+
+What is driving the outcome:
+
+- Flood exposure: High  
+- Coastal exposure: Medium  
+- Data confidence: Low  
+
+👉 This is MUCH clearer
+
+TAB 6 — EVIDENCE (CRIF + STANDARDS GO HERE)
+Add section:
+Framework Inputs:
+
+CRIF Risk Indicators:
+- Flood Risk: High  
+- Hazard Exposure: Medium  
+
+Building Standards:
+- Compliance Level: Partial  
+- Resilience Impact: Moderate  
+Then show:
+Effect on Decision:
+
+- Risk increased due to CRIF flood classification  
+- Risk reduced due to building standard compliance  
+
+👉 This keeps frameworks:
+
+visible
+structured
+not overwhelming
+3. SCENARIO TAB (RESTORE — THIS IS CRITICAL)
+You’re right — this likely got buried
+
+That is a mistake.
+
+👉 This is your strongest feature
+
+Create dedicated tab:
+
+👉 Scenario
+
+Layout:
+LEFT SIDE — CONTROLS
+Toggle:
+
+[ Add Monitoring ]
+[ Add Lab Validation ]
+[ Improve Standard Compliance ]
+RIGHT SIDE — OUTPUT
+Before:
+Risk: 72  
+Rate: 9.2%  
+Insurance: $1.6M  
+
+After:
+Risk: 55  
+Rate: 8.4%  
+Insurance: $1.2M  
+
+→ Savings: $3.8M
+ADD:
+
+👉 “Impact of Standards”
+
+Improved compliance reduces:
+- risk by 10%
+- insurance by $150K
+
+👉 This ties CRIF + standards into scenario
+
+4. PORTFOLIO DASHBOARD FIX
+Problem:
+
+👉 Too much in one screen
+
+Fix:
+
+Split into:
+
+TAB 1 — Overview
+capital at risk
+readiness
+key alerts
+TAB 2 — Allocation
+capital distribution
+risk buckets
+TAB 3 — Intelligence
+benchmarking
+insights
+trends
+
+👉 This reduces overload dramatically
+
+PART 3 — FRAMEWORK INTEGRATION LOGIC (CLEAN)
+Add to backend:
+CRIF Input Mapping
+CRIF Flood Risk → Environmental Risk +15%  
+CRIF Hazard Exposure → Infrastructure Risk +10%  
+Standards Mapping
+High Compliance → Risk -10%  
+Partial → Risk -5%  
+None → No reduction  
+Confidence Interaction
+If standard compliance verified by lab:
+→ increase confidence score  
+
+👉 This is powerful and subtle
+
+PART 4 — FINAL UX RULES
+MUST:
+
+✔ Decision first
+✔ One layer at a time
+✔ Tabs, not stacking
+✔ Scenario prominent
+
+MUST NOT:
+
+❌ everything on one screen
+❌ nested complexity
+❌ “dashboard overload”
+
+PART 5 — FINAL STRATEGIC RESULT
+
+After this update:
+
+👉 User experience becomes:
+
+See decision → Understand structure → Explore drivers → Validate evidence → Test scenarios
+
+Instead of:
+
+👉 “what am I looking at?”
+
+FINAL ANSWER
+You were right about:
+
+✔ UI overload
+✔ need for tab sequencing
+✔ scenario being missing
+
+Fix:
+
+👉 restructure → don’t add
+
+Biggest win:
+
+👉 Scenario + frameworks now connect directly to:
+
+decision + money
