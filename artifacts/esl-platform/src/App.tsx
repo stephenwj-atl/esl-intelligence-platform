@@ -10,6 +10,9 @@ import NewProject from "@/pages/new-project";
 import ProjectDetail from "@/pages/project-detail";
 import PortfolioManager from "@/pages/portfolio-manager";
 import AuthorityDashboard from "@/pages/authority-dashboard";
+import PipelineList from "@/pages/pipeline-list";
+import PipelineNew from "@/pages/pipeline-new";
+import PipelineDetail from "@/pages/pipeline-detail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +31,9 @@ function Router() {
       <Route path="/project/:id" component={ProjectDetail} />
       <Route path="/portfolios" component={PortfolioManager} />
       <Route path="/authority" component={AuthorityDashboard} />
+      <Route path="/pipelines" component={PipelineList} />
+      <Route path="/pipelines/new" component={PipelineNew} />
+      <Route path="/pipelines/:id" component={PipelineDetail} />
       <Route component={NotFound} />
     </Switch>
   );

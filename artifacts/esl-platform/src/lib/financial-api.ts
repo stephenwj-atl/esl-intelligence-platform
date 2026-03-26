@@ -66,6 +66,11 @@ export interface ProjectStructure {
     grantRequired: boolean;
     grantPurpose: string;
     grantPercent: number;
+    loanPercent: number;
+    splitDrivers: Array<{ factor: string; contribution: number; detail: string }>;
+    splitRationale: string[];
+    grantAmount: number;
+    loanAmount: number;
     loanViability: string;
     loanTriggers: string[];
     transitionMilestones: string[];

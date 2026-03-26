@@ -210,41 +210,64 @@ export function FinancialImpactPanel({ projectId }: { projectId: number }) {
                       <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Grant Component</span>
                     </div>
                     <div className="text-2xl font-mono font-black text-primary">{structure?.blended.grantPercent || 0}%</div>
-                    <div className="text-xs text-muted-foreground mt-1">De-risking allocation</div>
+                    <div className="text-xs text-muted-foreground mt-1">${structure?.blended.grantAmount || 0}M de-risking</div>
                   </div>
                   <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
                     <div className="flex items-center gap-2 mb-2">
                       <Building2 className="w-4 h-4 text-warning" />
-                      <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Loan Viability</span>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Loan Component</span>
                     </div>
-                    <div className="text-2xl font-mono font-black">
-                      <Badge variant={structure?.blended.loanViability === "VIABLE" ? "success" : structure?.blended.loanViability === "CONDITIONAL" ? "warning" : "destructive"} className="text-lg px-3 py-1">
-                        {structure?.blended.loanViability || "N/A"}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">Post de-risk status</div>
+                    <div className="text-2xl font-mono font-black text-warning">{structure?.blended.loanPercent || 0}%</div>
+                    <div className="text-xs text-muted-foreground mt-1">${structure?.blended.loanAmount || 0}M commercial — {structure?.blended.loanViability || "N/A"}</div>
                   </div>
                   <div className="bg-secondary/30 rounded-xl p-4 border border-border/50">
                     <div className="flex items-center gap-2 mb-2">
                       <Percent className="w-4 h-4 text-warning" />
-                      <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Blended Rate</span>
+                      <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Loan Rate</span>
                     </div>
                     <div className="text-2xl font-mono font-black text-warning">
                       {loanPricing.finalRate}%
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">Loan component rate</div>
+                    <div className="text-xs text-muted-foreground mt-1">On commercial component</div>
                   </div>
                 </div>
+
+                {structure?.blended.splitDrivers && structure.blended.splitDrivers.length > 0 && (
+                  <div className="bg-background/80 rounded-xl border border-primary/20 p-5 mb-6">
+                    <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-bold mb-3">Why {structure.blended.grantPercent}% Grant?</div>
+                    <div className="space-y-2">
+                      {structure.blended.splitDrivers.map((d, i) => (
+                        <div key={i} className="flex items-center justify-between bg-secondary/20 rounded-lg px-4 py-2.5">
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-foreground">{d.factor}</div>
+                            <div className="text-xs text-muted-foreground">{d.detail}</div>
+                          </div>
+                          <div className="text-sm font-mono font-bold text-primary ml-4">+{d.contribution}%</div>
+                        </div>
+                      ))}
+                    </div>
+                    {structure.blended.splitRationale && structure.blended.splitRationale.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-border/30 space-y-1">
+                        {structure.blended.splitRationale.map((r, i) => (
+                          <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                            <ArrowRight className="w-3 h-3 mt-0.5 text-primary shrink-0" />
+                            <span>{r}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="bg-background/80 rounded-xl border border-primary/20 p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-bold mb-1">Blended Structure Impact</div>
+                      <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-bold mb-1">Loan Component Cost</div>
                       <div className="text-sm text-muted-foreground">Grant absorbs initial risk; loan activates on milestones</div>
                     </div>
                     <div className="text-right">
                       <div className="text-3xl font-mono font-black text-warning">+{fmtMoney(totalImpact.totalLifetimeImpact)}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Loan component lifetime cost</div>
+                      <div className="text-xs text-muted-foreground mt-1">Lifetime cost on ${structure?.blended.loanAmount || 0}M loan</div>
                     </div>
                   </div>
                   {structure && structure.blended.loanTriggers.length > 0 && (

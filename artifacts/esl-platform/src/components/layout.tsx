@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe } from "lucide-react";
+import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe, FileStack } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CapitalModeSwitch } from "./capital-mode-context";
 
@@ -10,7 +10,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/", label: "Command Center", icon: LayoutDashboard },
     { href: "/authority", label: "Authority Index", icon: Globe },
     { href: "/portfolios", label: "Portfolios", icon: Layers },
-    { href: "/new", label: "New Analysis", icon: Plus },
+    { href: "/pipelines", label: "Pipelines", icon: FileStack },
+    { href: "/new", label: "+ New Analysis", icon: Plus },
   ];
 
   return (

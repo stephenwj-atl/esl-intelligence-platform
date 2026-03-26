@@ -183,11 +183,22 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                 )}
                 {activeMode === "Blended" && (
                   <>
-                    <StructureLine icon={Gift} text={`Grant (${structure.blended.grantPercent}%) required to reduce environmental uncertainty`} />
-                    <StructureLine icon={Building2} text="Loan viable after validation and monitoring" />
+                    <StructureLine icon={Gift} text={`Grant ${structure.blended.grantPercent}% — $${structure.blended.grantAmount}M`} />
+                    <StructureLine icon={Building2} text={`Loan ${structure.blended.loanPercent}% — $${structure.blended.loanAmount}M`} />
+                    {structure.blended.splitDrivers && structure.blended.splitDrivers.length > 0 && (
+                      <div className="pt-1 border-t border-border/20 mt-1">
+                        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Split Drivers</div>
+                        {structure.blended.splitDrivers.map((d, i) => (
+                          <div key={i} className="flex items-center justify-between text-xs text-foreground/70 ml-1 mb-0.5">
+                            <span>{d.factor}</span>
+                            <span className="font-mono text-primary">+{d.contribution}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {structure.blended.loanTriggers.length > 0 && (
                       <div className="pt-1 border-t border-border/20 mt-1">
-                        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Triggers</div>
+                        <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Loan Activation Triggers</div>
                         {structure.blended.loanTriggers.map((t, i) => (
                           <div key={i} className="flex items-center gap-1.5 text-xs text-foreground/70 ml-1">
                             <ArrowRight className="w-2.5 h-2.5 text-primary shrink-0" />

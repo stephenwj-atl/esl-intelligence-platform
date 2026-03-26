@@ -315,10 +315,91 @@ function calculateDeploymentReadiness(project: typeof projectsTable.$inferSelect
   return "NOT READY";
 }
 
-function calculateCapitalMode(project: typeof projectsTable.$inferSelect) {
+export function calculateCapitalMode(project: typeof projectsTable.$inferSelect) {
   if (project.overallRisk > 70 && project.dataConfidence < 50) return "Grant";
   if (project.overallRisk > 60 || project.dataConfidence < 60) return "Blended";
   return "Loan";
+}
+
+export function calculateBlendedGrantPercent(project: typeof projectsTable.$inferSelect): number {
+  const split = calculateBlendedSplit(project);
+  return split.grantPercent;
+}
+
+interface BlendedSplitResult {
+  grantPercent: number;
+  loanPercent: number;
+  rationale: string[];
+  drivers: { factor: string; contribution: number; detail: string }[];
+}
+
+function calculateBlendedSplit(project: typeof projectsTable.$inferSelect): BlendedSplitResult {
+  const drivers: { factor: string; contribution: number; detail: string }[] = [];
+
+  let riskComponent = 0;
+  if (project.overallRisk > 70) {
+    riskComponent = 20 + ((project.overallRisk - 70) / 30) * 15;
+    drivers.push({ factor: "Overall Risk", contribution: Math.round(riskComponent), detail: `Risk ${project.overallRisk.toFixed(1)}/100 — severe exposure requires substantial grant de-risking` });
+  } else if (project.overallRisk > 50) {
+    riskComponent = 5 + ((project.overallRisk - 50) / 20) * 15;
+    drivers.push({ factor: "Overall Risk", contribution: Math.round(riskComponent), detail: `Risk ${project.overallRisk.toFixed(1)}/100 — moderate exposure needs partial de-risking` });
+  } else if (project.overallRisk > 30) {
+    riskComponent = ((project.overallRisk - 30) / 20) * 5;
+    if (riskComponent >= 1) drivers.push({ factor: "Overall Risk", contribution: Math.round(riskComponent), detail: `Risk ${project.overallRisk.toFixed(1)}/100 — low exposure, minimal grant needed` });
+  }
+
+  let confidenceComponent = 0;
+  if (project.dataConfidence < 40) {
+    confidenceComponent = 15 + ((40 - project.dataConfidence) / 40) * 10;
+    drivers.push({ factor: "Data Confidence", contribution: Math.round(confidenceComponent), detail: `Confidence ${project.dataConfidence.toFixed(0)}% — critical data gaps require grant-funded validation` });
+  } else if (project.dataConfidence < 60) {
+    confidenceComponent = 5 + ((60 - project.dataConfidence) / 20) * 10;
+    drivers.push({ factor: "Data Confidence", contribution: Math.round(confidenceComponent), detail: `Confidence ${project.dataConfidence.toFixed(0)}% — moderate gaps need baseline studies` });
+  } else if (project.dataConfidence < 80) {
+    confidenceComponent = ((80 - project.dataConfidence) / 20) * 5;
+    if (confidenceComponent >= 1) drivers.push({ factor: "Data Confidence", contribution: Math.round(confidenceComponent), detail: `Confidence ${project.dataConfidence.toFixed(0)}% — minor gaps addressable with TA` });
+  }
+
+  let validationGapComponent = 0;
+  const gaps: string[] = [];
+  if (!project.hasLabData) { validationGapComponent += 5; gaps.push("lab validation"); }
+  if (!project.hasMonitoringData) { validationGapComponent += 5; gaps.push("monitoring"); }
+  if (!project.isIFCAligned) { validationGapComponent += 4; gaps.push("IFC alignment"); }
+  if (validationGapComponent > 0) {
+    drivers.push({ factor: "Validation Gaps", contribution: validationGapComponent, detail: `Missing: ${gaps.join(", ")} — grant funds compliance infrastructure` });
+  }
+
+  let exposureComponent = 0;
+  const exposureItems: string[] = [];
+  if (project.floodRisk > 7) { exposureComponent += 3; exposureItems.push(`flood ${project.floodRisk.toFixed(1)}`); }
+  if (project.coastalExposure > 7) { exposureComponent += 3; exposureItems.push(`coastal ${project.coastalExposure.toFixed(1)}`); }
+  if (project.contaminationRisk > 6) { exposureComponent += 2; exposureItems.push(`contamination ${project.contaminationRisk.toFixed(1)}`); }
+  if (project.waterStress > 7) { exposureComponent += 2; exposureItems.push(`water stress ${project.waterStress.toFixed(1)}`); }
+  if (exposureComponent > 0) {
+    drivers.push({ factor: "Environmental Exposure", contribution: exposureComponent, detail: `Elevated: ${exposureItems.join(", ")} — physical risk needs grant-funded mitigation` });
+  }
+
+  const rawGrant = riskComponent + confidenceComponent + validationGapComponent + exposureComponent;
+  const grantPercent = Math.round(Math.max(5, Math.min(75, rawGrant)));
+  const loanPercent = 100 - grantPercent;
+
+  const rationale: string[] = [];
+  if (grantPercent >= 50) {
+    rationale.push(`High grant share (${grantPercent}%) reflects severe environmental risk requiring substantial de-risking before commercial capital can be deployed`);
+  } else if (grantPercent >= 30) {
+    rationale.push(`Moderate grant share (${grantPercent}%) addresses key risk gaps while maintaining majority commercial lending`);
+  } else {
+    rationale.push(`Low grant share (${grantPercent}%) provides targeted technical assistance — project is near loan-viable`);
+  }
+
+  if (!project.hasMonitoringData || !project.hasLabData) {
+    rationale.push("Grant component funds environmental baseline and monitoring infrastructure that unlocks commercial lending");
+  }
+  if (project.dataConfidence < 60) {
+    rationale.push("Improved data confidence through grant-funded validation will reduce the risk premium on the loan component");
+  }
+
+  return { grantPercent, loanPercent, rationale, drivers };
 }
 
 router.get("/financial/project/:id/structure", async (req, res) => {
@@ -381,12 +462,19 @@ router.get("/financial/project/:id/structure", async (req, res) => {
     ],
   };
 
+  const blendedSplit = calculateBlendedSplit(project);
+
   const blendedStructure = {
     grantRequired: project.overallRisk > 50 || project.dataConfidence < 70,
     grantPurpose: project.overallRisk > 70
       ? "De-risk environmental exposure to enable commercial lending"
       : "Build data confidence to reduce lending risk premium",
-    grantPercent: project.overallRisk > 70 ? 40 : project.overallRisk > 50 ? 25 : 15,
+    grantPercent: blendedSplit.grantPercent,
+    loanPercent: blendedSplit.loanPercent,
+    splitDrivers: blendedSplit.drivers,
+    splitRationale: blendedSplit.rationale,
+    grantAmount: Math.round(project.investmentAmount * blendedSplit.grantPercent / 100 * 10) / 10,
+    loanAmount: Math.round(project.investmentAmount * blendedSplit.loanPercent / 100 * 10) / 10,
     loanViability: project.overallRisk > 75 ? "NOT VIABLE" : project.overallRisk > 60 ? "CONDITIONAL" : "VIABLE",
     loanTriggers: [
       ...(project.overallRisk > 60 ? ["Overall risk reduced below 60 threshold"] : []),
