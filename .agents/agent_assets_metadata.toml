@@ -6,3 +6,15 @@ id = "8KnVaRhOK5mDuHWAdUb5C"
 uri = "file://ESL_Platform_Guide.md"
 type = "text"
 title = "ESL Platform Guide, User Manual & Demo Script"
+
+[[outputs]]
+id = "yFW7x5Hzky2ty_02yxRPO"
+uri = "file://ESL_Data_Requirements.md"
+type = "text"
+title = "Data Requirements for Automated Risk Scoring (Researcher Assignment)"
+
+[[outputs]]
+id = "bLJnqFnzPjYIwqHPPx7gl"
+uri = "file://ESL_Platform_Summary.md"
+type = "text"
+title = "Condensed Platform Summary — Panel Map, Data Flow & Decision Impact"
