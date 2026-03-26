@@ -17,6 +17,7 @@ import { ProjectBenchmarkPanel } from "@/components/benchmarking";
 import { FinancialImpactPanel } from "@/components/financial-impact";
 import { ImpactTab } from "@/components/impact-tab";
 import { StructureTab } from "@/components/structure-tab";
+import { CapitalDecisionSummary } from "@/components/capital-decision-summary";
 import { useCapitalMode } from "@/components/capital-mode-context";
 import { financialApi, type ProjectStructure } from "@/lib/financial-api";
 import { governanceApi } from "@/lib/governance-api";
@@ -238,6 +239,8 @@ export default function ProjectDetail() {
         <AnimatedContainer delay={0.15}>
           {activeTab === "overview" && (
             <div className="space-y-6">
+              <CapitalDecisionSummary projectId={id} />
+
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                 <Card className="p-4 text-center">
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Capital Mode</div>

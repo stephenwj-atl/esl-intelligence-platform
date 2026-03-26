@@ -1,0 +1,135 @@
+MASTER REPLIT UPDATE PROMPT
+“Capital Decision Summary” Layer
+ROLE
+
+You are upgrading an institutional-grade environmental intelligence platform.
+
+Your task is to implement a decision-compression layer that surfaces:
+
+👉 capital decision
+👉 structure
+👉 financial consequence
+👉 required actions
+
+in a single view.
+
+OBJECTIVE
+
+Every project must immediately answer:
+
+What should we do?
+What structure is required?
+What happens financially?
+What must happen next?
+1. NEW COMPONENT — CAPITAL DECISION SUMMARY
+LOCATION (CRITICAL)
+
+Add at top of:
+
+Project Overview tab
+Project main page
+
+Above all other elements.
+
+COMPONENT STRUCTURE
+SECTION 1 — HEADER
+CAPITAL DECISION SUMMARY
+SECTION 2 — CORE DECISION
+Mode: [Loan / Grant / Blended]
+
+Deployment Status:
+READY / CONDITIONALLY READY / NOT READY
+SECTION 3 — STRUCTURE OUTPUT
+LOAN MODE:
+Recommended Structure:
+- Proceed with covenants
+- Monitoring required pre-disbursement
+GRANT MODE:
+Recommended Structure:
+- Phased disbursement required
+- Validation required before Phase 2
+BLENDED MODE:
+Recommended Structure:
+- Grant (X%) required to reduce environmental uncertainty
+- Loan viable after validation and monitoring
+
+Triggers:
+- Monitoring established
+- ESAP milestones met
+SECTION 4 — FINANCIAL / IMPACT CONSEQUENCE
+LOAN MODE:
+Financial Impact:
++1.2% financing cost  
++$400K insurance uplift  
+GRANT MODE:
+Impact Risk:
+High probability of delivery inefficiency without validation  
+BLENDED MODE:
+Combined Impact:
+Grant required to reduce financial and delivery risk  
+Projected savings if mitigated: $X  
+SECTION 5 — KEY CONSTRAINTS
+
+Auto-generate:
+
+Key Constraints:
+- Data confidence below threshold  
+- Monitoring not established  
+- High environmental exposure  
+SECTION 6 — NEXT ACTION (MOST IMPORTANT)
+Next Required Actions:
+
+1. Conduct baseline validation  
+2. Implement monitoring system  
+3. Reassess prior to capital deployment  
+2. DECISION EXPLAINABILITY ENGINE (ADD THIS)
+For every summary:
+
+Add hidden expandable section:
+
+Why this decision?
+
+- Flood Risk: 8/10  
+- Coastal Exposure: 7/10  
+- Data Confidence: 42%  
+
+→ Drives elevated risk and uncertainty  
+→ Requires mitigation before deployment  
+3. BEFORE / AFTER IMPACT PANEL (INLINE)
+
+Add mini comparison:
+
+Without Intervention:
+Rate: 9.2%  
+Premium: $1.6M  
+
+With Intervention:
+Rate: 8.5%  
+Premium: $1.2M  
+
+→ Savings: $3.4M  
+4. UI RULES
+Must:
+be visually dominant
+readable in 10 seconds
+no scrolling required
+Must NOT:
+require interpretation
+look like a report
+bury key outputs
+5. DATA HOOKS
+
+Use existing:
+
+risk scores
+financial engine
+impact engine
+blended logic
+
+DO NOT create new tables unless necessary
+
+FINAL PURPOSE
+
+After this update:
+
+👉 a CEO / IC member should understand the decision without touching anything else

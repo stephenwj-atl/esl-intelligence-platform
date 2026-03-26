@@ -63,7 +63,8 @@ artifacts-monorepo/
 - Portfolio metrics (weighted risk, total investment, project count)
 
 ### Project Intelligence View (8-tab interface)
-- **Overview**: Capital Mode badge, Data Confidence, Monitoring status, IFC alignment, Risk Topology chart, Financial Translation panel (delay/overrun/covenant/reputational risk)
+- **Capital Decision Summary** (top of Overview): Single-glance decision card showing Core Decision (system-recommended mode), Recommended Structure, Financial Impact / Impact Risk (mode-specific), Before/After comparison, Key Constraints, Next Required Actions, expandable Decision Explainability — uses `recommendedMode` as authoritative source
+- **Overview**: Capital Decision Summary, 7-indicator strip (Capital Mode, Deployment Readiness, Confidence, ESAP %, Monitoring, Last Event, IFC), Risk Topology chart, Financial Translation panel (delay/overrun/covenant/reputational risk)
 - **Risk**: What-If Scenario Analysis with toggles, Risk Monitoring Timeline, Framework Alignment, Covenants, ESAP
 - **Financial**: Loan pricing, insurance, covenant level, capital constraints, lifetime cost (via FinancialImpactPanel)
 - **Impact**: Impact Delivery Risk (HIGH/MEDIUM/LOW with drivers), Impact Efficiency Score, Monitoring Intensity, Disbursement Risk — mode-aware (Grant/Loan/Blended)
