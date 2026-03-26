@@ -36,7 +36,7 @@ The ESL Environmental Intelligence Platform is a Bloomberg Terminal-style decisi
 - **Deployment readiness assessments** (READY / CONDITIONALLY READY / NOT READY)
 - **Institutional governance lifecycle management** (covenants, ESAP, monitoring, audit trails)
 
-The platform serves development banks, climate funds, institutional investors, and environmental regulators across the Caribbean region.
+The platform serves **corporate and commercial banks** (JMMB, NCB, Sagicor, FirstCaribbean, Republic Bank), **development finance institutions** (CDB, IDB Invest, IFC), **climate funds** (GCF, GEF, CCRIF), **institutional investors**, and **environmental regulators** across the Caribbean region.
 
 **What this system answers at a glance:**
 
