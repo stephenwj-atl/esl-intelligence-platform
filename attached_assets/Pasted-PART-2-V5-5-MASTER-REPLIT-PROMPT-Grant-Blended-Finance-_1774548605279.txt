@@ -1,0 +1,125 @@
+PART 2 — V5.5 MASTER REPLIT PROMPT
+Grant + Blended Finance Intelligence Layer
+ROLE
+
+You are a senior full-stack and financial systems engineer.
+
+Extend V5 system to support:
+
+Loan
+Grant
+Blended finance
+OBJECTIVE
+
+Upgrade system from:
+
+Risk → Financial Impact
+
+to:
+
+Risk → Financial Impact + Impact Delivery + Capital Structuring
+CORE MODULES
+1. CAPITAL MODE ENGINE
+Add:
+mode = loan | grant | blended
+All outputs must depend on mode
+2. IMPACT INTELLIGENCE ENGINE (NEW)
+Inputs:
+Environmental Risk
+Data Confidence
+Project Type
+Outputs:
+A. Impact Delivery Risk
+If Risk >70 OR Confidence <50 → HIGH  
+Else → MEDIUM / LOW
+B. Impact Efficiency Score
+Base = 100  
+Subtract:
+- risk penalty  
+- uncertainty penalty  
+
+Output: 0–100
+C. Monitoring Intensity
+If Confidence <60 → HIGH  
+Else → MEDIUM
+D. Disbursement Risk
+If high risk + low confidence → ELEVATED
+3. GRANT STRUCTURING ENGINE
+Output:
+Disbursement Phases:
+Phase 1: Baseline validation  
+Phase 2: Monitoring installation  
+Phase 3: Performance verification  
+Release Logic:
+IF validation complete → release funds  
+IF monitoring missing → hold  
+4. BLENDED FINANCE ENGINE (CRITICAL)
+Logic:
+IF Risk >65 AND Confidence <60:
+  Recommend:
+    Grant = YES
+    Loan = CONDITIONAL
+Output:
+Optimal Structure:
+
+Grant Component: 30%  
+Purpose: de-risk environmental uncertainty  
+
+Loan Component: 70%  
+Condition: monitoring + validation required  
+5. DEPLOYMENT READINESS ENGINE
+Output:
+READY  
+CONDITIONALLY READY  
+NOT READY
+Logic:
+If high risk + low confidence → NOT READY  
+If medium risk → CONDITIONAL  
+Else → READY  
+6. PORTFOLIO CAPITAL ENGINE
+Aggregate:
+capital by type
+readiness distribution
+Output:
+$20M requires grant-first deployment  
+$45M ready for direct lending  
+7. DATA MODEL ADDITIONS
+capital_modes
+project_id
+mode
+impact_metrics
+project_id
+delivery_risk
+efficiency_score
+UX REQUIREMENTS
+Must:
+update instantly when mode changes
+show different logic clearly
+feel institutional
+FINAL PURPOSE
+
+After V5.5, user must see:
+
+👉 This system tells us how to deploy capital — not just assess risk
+
+FINAL STRATEGIC NOTE
+
+This upgrade is massive
+
+Because now you are relevant to:
+
+loans
+grants
+blended finance
+climate funds
+development banks
+WHERE YOU ARE NOW
+
+After this:
+
+👉 You are no longer a risk system
+👉 You are no longer a financial tool
+
+👉 You are:
+
+A capital deployment intelligence system
