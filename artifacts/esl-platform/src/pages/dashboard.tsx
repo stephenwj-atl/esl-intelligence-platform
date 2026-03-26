@@ -24,7 +24,8 @@ import {
 } from "recharts";
 import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
 import { regionalApi, type PortfolioBenchmark } from "@/lib/regional-api";
-import { financialApi, type PortfolioFinancialImpact, type ESLComparison } from "@/lib/financial-api";
+import { financialApi, type PortfolioFinancialImpact, type ESLComparison, type PortfolioDeployment } from "@/lib/financial-api";
+import { useCapitalMode } from "@/components/capital-mode-context";
 
 const ROLES = ["Analyst", "Investment Officer", "Admin"] as const;
 type Role = (typeof ROLES)[number];
@@ -41,7 +42,9 @@ export default function Dashboard() {
   const [portfolioBench, setPortfolioBench] = useState<PortfolioBenchmark | null>(null);
   const [portfolioFinancial, setPortfolioFinancial] = useState<PortfolioFinancialImpact | null>(null);
   const [eslComparison, setEslComparison] = useState<ESLComparison | null>(null);
+  const [deployment, setDeployment] = useState<PortfolioDeployment | null>(null);
   const [role, setRole] = useState<Role>("Analyst");
+  const { mode: capitalMode } = useCapitalMode();
 
   const [showOptimization, setShowOptimization] = useState(false);
 
@@ -50,6 +53,7 @@ export default function Dashboard() {
     regionalApi.getPortfolioBenchmark().then(setPortfolioBench).catch(() => {});
     financialApi.getPortfolioImpact().then(setPortfolioFinancial).catch(() => {});
     financialApi.getComparison().then(setEslComparison).catch(() => {});
+    financialApi.getPortfolioDeployment().then(setDeployment).catch(() => {});
   }, []);
 
   const isLoading = projectsLoading || summaryLoading;
@@ -197,6 +201,130 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </AnimatedContainer>
+        )}
+
+        {/* Capital Deployment Intelligence */}
+        {deployment && (
+          <AnimatedContainer delay={0.08}>
+            <Card className="overflow-hidden">
+              <div className="p-5 border-b border-white/5 bg-card/80 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Capital Deployment Intelligence</h3>
+                </div>
+                <Badge variant="outline" className="font-mono uppercase">{capitalMode} Mode</Badge>
+              </div>
+              <div className="p-5 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="p-4">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider mb-3 font-bold">Capital Mix</div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-primary" />
+                          <span className="text-sm">Loan</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-foreground">{deployment.capitalMix.loan.percent}%</span>
+                          <span className="text-xs text-muted-foreground">({deployment.capitalMix.loan.count})</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-warning" />
+                          <span className="text-sm">Grant</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-foreground">{deployment.capitalMix.grant.percent}%</span>
+                          <span className="text-xs text-muted-foreground">({deployment.capitalMix.grant.count})</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-violet-500" />
+                          <span className="text-sm">Blended</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-foreground">{deployment.capitalMix.blended.percent}%</span>
+                          <span className="text-xs text-muted-foreground">({deployment.capitalMix.blended.count})</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden mt-3 flex">
+                      <div className="h-full bg-primary" style={{ width: `${deployment.capitalMix.loan.percent}%` }} />
+                      <div className="h-full bg-warning" style={{ width: `${deployment.capitalMix.grant.percent}%` }} />
+                      <div className="h-full bg-violet-500" style={{ width: `${deployment.capitalMix.blended.percent}%` }} />
+                    </div>
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider mb-3 font-bold">Deployment Readiness</div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-success" />
+                          <span className="text-sm">Ready</span>
+                        </div>
+                        <span className="font-mono font-bold text-success">{deployment.readiness.ready.count} ({deployment.readiness.ready.percent}%)</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-warning" />
+                          <span className="text-sm">Conditional</span>
+                        </div>
+                        <span className="font-mono font-bold text-warning">{deployment.readiness.conditional.count} ({deployment.readiness.conditional.percent}%)</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <XCircle className="w-4 h-4 text-destructive" />
+                          <span className="text-sm">Not Ready</span>
+                        </div>
+                        <span className="font-mono font-bold text-destructive">{deployment.readiness.notReady.count} ({deployment.readiness.notReady.percent}%)</span>
+                      </div>
+                    </div>
+                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden mt-3 flex">
+                      <div className="h-full bg-success" style={{ width: `${deployment.readiness.ready.percent}%` }} />
+                      <div className="h-full bg-warning" style={{ width: `${deployment.readiness.conditional.percent}%` }} />
+                      <div className="h-full bg-destructive" style={{ width: `${deployment.readiness.notReady.percent}%` }} />
+                    </div>
+                  </Card>
+
+                  <Card className={`p-4 ${deployment.capitalEfficiency.atRiskPercent > 30 ? "border-destructive/20 bg-destructive/5" : ""}`}>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider mb-3 font-bold">Capital Efficiency</div>
+                    <div className="text-center mb-3">
+                      <div className={`text-3xl font-mono font-bold ${deployment.capitalEfficiency.atRiskPercent > 30 ? "text-destructive" : "text-warning"}`}>
+                        {deployment.capitalEfficiency.atRiskPercent}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">Capital at Risk</div>
+                      <div className="text-xs font-mono text-muted-foreground mt-1">
+                        {formatCurrency(deployment.capitalEfficiency.atRisk)} exposed
+                      </div>
+                    </div>
+                    {deployment.capitalEfficiency.drivers.length > 0 && (
+                      <div className="space-y-1 border-t border-border/30 pt-2">
+                        {deployment.capitalEfficiency.drivers.map((d, i) => (
+                          <div key={i} className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <AlertTriangle className="w-3 h-3 text-warning shrink-0" /> {d}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                </div>
+
+                {deployment.structuringInsights.length > 0 && (
+                  <div className="flex flex-wrap gap-3">
+                    {deployment.structuringInsights.map((insight, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs bg-secondary/40 border border-border/30 rounded-lg px-3 py-2">
+                        <Zap className="w-3 h-3 text-primary shrink-0" />
+                        <span className="text-foreground/80">{insight}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
           </AnimatedContainer>
         )}
 

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CapitalModeSwitch } from "./capital-mode-context";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -71,7 +72,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           
           <div className="flex items-center space-x-4 ml-auto">
-            <div className="text-sm font-display font-semibold text-muted-foreground mr-4 hidden sm:block border-r border-border/50 pr-4">
+            <CapitalModeSwitch />
+            <div className="text-sm font-display font-semibold text-muted-foreground mr-4 hidden sm:block border-l border-border/50 pl-4">
               Portfolio: <span className="text-foreground">Caribbean Energy Fund</span>
             </div>
             <div className="flex items-center bg-secondary/50 rounded-full px-3 py-1.5 border border-white/5">

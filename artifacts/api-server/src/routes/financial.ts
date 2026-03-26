@@ -303,4 +303,231 @@ router.get("/financial/scenario/:id", async (req, res) => {
   });
 });
 
+function calculateDeploymentReadiness(project: typeof projectsTable.$inferSelect) {
+  const hasMonitoring = project.hasMonitoringData;
+  const hasLab = project.hasLabData;
+  const hasIFC = project.isIFCAligned;
+  const riskOk = project.overallRisk < 70;
+  const confOk = project.dataConfidence >= 50;
+
+  if (riskOk && confOk && hasMonitoring) return "READY";
+  if (riskOk || confOk) return "CONDITIONALLY READY";
+  return "NOT READY";
+}
+
+function calculateCapitalMode(project: typeof projectsTable.$inferSelect) {
+  if (project.overallRisk > 70 && project.dataConfidence < 50) return "Grant";
+  if (project.overallRisk > 60 || project.dataConfidence < 60) return "Blended";
+  return "Loan";
+}
+
+router.get("/financial/project/:id/structure", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+
+  const impact = calculateFinancialImpact(project);
+  const readiness = calculateDeploymentReadiness(project);
+  const recommendedMode = calculateCapitalMode(project);
+
+  const loanStructure = {
+    viable: project.overallRisk <= 75,
+    conditions: impact.covenantRequirements,
+    conditionsPrecedent: [
+      ...(project.dataConfidence < 60 ? ["Baseline environmental data validation"] : []),
+      ...(project.overallRisk > 50 ? ["Independent environmental assessment"] : []),
+      ...(project.coastalExposure > 6 ? ["Coastal resilience engineering plan"] : []),
+      ...(!project.hasMonitoringData ? ["Environmental monitoring system installation"] : []),
+    ],
+    riskMitigation: [
+      ...(project.floodRisk > 6 ? ["Flood defense infrastructure required"] : []),
+      ...(project.contaminationRisk > 6 ? ["Contamination remediation plan"] : []),
+      ...(project.waterStress > 6 ? ["Water management protocol"] : []),
+    ],
+    covenantLevel: impact.covenantLevel,
+    rate: impact.finalRate,
+  };
+
+  const grantStructure = {
+    required: project.overallRisk > 60 || project.dataConfidence < 60,
+    purpose: project.overallRisk > 70
+      ? "De-risk environmental exposure before commercial capital deployment"
+      : project.dataConfidence < 60
+        ? "Fund baseline data collection and monitoring infrastructure"
+        : "Technical assistance for environmental compliance",
+    disbursementPhases: [
+      {
+        phase: 1,
+        name: "Baseline Validation",
+        conditions: ["Environmental baseline study complete", "Lab validation protocol established", "Community consultation conducted"],
+        allocation: 30,
+        status: project.hasLabData ? "COMPLETE" : "PENDING",
+      },
+      {
+        phase: 2,
+        name: "Monitoring Infrastructure",
+        conditions: ["Environmental monitoring system installed", "Data collection protocols active", "Reporting framework established"],
+        allocation: 40,
+        status: project.hasMonitoringData ? "COMPLETE" : "PENDING",
+      },
+      {
+        phase: 3,
+        name: "Performance Verification",
+        conditions: ["6-month monitoring data reviewed", "Risk score reduction verified", "IFC alignment assessment"],
+        allocation: 30,
+        status: project.isIFCAligned ? "COMPLETE" : "PENDING",
+      },
+    ],
+  };
+
+  const blendedStructure = {
+    grantRequired: project.overallRisk > 50 || project.dataConfidence < 70,
+    grantPurpose: project.overallRisk > 70
+      ? "De-risk environmental exposure to enable commercial lending"
+      : "Build data confidence to reduce lending risk premium",
+    grantPercent: project.overallRisk > 70 ? 40 : project.overallRisk > 50 ? 25 : 15,
+    loanViability: project.overallRisk > 75 ? "NOT VIABLE" : project.overallRisk > 60 ? "CONDITIONAL" : "VIABLE",
+    loanTriggers: [
+      ...(project.overallRisk > 60 ? ["Overall risk reduced below 60 threshold"] : []),
+      ...(!project.hasMonitoringData ? ["Environmental monitoring established"] : []),
+      ...(project.dataConfidence < 60 ? ["Data confidence above 60%"] : []),
+    ],
+    transitionMilestones: [
+      "ESAP completion verified",
+      "Monitoring data demonstrates risk reduction trend",
+      "Independent assessment confirms improved risk profile",
+    ],
+  };
+
+  res.json({
+    project: { id: project.id, name: project.name, country: project.country, projectType: project.projectType, investmentAmount: project.investmentAmount },
+    deploymentReadiness: readiness,
+    recommendedMode,
+    loan: loanStructure,
+    grant: grantStructure,
+    blended: blendedStructure,
+  });
+});
+
+router.get("/financial/project/:id/impact", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+
+  let deliveryRisk = "LOW";
+  const deliveryDrivers: string[] = [];
+  if (project.floodRisk > 6) deliveryDrivers.push(`Flood exposure: ${project.floodRisk.toFixed(1)}/10`);
+  if (project.coastalExposure > 6) deliveryDrivers.push(`Coastal vulnerability: ${project.coastalExposure.toFixed(1)}/10`);
+  if (project.dataConfidence < 60) deliveryDrivers.push(`Low data confidence: ${project.dataConfidence.toFixed(0)}%`);
+  if (project.contaminationRisk > 5) deliveryDrivers.push(`Contamination risk: ${project.contaminationRisk.toFixed(1)}/10`);
+  if (project.regulatoryComplexity > 6) deliveryDrivers.push(`Regulatory complexity: ${project.regulatoryComplexity.toFixed(1)}/10`);
+  if (deliveryDrivers.length >= 3) deliveryRisk = "HIGH";
+  else if (deliveryDrivers.length >= 1) deliveryRisk = "MEDIUM";
+
+  let baseEfficiency = 85;
+  if (project.overallRisk > 70) baseEfficiency -= 20;
+  else if (project.overallRisk > 50) baseEfficiency -= 10;
+  if (project.dataConfidence < 50) baseEfficiency -= 15;
+  else if (project.dataConfidence < 70) baseEfficiency -= 8;
+  if (project.regulatoryComplexity > 7) baseEfficiency -= 5;
+  const impactEfficiency = Math.max(20, Math.min(100, baseEfficiency));
+
+  const efficiencyFactors = [
+    { factor: "Environmental Risk", adjustment: project.overallRisk > 70 ? -20 : project.overallRisk > 50 ? -10 : 0 },
+    { factor: "Data Uncertainty", adjustment: project.dataConfidence < 50 ? -15 : project.dataConfidence < 70 ? -8 : 0 },
+    { factor: "Execution Complexity", adjustment: project.regulatoryComplexity > 7 ? -5 : 0 },
+  ].filter(f => f.adjustment !== 0);
+
+  let monitoringIntensity = "STANDARD";
+  if (project.overallRisk > 70 || project.dataConfidence < 50) monitoringIntensity = "HIGH";
+  else if (project.overallRisk > 50 || project.dataConfidence < 70) monitoringIntensity = "ELEVATED";
+  const monitoringRequirements = [
+    ...(monitoringIntensity === "HIGH" ? ["Monthly environmental reporting", "Quarterly independent audits", "Real-time data collection"] : []),
+    ...(monitoringIntensity === "ELEVATED" ? ["Quarterly environmental reporting", "Semi-annual audits"] : []),
+    ...(monitoringIntensity === "STANDARD" ? ["Semi-annual reporting", "Annual audit"] : []),
+  ];
+
+  let disbursementRisk = "LOW";
+  if (project.overallRisk > 70 && project.dataConfidence < 60) disbursementRisk = "ELEVATED";
+  else if (project.overallRisk > 60 || project.dataConfidence < 50) disbursementRisk = "MODERATE";
+  const disbursementFactors: string[] = [];
+  if (project.overallRisk > 70) disbursementFactors.push("High environmental risk increases misallocation probability");
+  if (project.dataConfidence < 60) disbursementFactors.push("Low data confidence reduces outcome predictability");
+  if (!project.hasMonitoringData) disbursementFactors.push("No monitoring infrastructure to verify fund utilization");
+
+  res.json({
+    project: { id: project.id, name: project.name },
+    deliveryRisk: { level: deliveryRisk, drivers: deliveryDrivers },
+    impactEfficiency: { score: impactEfficiency, factors: efficiencyFactors },
+    monitoringIntensity: { level: monitoringIntensity, requirements: monitoringRequirements },
+    disbursementRisk: { level: disbursementRisk, factors: disbursementFactors },
+  });
+});
+
+router.get("/financial/portfolio/deployment", async (_req, res) => {
+  const allProjects = await db.select().from(projectsTable);
+  if (allProjects.length === 0) {
+    res.json({ capitalMix: {}, readiness: {}, efficiency: {} });
+    return;
+  }
+
+  const modes = allProjects.map(p => ({ ...p, mode: calculateCapitalMode(p), readiness: calculateDeploymentReadiness(p) }));
+
+  const loanProjects = modes.filter(m => m.mode === "Loan");
+  const grantProjects = modes.filter(m => m.mode === "Grant");
+  const blendedProjects = modes.filter(m => m.mode === "Blended");
+
+  const totalCapital = allProjects.reduce((s, p) => s + p.investmentAmount, 0);
+  const loanCapital = loanProjects.reduce((s, p) => s + p.investmentAmount, 0);
+  const grantCapital = grantProjects.reduce((s, p) => s + p.investmentAmount, 0);
+  const blendedCapital = blendedProjects.reduce((s, p) => s + p.investmentAmount, 0);
+
+  const readyCount = modes.filter(m => m.readiness === "READY").length;
+  const conditionalCount = modes.filter(m => m.readiness === "CONDITIONALLY READY").length;
+  const notReadyCount = modes.filter(m => m.readiness === "NOT READY").length;
+
+  const lowConfCapital = allProjects
+    .filter(p => p.dataConfidence < 60 || p.overallRisk > 70)
+    .reduce((s, p) => s + p.investmentAmount, 0);
+
+  const structuringInsights: string[] = [];
+  if (grantProjects.length > 0) structuringInsights.push(`${grantProjects.length} project${grantProjects.length > 1 ? "s" : ""} require grant-first structuring`);
+  if (loanProjects.length > 0) structuringInsights.push(`${loanProjects.length} project${loanProjects.length > 1 ? "s" : ""} viable for direct lending`);
+  if (blendedProjects.length > 0) structuringInsights.push(`${blendedProjects.length} project${blendedProjects.length > 1 ? "s" : ""} recommended for blended finance`);
+  if (notReadyCount > 0) structuringInsights.push(`${notReadyCount} project${notReadyCount > 1 ? "s" : ""} should be deferred pending data improvement`);
+
+  res.json({
+    capitalMix: {
+      loan: { count: loanProjects.length, capital: loanCapital, percent: totalCapital > 0 ? Math.round(loanCapital / totalCapital * 100) : 0 },
+      grant: { count: grantProjects.length, capital: grantCapital, percent: totalCapital > 0 ? Math.round(grantCapital / totalCapital * 100) : 0 },
+      blended: { count: blendedProjects.length, capital: blendedCapital, percent: totalCapital > 0 ? Math.round(blendedCapital / totalCapital * 100) : 0 },
+    },
+    readiness: {
+      ready: { count: readyCount, percent: Math.round(readyCount / allProjects.length * 100) },
+      conditional: { count: conditionalCount, percent: Math.round(conditionalCount / allProjects.length * 100) },
+      notReady: { count: notReadyCount, percent: Math.round(notReadyCount / allProjects.length * 100) },
+    },
+    capitalEfficiency: {
+      atRisk: lowConfCapital,
+      atRiskPercent: totalCapital > 0 ? Math.round(lowConfCapital / totalCapital * 100) : 0,
+      drivers: [
+        ...(allProjects.filter(p => p.dataConfidence < 60).length > 0 ? ["Low data confidence"] : []),
+        ...(allProjects.filter(p => p.overallRisk > 70).length > 0 ? ["High environmental uncertainty"] : []),
+      ],
+    },
+    structuringInsights,
+    projects: modes.map(m => ({
+      id: m.id,
+      name: m.name,
+      recommendedMode: m.mode,
+      readiness: m.readiness,
+      overallRisk: m.overallRisk,
+      dataConfidence: m.dataConfidence,
+      investmentAmount: m.investmentAmount,
+    })),
+  });
+});
+
 export default router;

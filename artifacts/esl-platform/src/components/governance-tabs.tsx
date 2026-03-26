@@ -331,6 +331,20 @@ export function MonitoringTab({ projectId }: { projectId: number }) {
   const verified = data.filter(m => m.status === "Verified").length;
   const escalated = data.filter(m => m.status === "Escalated").length;
 
+  const getCapitalTag = (eventType: string, result: string) => {
+    const tags: string[] = [];
+    if (eventType === "Lab Test" || eventType === "Audit") {
+      tags.push("Required for grant release");
+    }
+    if (eventType === "Site Visit" || eventType === "Audit") {
+      tags.push("Required for loan covenant");
+    }
+    if (result === "Fail" && eventType === "Lab Test") {
+      tags.push("Grant disbursement hold");
+    }
+    return tags;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -367,12 +381,14 @@ export function MonitoringTab({ projectId }: { projectId: number }) {
                 <th className="text-left px-4 py-3 font-semibold">Type</th>
                 <th className="text-left px-4 py-3 font-semibold">Result</th>
                 <th className="text-left px-4 py-3 font-semibold">Status</th>
+                <th className="text-left px-4 py-3 font-semibold">Capital Tags</th>
                 <th className="text-left px-4 py-3 font-semibold">Findings</th>
               </tr>
             </thead>
             <tbody>
               {data.map(event => {
                 const Icon = monitoringTypeIcon[event.type] || Activity;
+                const tags = getCapitalTag(event.type, event.result);
                 return (
                   <tr key={event.id} className={`border-b border-border/30 hover:bg-secondary/20 ${event.status === "Escalated" ? "bg-destructive/5" : ""}`}>
                     <td className="px-4 py-3 font-mono text-xs">{event.date}</td>
@@ -391,6 +407,17 @@ export function MonitoringTab({ projectId }: { projectId: number }) {
                       <Badge variant={event.status === "Verified" ? "success" : "destructive"}>
                         {event.status}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {tags.map((tag, i) => (
+                          <span key={i} className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                            tag.includes("grant") ? "bg-warning/10 text-warning border border-warning/20" :
+                            tag.includes("loan") ? "bg-primary/10 text-primary border border-primary/20" :
+                            "bg-destructive/10 text-destructive border border-destructive/20"
+                          }`}>{tag}</span>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground max-w-xs truncate">{event.findings || "—"}</td>
                   </tr>

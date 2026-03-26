@@ -62,14 +62,15 @@ artifacts-monorepo/
 - Investment amount entry per project
 - Portfolio metrics (weighted risk, total investment, project count)
 
-### Project Intelligence View (7-tab interface)
-- **Risk Overview**: Investment Decision Signal, What-If Scenario Analysis, Risk Monitoring Timeline, Risk Topology, Financial Translation
-- **Framework Alignment**: IFC PS1-PS8, Equator Principles, IDB Invest alignment with status/severity/gap analysis
-- **Covenants**: Investment covenant tracking with status management (Pending/In Progress/Met/Breach)
-- **ESAP**: Environmental & Social Action Plan items with progress tracking and evidence
-- **Monitoring**: Monitoring event log with type, result, findings, escalation status
-- **Audit Trail**: Full audit log of all governance actions with timestamps and actors
-- **Report**: Institutional report generation (Pre-IC / Post-Close format) with full governance data
+### Project Intelligence View (8-tab interface)
+- **Overview**: Capital Mode badge, Data Confidence, Monitoring status, IFC alignment, Risk Topology chart, Financial Translation panel (delay/overrun/covenant/reputational risk)
+- **Risk**: What-If Scenario Analysis with toggles, Risk Monitoring Timeline, Framework Alignment, Covenants, ESAP
+- **Financial**: Loan pricing, insurance, covenant level, capital constraints, lifetime cost (via FinancialImpactPanel)
+- **Impact**: Impact Delivery Risk (HIGH/MEDIUM/LOW with drivers), Impact Efficiency Score, Monitoring Intensity, Disbursement Risk — mode-aware (Grant/Loan/Blended)
+- **Structure**: Capital structure by mode — Loan (covenants, conditions precedent, risk mitigation), Grant (disbursement phases with conditions), Blended (grant/loan split, triggers, milestones)
+- **Monitoring**: Monitoring event log with Capital Tags ("Required for grant release", "Required for loan covenant", "Grant disbursement hold")
+- **Audit Trail**: Full audit log of all governance actions
+- **Report**: Institutional report generation
 
 ### Risk Scoring Engine (`artifacts/api-server/src/lib/risk-engine.ts`)
 - Environmental, Infrastructure, Human Exposure, Regulatory risk subscores (0-100)
@@ -157,6 +158,20 @@ artifacts-monorepo/
 - Portfolio Financial Impact + ESL Comparison: integrated into dashboard
 - API financial routes in `artifacts/api-server/src/routes/financial.ts`
 - DB table: `financial_impacts` (schema at `lib/db/src/schema/financial-impacts.ts`)
+
+### V5.5 Capital Deployment Interface
+- **Capital Mode Context**: `artifacts/esl-platform/src/components/capital-mode-context.tsx` — global Loan/Grant/Blended state via React Context
+- **CapitalModeSwitch**: Three-segment control in layout header (all pages)
+- **Impact Tab**: `artifacts/esl-platform/src/components/impact-tab.tsx` — mode-aware impact assessment
+- **Structure Tab**: `artifacts/esl-platform/src/components/structure-tab.tsx` — loan/grant/blended structure views
+- **Dashboard Capital Panel**: Capital Mix, Deployment Readiness, Capital Efficiency, Structuring Insights
+- **Monitoring Tags**: Capital tags on monitoring events ("Required for grant release", "Required for loan covenant")
+- **API Routes**:
+  - `GET /api/financial/project/:id/structure` — capital structure per mode
+  - `GET /api/financial/project/:id/impact` — impact assessment (delivery risk, efficiency, monitoring, disbursement)
+  - `GET /api/financial/portfolio/deployment` — capital mix, readiness, efficiency, structuring insights
+- **Capital Mode Logic**: Risk>70 + Confidence<50 → Grant, Risk>60 OR Confidence<60 → Blended, else Loan
+- **Deployment Readiness**: READY (risk<70 + confidence>=50 + monitoring), CONDITIONALLY READY (risk<70 OR confidence>=50), NOT READY
 
 ### Financial Calculation Logic
 - Base Rate: 8%, Risk 40-60 → +0.5%, Risk 60-75 → +1.0%, Risk >75 → +1.5%

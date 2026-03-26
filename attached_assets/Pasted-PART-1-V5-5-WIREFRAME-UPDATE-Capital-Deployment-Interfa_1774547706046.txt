@@ -1,0 +1,156 @@
+PART 1 — V5.5 WIREFRAME UPDATE
+Capital Deployment Interface (Loan + Grant + Blended)
+CORE SHIFT
+
+You are moving from:
+
+👉 “Risk + Financial Impact”
+
+to:
+
+👉 “Capital Structuring & Deployment Intelligence”
+
+1. GLOBAL CONTROL (NEW — NON-NEGOTIABLE)
+
+Add at top of:
+
+Project view
+Portfolio view
+CAPITAL MODE SWITCH
+[ Loan ]   [ Grant ]   [ Blended ]
+Behavior:
+Entire system recalculates outputs based on mode
+This must feel native, not toggle gimmick
+2. PROJECT VIEW — NEW STRUCTURE
+
+Replace current layout with:
+
+TABS
+Overview | Risk | Financial | Impact | Structure | Monitoring | Reports | Audit
+
+👉 “Financial” and “Impact” separated
+👉 “Structure” becomes the brain
+
+3. OVERVIEW TAB (UPDATED)
+
+Add:
+
+Capital Mode (visible)
+Deployment Readiness Indicator:
+READY  
+CONDITIONALLY READY  
+NOT READY
+ESAP Progress
+Data Confidence
+Last Monitoring
+4. FINANCIAL TAB (LOAN MODE)
+
+(Keep existing V5)
+
+Rate adjustment
+Insurance
+Covenant severity
+5. IMPACT TAB (NEW — GRANT MODE CORE)
+Layout
+A. Impact Delivery Risk
+Delivery Risk: HIGH  
+Drivers:
+- flood exposure  
+- low data confidence  
+B. Impact Efficiency Score
+Projected Impact Efficiency: 68%
+
+Adjusted for:
+- environmental risk  
+- uncertainty  
+- execution complexity
+C. Monitoring Intensity
+Monitoring Requirement: HIGH  
+D. Disbursement Risk
+Risk of Misallocation: ELEVATED
+6. STRUCTURE TAB (MOST IMPORTANT TAB)
+
+This is where everything comes together
+
+For LOAN MODE:
+
+Show:
+
+Covenants
+Conditions precedent
+Risk mitigation
+For GRANT MODE:
+
+Show:
+
+Disbursement Conditions
+Phase 1:
+- baseline validation required  
+
+Phase 2:
+- monitoring installed  
+
+Phase 3:
+- performance verified  
+For BLENDED MODE:
+
+Show:
+
+Grant Required: YES  
+Purpose: de-risk environmental exposure  
+
+Loan Viability: CONDITIONAL  
+Trigger:
+- monitoring established  
+- ESAP complete  
+
+👉 This is the money slide in demos
+
+7. MONITORING TAB (NO CHANGE — BUT ADD TAGS)
+
+Add tags:
+
+“Required for grant release”
+“Required for loan covenant”
+8. PORTFOLIO VIEW — NEW ELEMENTS
+Add:
+Capital Mix Panel
+Loan: 60%  
+Grant: 25%  
+Blended: 15%
+Deployment Readiness Summary
+Ready: 40%  
+Conditional: 35%  
+Not Ready: 25%
+Capital Efficiency Insight
+$18M at risk of inefficient deployment due to:
+- low data confidence  
+- high environmental uncertainty  
+9. NEW DASHBOARD PANEL
+“Capital Structuring Insight”
+
+Example:
+
+3 projects require grant-first structuring  
+2 projects viable for direct lending  
+1 project should be deferred
+10. DESIGN RULES (UPDATED)
+Must feel like:
+
+👉 capital allocation + structuring system
+
+NOT:
+
+👉 analytics dashboard
+
+Visual hierarchy:
+Decision
+Structure
+Impact
+Risk
+EXECUTION ORDER
+Add capital mode switch
+Restructure tabs
+Build structure tab
+Add impact tab
+THEN update backend

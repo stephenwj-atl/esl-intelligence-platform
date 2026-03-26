@@ -39,9 +39,69 @@ export interface FinancialScenario {
   mitigations: string[];
 }
 
+export interface ProjectStructure {
+  project: { id: number; name: string; country: string; projectType: string; investmentAmount: number };
+  deploymentReadiness: string;
+  recommendedMode: string;
+  loan: {
+    viable: boolean;
+    conditions: string[];
+    conditionsPrecedent: string[];
+    riskMitigation: string[];
+    covenantLevel: string;
+    rate: number;
+  };
+  grant: {
+    required: boolean;
+    purpose: string;
+    disbursementPhases: Array<{
+      phase: number;
+      name: string;
+      conditions: string[];
+      allocation: number;
+      status: string;
+    }>;
+  };
+  blended: {
+    grantRequired: boolean;
+    grantPurpose: string;
+    grantPercent: number;
+    loanViability: string;
+    loanTriggers: string[];
+    transitionMilestones: string[];
+  };
+}
+
+export interface ProjectImpactAssessment {
+  project: { id: number; name: string };
+  deliveryRisk: { level: string; drivers: string[] };
+  impactEfficiency: { score: number; factors: Array<{ factor: string; adjustment: number }> };
+  monitoringIntensity: { level: string; requirements: string[] };
+  disbursementRisk: { level: string; factors: string[] };
+}
+
+export interface PortfolioDeployment {
+  capitalMix: {
+    loan: { count: number; capital: number; percent: number };
+    grant: { count: number; capital: number; percent: number };
+    blended: { count: number; capital: number; percent: number };
+  };
+  readiness: {
+    ready: { count: number; percent: number };
+    conditional: { count: number; percent: number };
+    notReady: { count: number; percent: number };
+  };
+  capitalEfficiency: { atRisk: number; atRiskPercent: number; drivers: string[] };
+  structuringInsights: string[];
+  projects: Array<{ id: number; name: string; recommendedMode: string; readiness: string; overallRisk: number; dataConfidence: number; investmentAmount: number }>;
+}
+
 export const financialApi = {
   getProjectImpact: (id: number) => fetchJson<ProjectFinancialImpact>(`/financial/project/${id}`),
   getPortfolioImpact: () => fetchJson<PortfolioFinancialImpact>("/financial/portfolio"),
   getComparison: () => fetchJson<ESLComparison>("/financial/comparison"),
   getScenario: (id: number) => fetchJson<FinancialScenario>(`/financial/scenario/${id}`),
+  getProjectStructure: (id: number) => fetchJson<ProjectStructure>(`/financial/project/${id}/structure`),
+  getProjectImpactAssessment: (id: number) => fetchJson<ProjectImpactAssessment>(`/financial/project/${id}/impact`),
+  getPortfolioDeployment: () => fetchJson<PortfolioDeployment>("/financial/portfolio/deployment"),
 };
