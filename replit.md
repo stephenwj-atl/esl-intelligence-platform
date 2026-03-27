@@ -27,7 +27,7 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 ### Core Features
 
 **1. Portfolio Command Center (Frontend Dashboard)**
-- A 3-tab layout providing an "Overview," "Allocation," and "Intelligence" view.
+- A 4-tab layout providing "Overview," "Allocation," "Impact," and "Intelligence" views.
 - **Overview**: Displays portfolio-level decisions, summary metrics (Total Capital, Avg Risk, Exposure at Risk, Confidence Score), Capital Deployment Intelligence, Top Risk Alerts, and an Asset Inventory.
 - **Allocation**: Features a Risk vs. Confidence Scatter Matrix, Capital Allocation Pie Chart, Data Confidence Index, Risk Distribution, and Portfolio Financial Impact projections.
 - **Intelligence**: Offers Cross-Project Intelligence patterns, Portfolio Governance metrics (ESAP %, Covenant Compliance %), and Portfolio Optimization recommendations.
@@ -35,11 +35,14 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 
 **2. Project Intelligence View**
 - A 10-tab interface for detailed project analysis: "Decision," "Structure," "Financial," "Impact," "Drivers," "Evidence," "Scenario," "Monitoring," "Report," and "Audit."
-- **Decision**: Provides a Capital Decision Summary, recommended structure, financial impact, key constraints, and next actions.
-- **Structure**: Details capital structure by mode (Loan, Grant, Blended).
-- **Financial**: Covers loan pricing, insurance, covenant levels, and lifetime cost.
-- **Impact**: Assesses Impact Delivery Risk, Efficiency Score, Monitoring Intensity, and Disbursement Risk.
-- **Scenario**: Allows "what-if" analysis with before/after comparisons and a Risk Monitoring Timeline.
+- **Decision**: Capital Decision Summary — Mode, Status, Recommended Structure, Key Constraints, Next Required Actions. Clean, readable in 10 seconds.
+- **Structure**: Capital structure by mode (Loan, Grant, Blended) plus Covenants and ESAP governance sections.
+- **Financial**: Loan pricing, insurance, covenant levels, lifetime cost. Hidden in Grant mode.
+- **Impact**: Impact Delivery Risk, Efficiency Score, Monitoring Intensity, Disbursement Risk. Hidden in Loan mode.
+- **ESL Services**: Auto-generated ESL service proposals from risk flags.
+- **Evidence**: Lab Data, Monitoring Data, IFC Standards validation and Effect on Decision.
+- **Scenario**: "What-if" analysis with mode-specific comparison labels (Loan: Current Risk Position → With Intervention; Grant: Current Impact Profile → Post-Intervention Impact; Blended: Current Structure → Transition Target).
+- **Tab visibility rules**: Financial hidden in Grant mode; Impact hidden in Loan mode; useEffect auto-switches to Decision tab on mode change if current tab becomes hidden.
 
 **3. Risk Scoring Engine**
 - Calculates Environmental, Infrastructure, Human Exposure, and Regulatory risk subscores (0-100).

@@ -45,6 +45,7 @@ type Role = "Analyst" | "Investment Officer" | "Admin";
 const DASH_TABS = [
   { id: "overview", label: "Overview", icon: Eye },
   { id: "allocation", label: "Allocation", icon: PieChartIcon },
+  { id: "impact", label: "Impact", icon: Target },
   { id: "intelligence", label: "Intelligence", icon: Brain },
 ] as const;
 
@@ -661,6 +662,107 @@ export default function Dashboard() {
                 </Card>
               </AnimatedContainer>
             )}
+          </div>
+        )}
+
+        {dashTab === "impact" && (
+          <div className="space-y-6">
+            <AnimatedContainer delay={0.05}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {(() => {
+                  const totalProjects = projects?.length || 0;
+                  const mix = deployment?.capitalMix as any;
+                  const rd = deployment?.readiness as any;
+                  const grantProjects = mix?.grant?.count || 0;
+                  const blendedProjects = mix?.blended?.count || 0;
+                  const impactProjects = grantProjects + blendedProjects;
+                  const readyCount = rd?.ready?.count || 0;
+                  const conditionalCount = rd?.conditional?.count || 0;
+                  const notReadyCount = rd?.notReady?.count || 0;
+                  const deliveryRate = totalProjects > 0 ? Math.round((readyCount / totalProjects) * 100) : 0;
+                  const disbursementVelocity = totalProjects > 0 ? Math.round(((readyCount + conditionalCount) / totalProjects) * 100) : 0;
+                  return (
+                    <>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Impact Delivery Rate</div>
+                        <div className={`text-3xl font-mono font-bold ${deliveryRate >= 60 ? "text-success" : deliveryRate >= 40 ? "text-warning" : "text-destructive"}`}>{deliveryRate}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Projects deployment-ready</div>
+                        <div className="h-2 bg-secondary rounded-full mt-3 overflow-hidden">
+                          <div className={`h-full rounded-full ${deliveryRate >= 60 ? "bg-success" : deliveryRate >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${deliveryRate}%` }} />
+                        </div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Disbursement Velocity</div>
+                        <div className={`text-3xl font-mono font-bold ${disbursementVelocity >= 70 ? "text-success" : disbursementVelocity >= 50 ? "text-warning" : "text-destructive"}`}>{disbursementVelocity}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Capital deployable or conditional</div>
+                        <div className="h-2 bg-secondary rounded-full mt-3 overflow-hidden">
+                          <div className={`h-full rounded-full ${disbursementVelocity >= 70 ? "bg-success" : disbursementVelocity >= 50 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${disbursementVelocity}%` }} />
+                        </div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Impact Portfolio</div>
+                        <div className="text-3xl font-mono font-bold text-primary">{impactProjects}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Grant + Blended projects</div>
+                        <div className="flex gap-2 mt-3 text-xs">
+                          <Badge variant="outline" className="font-mono">{grantProjects} Grant</Badge>
+                          <Badge variant="outline" className="font-mono">{blendedProjects} Blended</Badge>
+                        </div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Blocked Capital</div>
+                        <div className={`text-3xl font-mono font-bold ${notReadyCount > 3 ? "text-destructive" : notReadyCount > 0 ? "text-warning" : "text-success"}`}>{notReadyCount}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Projects not ready for deployment</div>
+                        <div className="flex gap-2 mt-3 text-xs">
+                          <Badge variant={notReadyCount > 0 ? "destructive" : "success"} className="font-mono">
+                            {notReadyCount > 0 ? "Action required" : "All clear"}
+                          </Badge>
+                        </div>
+                      </Card>
+                    </>
+                  );
+                })()}
+              </div>
+            </AnimatedContainer>
+
+            <AnimatedContainer delay={0.1}>
+              <Card className="p-6">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6 flex items-center">
+                  <Target className="w-4 h-4 mr-2 text-primary" /> Deployment Readiness by Project
+                </h3>
+                {projects && projects.length > 0 ? (
+                  <div className="space-y-3">
+                    {projects.map((p: any) => {
+                      const risk = p.riskScores?.overallRisk ?? p.overallRisk ?? 0;
+                      const conf = p.riskScores?.dataConfidence ?? p.dataConfidence ?? 0;
+                      const isReady = risk <= 40 && conf >= 60;
+                      const isConditional = !isReady && risk <= 70;
+                      const status = isReady ? "READY" : isConditional ? "CONDITIONAL" : "NOT READY";
+                      const statusColor = isReady ? "text-success" : isConditional ? "text-warning" : "text-destructive";
+                      const statusBg = isReady ? "bg-success/10" : isConditional ? "bg-warning/10" : "bg-destructive/10";
+                      return (
+                        <Link key={p.id} href={`/project/${p.id}`}>
+                          <div className={`flex items-center justify-between p-3 rounded-lg border border-border/30 ${statusBg} hover:border-primary/30 transition-colors cursor-pointer`}>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full ${isReady ? "bg-success" : isConditional ? "bg-warning" : "bg-destructive"}`} />
+                              <span className="text-sm font-medium text-foreground">{p.name}</span>
+                              <span className="text-xs text-muted-foreground">{p.country}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="text-xs text-muted-foreground font-mono">Risk: {risk.toFixed(0)}</span>
+                              <span className="text-xs text-muted-foreground font-mono">Conf: {conf.toFixed(0)}%</span>
+                              <Badge variant="outline" className={`${statusColor} font-mono text-[10px]`}>{status}</Badge>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">No projects available.</div>
+                )}
+              </Card>
+            </AnimatedContainer>
           </div>
         )}
 

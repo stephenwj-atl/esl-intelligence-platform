@@ -1,0 +1,251 @@
+Below is a clean, structured V6 MASTER REPLIT PROMPT that builds exactly what we discussed:
+
+👉 ONE system + THREE translation layers (Loan / Grant / Blended)
+👉 No duplication
+👉 No bloat
+👉 No confusion
+
+MASTER REPLIT PROMPT — V6
+Environmental Intelligence for Capital Deployment
+Multi-Instrument (Loan / Grant / Blended) System
+ROLE
+
+You are a senior systems architect and full-stack engineer.
+
+You are upgrading an existing environmental intelligence platform into a multi-instrument capital deployment system.
+
+OBJECTIVE
+
+Transform the system from:
+
+Environmental Risk → Loan-Based Financial Output
+
+into:
+
+Environmental Intelligence → Multi-Instrument Capital Decisions
+   → Loan (risk-return)
+   → Grant (impact delivery)
+   → Blended (transition to viability)
+CORE ARCHITECTURE (MANDATORY)
+Layer 1 — Environmental Intelligence (DO NOT CHANGE)
+
+Already exists:
+
+Risk scoring (0–100)
+Data confidence scoring
+Risk drivers
+Monitoring inputs
+Scenario engine
+
+👉 This is the foundation — do not modify logic
+
+Layer 2 — Translation Layer (BUILD THIS)
+
+Create a mode-aware translation engine:
+
+mode = "loan" | "grant" | "blended"
+
+All outputs must be computed through:
+
+translateEnvironmentalIntelligence(mode, inputs)
+MODULE 1 — LOAN TRANSLATION (EXISTING — REFACTOR)
+Keep:
+interest rate adjustment
+insurance uplift
+covenant severity
+capital constraints
+Refactor:
+
+Make outputs clearly tied to:
+
+LoanOutput {
+  adjustedRate
+  insurancePremium
+  lifetimeFinancingImpact
+  covenantLevel
+  capitalConstraintFlag
+}
+MODULE 2 — GRANT TRANSLATION (NEW — HIGH PRIORITY)
+Create:
+GrantOutput {
+  impactDeliveryProbability
+  impactEfficiencyScore
+  costPerOutcome
+  disbursementRisk
+  utilisationRate
+}
+LOGIC
+A. Impact Delivery Probability
+base = 100
+
+subtract:
+- environmental risk penalty
+- data confidence penalty
+- sector complexity penalty
+B. Impact Efficiency Score
+efficiency = f(risk, confidence, environmental volatility)
+C. Cost Per Outcome
+adjust base cost by:
+- environmental constraints
+- rework probability
+- delay likelihood
+D. Disbursement Risk
+if confidence < threshold OR high risk:
+  disbursementRisk = HIGH
+E. Utilisation Rate
+utilisation = projected % of grant actually used effectively
+MODULE 3 — BLENDED TRANSLATION (NEW — CRITICAL)
+Create:
+BlendedOutput {
+  grantPercentage
+  loanPercentage
+  concessionalityLevel
+  transitionTimeline
+  viabilityThreshold
+  firstLossEstimate
+  crowdInRatio
+}
+LOGIC
+A. Grant / Loan Split
+grant% = f(risk, confidence, validation gaps)
+loan% = remainder
+B. Transition Timeline
+timeline = sequence of:
+- validation
+- monitoring
+- intervention
+→ until risk < threshold
+C. Viability Threshold
+loanEligible = risk < X AND confidence > Y
+D. First Loss Estimate
+firstLoss = % of capital required to absorb risk
+E. Crowding-In Ratio
+privateCapital = f(risk reduction via grant)
+MODULE 4 — CAPITAL MODE SWITCH (GLOBAL UI CONTROL)
+
+Add persistent control:
+
+[ Loan ] [ Grant ] [ Blended ]
+Behavior:
+All tabs update instantly
+All outputs recomputed
+No page reload
+MODULE 5 — UNIFIED DECISION OUTPUT (CRITICAL)
+
+Every mode must output:
+
+Decision {
+  status: READY | CONDITIONALLY_READY | NOT_READY
+  reasoning
+  nextActions
+}
+Example:
+Loan:
+Proceed with covenants
+Grant:
+Disburse in phases
+Blended:
+Grant-first, loan after validation
+MODULE 6 — SCENARIO ENGINE (UPGRADE — VERY IMPORTANT)
+Extend existing scenario system:
+Inputs:
+add monitoring
+add lab validation
+improve standards
+apply intervention
+Outputs MUST CHANGE BY MODE:
+Loan:
+rate ↓
+insurance ↓
+Grant:
+impact probability ↑
+utilisation ↑
+Blended:
+grant % ↓
+loan viability ↑
+Example:
+Before:
+Loan viable: NO
+Grant required: 60%
+
+After:
+Loan viable: YES
+Grant required: 25%
+
+→ Transition achieved
+MODULE 7 — PORTFOLIO ENGINE (UPGRADE)
+Add mode-aware portfolio metrics:
+Loan Portfolio:
+capital at risk
+weighted risk
+Grant Portfolio:
+impact delivery rate
+utilisation rate
+disbursement velocity
+Blended Portfolio:
+transition pipeline
+capital leverage
+crowd-in ratio
+MODULE 8 — DATA MODEL EXTENSIONS
+
+Add:
+
+Project {
+  capitalMode
+  outcomes[] (for grants)
+  sectorType
+}
+Outcome {
+  type (hectares, beneficiaries, etc.)
+  targetValue
+  achievedValue
+}
+BlendedStructure {
+  grantComponent
+  loanComponent
+  timeline
+}
+MODULE 9 — UI STRUCTURE (DO NOT BREAK EXISTING FLOW)
+
+Tabs remain:
+
+Decision | Structure | Financial | Impact | Drivers | Evidence | Scenario | Monitoring
+Behavior by mode:
+Financial tab → Loan logic
+Impact tab → Grant logic
+Structure tab → Blended logic
+FINAL SYSTEM BEHAVIOR
+
+User sees:
+
+Same project
+Different interpretation depending on capital type
+FINAL PURPOSE
+
+After V6:
+
+👉 The system answers:
+
+Not just:
+"What is the risk?"
+
+But:
+"How should capital be deployed?"
+FINAL CHECK (MANDATORY)
+
+System must:
+
+✔ Work equally for loans, grants, blended
+✔ Not duplicate logic
+✔ Maintain one intelligence layer
+✔ Keep UI clean
+
+FINAL NOTE
+
+You are now building:
+
+👉 a capital deployment operating system
+
+Not:
+
+👉 an environmental tool

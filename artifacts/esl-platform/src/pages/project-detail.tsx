@@ -20,7 +20,7 @@ import { ImpactTab } from "@/components/impact-tab";
 import { StructureTab } from "@/components/structure-tab";
 import { CapitalDecisionSummary } from "@/components/capital-decision-summary";
 import { useCapitalMode } from "@/components/capital-mode-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FrameworkAlignmentTab, CovenantsTab, EsapTab, MonitoringTab,
   AuditTrailTab, ReportTab, BreachAlert
@@ -56,6 +56,11 @@ export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState<TabId>("decision");
   const { mode: capitalMode } = useCapitalMode();
   const { permissions } = useRole();
+
+  useEffect(() => {
+    if (activeTab === "financial" && capitalMode === "Grant") setActiveTab("decision");
+    if (activeTab === "impact" && capitalMode === "Loan") setActiveTab("decision");
+  }, [capitalMode]);
 
   const [toggles, setToggles] = useState({
     hasMonitoringData: false,
@@ -197,6 +202,8 @@ export default function ProjectDetail() {
           <div className="flex gap-1 bg-secondary/30 rounded-xl p-1 overflow-x-auto">
             {TABS.filter(tab => {
               if (tab.id === "audit" && !permissions.canViewAudit) return false;
+              if (tab.id === "financial" && capitalMode === "Grant") return false;
+              if (tab.id === "impact" && capitalMode === "Loan") return false;
               return true;
             }).map(tab => {
               const Icon = tab.icon;
@@ -225,7 +232,13 @@ export default function ProjectDetail() {
             </div>
           )}
 
-          {activeTab === "structure" && <StructureTab projectId={id} />}
+          {activeTab === "structure" && (
+            <div className="space-y-6">
+              <StructureTab projectId={id} />
+              <CovenantsTab projectId={id} />
+              <EsapTab projectId={id} />
+            </div>
+          )}
 
           {activeTab === "financial" && <FinancialImpactPanel projectId={id} />}
 
@@ -420,8 +433,6 @@ export default function ProjectDetail() {
               </Card>
 
               <FrameworkAlignmentTab projectId={id} />
-              <CovenantsTab projectId={id} />
-              <EsapTab projectId={id} />
             </div>
           )}
 
@@ -455,21 +466,31 @@ export default function ProjectDetail() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="rounded-xl border border-muted p-4 text-center bg-secondary/20">
-                          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Before</div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                            {capitalMode === "Grant" ? "Current Impact Profile" : capitalMode === "Blended" ? "Current Structure" : "Current Risk Position"}
+                          </div>
                           <div className={`text-3xl font-mono font-bold ${getRiskColor(project.riskScores.overallRisk)}`}>{project.riskScores.overallRisk.toFixed(1)}</div>
-                          <div className="text-xs text-muted-foreground mt-1">Risk Score</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {capitalMode === "Grant" ? "Delivery Risk" : capitalMode === "Blended" ? "Grant Dependency" : "Risk Score"}
+                          </div>
                           <div className="text-xs font-mono text-muted-foreground mt-2">{formatPercent(project.riskScores.dataConfidence)} confidence</div>
                         </div>
                         <div className="rounded-xl border border-primary/30 p-4 text-center bg-primary/5">
-                          <div className="text-xs text-primary uppercase tracking-wider mb-2 font-bold">After</div>
+                          <div className="text-xs text-primary uppercase tracking-wider mb-2 font-bold">
+                            {capitalMode === "Grant" ? "Post-Intervention Impact" : capitalMode === "Blended" ? "Transition Target" : "With Intervention"}
+                          </div>
                           <div className={`text-3xl font-mono font-bold ${getRiskColor(scenarioResult!.after.riskScores.overallRisk)}`}>{scenarioResult!.after.riskScores.overallRisk.toFixed(1)}</div>
-                          <div className="text-xs text-muted-foreground mt-1">Risk Score</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {capitalMode === "Grant" ? "Improved Delivery" : capitalMode === "Blended" ? "Loan Viability" : "Risk Score"}
+                          </div>
                           <div className="text-xs font-mono text-primary mt-2">{formatPercent(scenarioResult!.after.riskScores.dataConfidence)} confidence</div>
                         </div>
                       </div>
 
                       <div className="rounded-xl border border-success/20 bg-success/5 p-4">
-                        <div className="text-xs text-success uppercase tracking-wider font-bold mb-2">Impact</div>
+                        <div className="text-xs text-success uppercase tracking-wider font-bold mb-2">
+                          {capitalMode === "Grant" ? "Grant Impact" : capitalMode === "Blended" ? "Blended Impact" : "Financial Impact"}
+                        </div>
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Risk Change</span>
@@ -491,6 +512,42 @@ export default function ProjectDetail() {
                               {formatPercent(project.riskScores.dataConfidence)} → {formatPercent(scenarioResult!.after.riskScores.dataConfidence)}
                             </span>
                           </div>
+                          {capitalMode === "Loan" && (
+                            <div className="pt-2 border-t border-success/20 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Rate impact</span>
+                                <span className="font-mono text-success">Lower risk premium</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Insurance</span>
+                                <span className="font-mono text-success">Reduced uplift</span>
+                              </div>
+                            </div>
+                          )}
+                          {capitalMode === "Grant" && (
+                            <div className="pt-2 border-t border-success/20 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Impact delivery</span>
+                                <span className="font-mono text-success">Higher probability</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Utilisation</span>
+                                <span className="font-mono text-success">Improved efficiency</span>
+                              </div>
+                            </div>
+                          )}
+                          {capitalMode === "Blended" && (
+                            <div className="pt-2 border-t border-success/20 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Grant component</span>
+                                <span className="font-mono text-success">Reducible</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Loan viability</span>
+                                <span className="font-mono text-success">Improved</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 

@@ -1,0 +1,199 @@
+MASTER REPLIT PROMPT — V6 WIREFRAME UPDATE
+Multi-Instrument Capital Deployment UI
+ROLE
+
+You are a senior product designer and frontend architect.
+
+You are restructuring the UI of an existing environmental intelligence platform to support:
+
+Loan
+Grant
+Blended finance
+OBJECTIVE
+
+Transform UI from:
+
+Risk Dashboard
+
+into:
+
+Capital Decision Interface
+CORE DESIGN PRINCIPLE (MANDATORY)
+Decision → Structure → Interpretation → Evidence → Simulation
+
+Everything must follow this order.
+
+1. GLOBAL CONTROL — CAPITAL MODE SWITCH
+Add at TOP (persistent across all pages)
+CAPITAL MODE
+
+[ Loan ]   [ Grant ]   [ Blended ]
+Behavior:
+Switching mode updates entire UI instantly
+No reload
+All tabs recompute outputs
+2. PROJECT PAGE — COMPLETE RESTRUCTURE
+Replace current layout with:
+Decision | Structure | Financial | Impact | Drivers | Evidence | Scenario | Monitoring | Reports | Audit
+3. TAB 1 — DECISION (DEFAULT)
+This is the MOST IMPORTANT screen
+Content (ONLY THIS):
+CAPITAL DECISION SUMMARY
+
+Mode: [Loan / Grant / Blended]
+
+Status:
+READY / CONDITIONALLY READY / NOT READY
+
+Recommended Structure:
+- Loan / Grant / Blended logic
+
+Key Constraints:
+- Data confidence
+- Risk drivers
+
+Next Actions:
+- Validation
+- Monitoring
+- Intervention
+RULE:
+
+❌ No charts
+❌ No tables
+❌ No clutter
+
+👉 Must be readable in 10 seconds
+
+4. TAB 2 — STRUCTURE (CORE LOGIC)
+Dynamic based on mode
+Loan:
+covenants
+conditions
+risk controls
+Grant:
+disbursement phases
+milestone conditions
+release triggers
+Blended:
+grant % / loan %
+transition pathway
+triggers for loan activation
+5. TAB 3 — FINANCIAL (LOAN MODE)
+Show ONLY when Loan or Blended active
+interest rate adjustment
+insurance
+capital impact
+6. TAB 4 — IMPACT (GRANT MODE)
+Show ONLY when Grant or Blended active
+impact delivery probability
+efficiency score
+disbursement risk
+utilisation
+7. TAB 5 — DRIVERS (RENAME FROM “RISK”)
+Show:
+What is driving the outcome:
+
+- Flood risk
+- Coastal exposure
+- Data confidence
+- Contamination
+
+👉 No generic “risk score explanation”
+
+8. TAB 6 — EVIDENCE
+Show:
+CRIF inputs
+standards compliance
+lab data
+monitoring
+Include:
+Effect on decision:
+9. TAB 7 — SCENARIO (CRITICAL — RESTORE + ENHANCE)
+This is your strongest feature
+LEFT:
+[ Add Monitoring ]
+[ Add Lab Validation ]
+[ Improve Standards ]
+[ Apply Intervention ]
+RIGHT:
+BEFORE vs AFTER
+
+Loan:
+Rate ↓
+Insurance ↓
+
+Grant:
+Impact ↑
+Utilisation ↑
+
+Blended:
+Grant ↓
+Loan viability ↑
+
+👉 Must be visually powerful
+
+10. TAB 8 — MONITORING
+events
+compliance
+alerts
+
+Add tags:
+
+“required for loan”
+“required for grant”
+11. PORTFOLIO VIEW — SPLIT INTO TABS
+Replace current dashboard with:
+TAB 1 — Overview
+total capital
+readiness
+alerts
+TAB 2 — Allocation
+capital by risk
+capital by mode
+TAB 3 — Impact (NEW)
+impact delivery rate
+disbursement velocity
+TAB 4 — Intelligence
+trends
+benchmarks
+12. NEW PANEL — CAPITAL MIX
+Loan: 55%
+Grant: 30%
+Blended: 15%
+13. NEW PANEL — DEPLOYMENT READINESS
+READY: 40%
+CONDITIONAL: 35%
+NOT READY: 25%
+14. DESIGN RULES
+Must:
+
+✔ minimal
+✔ structured
+✔ no clutter
+✔ strong hierarchy
+
+Must NOT:
+
+❌ SaaS dashboard look
+❌ too many colors
+❌ information overload
+
+15. FINAL UX TEST
+
+User must be able to:
+
+1. See decision
+2. Understand structure
+3. See impact
+4. Test scenario
+
+In under 60 seconds.
+
+FINAL PURPOSE
+
+After this UI:
+
+👉 system feels like:
+
+investment tool
+not analytics dashboard
