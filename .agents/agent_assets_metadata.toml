@@ -24,3 +24,9 @@ id = "P7rCoj2r6BDmkfST9y-PP"
 uri = "file://artifacts/esl-platform/ESL_Platform_Prospect_Walkthrough.md"
 type = "text"
 title = "ESL Intelligence Platform — Prospect Walkthrough"
+
+[[outputs]]
+id = "XOdhOtrdS6EXpKHrZFSBE"
+uri = "file://artifacts/esl-platform/ESL_Platform_Gap_Analysis.md"
+type = "text"
+title = "ESL Platform Gap Analysis — Evaluation Against Capital Deployment Positioning"
