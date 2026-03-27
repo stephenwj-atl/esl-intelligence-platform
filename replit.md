@@ -82,6 +82,15 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 - `pipelines`: Configures assessment pipeline definitions.
 - `financial_impacts`: Stores detailed financial impact data.
 
+### Role-Based Access Control
+- **Role Context**: `artifacts/esl-platform/src/components/role-context.tsx` — global role state via React Context
+- **Role selector**: In layout header (all pages), switches between Analyst / Investment Officer / Admin
+- **Avatar badge**: Shows AN / IO / AD based on role
+- **Analyst**: Can create projects, view risk/financial/ESL data, run scenarios, generate proposals. Cannot delete, manage pipelines, view audit trail, capital deployment, or governance.
+- **Investment Officer**: Everything Analyst can do, plus pipeline management, capital deployment intelligence, portfolio optimization, and governance panels.
+- **Admin**: Full access including delete (projects, pipelines, portfolios) and audit trail.
+- **Gated actions**: Delete buttons (project detail, pipeline list, portfolio manager), New Pipeline button, New Portfolio button, Audit tab, Capital Deployment panel, Governance panel.
+
 ### UI/UX Design
 - Aesthetic: Dark charcoal/black background, cyan/teal primary, white text, aiming for a Bloomberg Terminal look.
 - Investment amounts displayed in millions USD (e.g., $25M).

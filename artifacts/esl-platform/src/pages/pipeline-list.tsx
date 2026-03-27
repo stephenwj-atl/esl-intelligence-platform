@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Layout } from "@/components/layout";
 import { Card, Button, Badge, AnimatedContainer } from "@/components/ui";
 import { FileStack, Plus, ArrowRight, Loader2, Trash2, ChevronRight } from "lucide-react";
+import { useRole } from "@/components/role-context";
 
 const BASE = "/api";
 
@@ -21,6 +22,7 @@ interface Pipeline {
 export default function PipelineList() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState(true);
+  const { permissions } = useRole();
 
   useEffect(() => {
     fetch(`${BASE}/pipelines`)
@@ -49,16 +51,20 @@ export default function PipelineList() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/new">
-              <Button variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-1" /> Single Project
-              </Button>
-            </Link>
-            <Link href="/pipelines/new">
-              <Button>
-                <Plus className="w-4 h-4 mr-1" /> New Pipeline
-              </Button>
-            </Link>
+            {permissions.canCreate && (
+              <Link href="/new">
+                <Button variant="outline" size="sm">
+                  <Plus className="w-4 h-4 mr-1" /> Single Project
+                </Button>
+              </Link>
+            )}
+            {permissions.canManagePipelines && (
+              <Link href="/pipelines/new">
+                <Button>
+                  <Plus className="w-4 h-4 mr-1" /> New Pipeline
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -99,10 +105,12 @@ export default function PipelineList() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deletePipeline(p.id); }}
-                        className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {permissions.canDelete && (
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deletePipeline(p.id); }}
+                          className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                       <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                   </div>

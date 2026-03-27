@@ -26,6 +26,7 @@ import {
   AuditTrailTab, ReportTab, BreachAlert
 } from "@/components/governance-tabs";
 import { ESLServicesTab } from "@/components/esl-services-tab";
+import { useRole } from "@/components/role-context";
 
 const TABS = [
   { id: "decision", label: "Decision", icon: ShieldCheck },
@@ -54,6 +55,7 @@ export default function ProjectDetail() {
   const { data: riskHistory } = useGetProjectRiskHistory(id);
   const [activeTab, setActiveTab] = useState<TabId>("decision");
   const { mode: capitalMode } = useCapitalMode();
+  const { permissions } = useRole();
 
   const [toggles, setToggles] = useState({
     hasMonitoringData: false,
@@ -155,9 +157,11 @@ export default function ProjectDetail() {
               <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">{project.name}</h1>
             </div>
           </div>
-          <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-            <Trash2 className="h-4 w-4 mr-2" /> Delete
-          </Button>
+          {permissions.canDelete && (
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              <Trash2 className="h-4 w-4 mr-2" /> Delete
+            </Button>
+          )}
         </AnimatedContainer>
 
         <AnimatedContainer delay={0.05}>
@@ -191,7 +195,10 @@ export default function ProjectDetail() {
 
         <AnimatedContainer delay={0.1}>
           <div className="flex gap-1 bg-secondary/30 rounded-xl p-1 overflow-x-auto">
-            {TABS.map(tab => {
+            {TABS.filter(tab => {
+              if (tab.id === "audit" && !permissions.canViewAudit) return false;
+              return true;
+            }).map(tab => {
               const Icon = tab.icon;
               return (
                 <button

@@ -18,11 +18,13 @@ import {
 import { Layout } from "@/components/layout";
 import { Card, Button, Badge, AnimatedContainer } from "@/components/ui";
 import { formatCurrency, getRiskColor } from "@/lib/utils";
+import { useRole } from "@/components/role-context";
 
 const STAGES = ["Early", "Pre-IC", "Approved", "Post-Close"] as const;
 
 export default function PortfolioManager() {
   const [, setLocation] = useLocation();
+  const { permissions } = useRole();
   const queryClient = useQueryClient();
   const { data: portfolios, isLoading: portfoliosLoading } = useListPortfolios();
   const { data: projects } = useListProjects();
@@ -121,13 +123,15 @@ export default function PortfolioManager() {
               <p className="text-muted-foreground mt-1">Create and manage investment portfolios with project assignments.</p>
             </div>
           </div>
-          <Button 
-            className="group" 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-          >
-            <FolderPlus className="mr-2 h-4 w-4" />
-            New Portfolio
-          </Button>
+          {permissions.canDelete && (
+            <Button 
+              className="group" 
+              onClick={() => setShowCreateForm(!showCreateForm)}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />
+              New Portfolio
+            </Button>
+          )}
         </div>
 
         {showCreateForm && (
@@ -188,14 +192,16 @@ export default function PortfolioManager() {
                       >
                         <Plus className="w-3 h-3 mr-1" /> Add Project
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDeletePortfolio(portfolio.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      {permissions.canDelete && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeletePortfolio(portfolio.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
                     </div>
                   </div>
 

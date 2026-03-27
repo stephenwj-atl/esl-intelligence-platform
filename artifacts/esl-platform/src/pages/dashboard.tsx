@@ -13,7 +13,7 @@ import {
   DollarSign, Loader2, ArrowRight, TrendingDown,
   Target, Info, ChevronRight, Zap, Brain, Database,
   Shield, TrendingUp, Crosshair, Globe, Layers, BarChart3,
-  FileCheck, ClipboardList, AlertOctagon, User, Umbrella, Building2, XCircle, CheckCircle2,
+  FileCheck, ClipboardList, AlertOctagon, Umbrella, Building2, XCircle, CheckCircle2,
   PieChart as PieChartIcon, Eye
 } from "lucide-react";
 import { Layout } from "@/components/layout";
@@ -27,6 +27,7 @@ import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
 import { regionalApi, type PortfolioBenchmark } from "@/lib/regional-api";
 import { financialApi, type PortfolioFinancialImpact, type ESLComparison, type PortfolioDeployment } from "@/lib/financial-api";
 import { useCapitalMode } from "@/components/capital-mode-context";
+import { useRole } from "@/components/role-context";
 import { Briefcase } from "lucide-react";
 
 interface ESLPipelineData {
@@ -39,8 +40,7 @@ interface ESLPipelineData {
   topProjects: Array<{ id: number; name: string; country: string; investmentAmount: number; overallRisk: number; serviceCount: number; criticalCount: number; totalFee: number }>;
 }
 
-const ROLES = ["Analyst", "Investment Officer", "Admin"] as const;
-type Role = (typeof ROLES)[number];
+type Role = "Analyst" | "Investment Officer" | "Admin";
 
 const DASH_TABS = [
   { id: "overview", label: "Overview", icon: Eye },
@@ -64,7 +64,7 @@ export default function Dashboard() {
   const [eslComparison, setEslComparison] = useState<ESLComparison | null>(null);
   const [deployment, setDeployment] = useState<PortfolioDeployment | null>(null);
   const [eslPipeline, setEslPipeline] = useState<ESLPipelineData | null>(null);
-  const [role, setRole] = useState<Role>("Analyst");
+  const { role, permissions } = useRole();
   const { mode: capitalMode } = useCapitalMode();
   const [dashTab, setDashTab] = useState<DashTabId>("overview");
 
@@ -163,22 +163,14 @@ export default function Dashboard() {
             <p className="text-muted-foreground mt-1">Real-time risk and capital allocation intelligence.</p>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-1.5 border border-border/50">
-              <User className="w-4 h-4 text-muted-foreground" />
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as Role)}
-                className="bg-transparent text-sm font-mono text-foreground border-none outline-none cursor-pointer"
-              >
-                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <Link href="/new">
-              <Button className="group">
-                <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" />
-                New Asset
-              </Button>
-            </Link>
+            {permissions.canCreate && (
+              <Link href="/new">
+                <Button className="group">
+                  <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" />
+                  New Asset
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -267,7 +259,7 @@ export default function Dashboard() {
               </div>
             </AnimatedContainer>
 
-            {deployment && (
+            {deployment && permissions.canViewCapitalDeployment && (
               <AnimatedContainer delay={0.15}>
                 <Card className="overflow-hidden">
                   <div className="p-5 border-b border-white/5 bg-card/80 flex items-center justify-between">
@@ -796,7 +788,7 @@ export default function Dashboard() {
               </AnimatedContainer>
             )}
 
-            {governance && (
+            {governance && permissions.canViewGovernance && (
               <AnimatedContainer delay={0.1}>
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center">

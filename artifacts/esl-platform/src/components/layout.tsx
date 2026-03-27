@@ -1,10 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe, FileStack } from "lucide-react";
+import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe, FileStack, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CapitalModeSwitch } from "./capital-mode-context";
+import { useRole, ROLES } from "./role-context";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { role, setRole } = useRole();
 
   const navItems = [
     { href: "/", label: "Command Center", icon: LayoutDashboard },
@@ -77,12 +79,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="text-sm font-display font-semibold text-muted-foreground mr-4 hidden sm:block border-l border-border/50 pl-4">
               Portfolio: <span className="text-foreground">Caribbean Energy Fund</span>
             </div>
-            <div className="flex items-center bg-secondary/50 rounded-full px-3 py-1.5 border border-white/5">
-              <Activity className="h-4 w-4 text-primary mr-2 animate-pulse" />
-              <span className="text-xs font-medium text-foreground/80">System Nominal</span>
+            <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-1.5 border border-border/50">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as typeof role)}
+                className="bg-transparent text-xs font-mono text-foreground border-none outline-none cursor-pointer"
+              >
+                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
             </div>
             <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-primary/50 flex items-center justify-center text-xs font-bold text-background shadow-[0_0_10px_rgba(6,182,212,0.3)]">
-              AD
+              {role === "Admin" ? "AD" : role === "Investment Officer" ? "IO" : "AN"}
             </div>
           </div>
         </header>
