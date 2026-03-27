@@ -21,6 +21,7 @@ import { StructureTab } from "@/components/structure-tab";
 import { CapitalDecisionSummary } from "@/components/capital-decision-summary";
 import { useCapitalMode } from "@/components/capital-mode-context";
 import { useState, useEffect } from "react";
+import { financialApi, type TranslationResult, type ModeScenarioResult } from "@/lib/financial-api";
 import {
   FrameworkAlignmentTab, CovenantsTab, EsapTab, MonitoringTab,
   AuditTrailTab, ReportTab, BreachAlert
@@ -61,6 +62,15 @@ export default function ProjectDetail() {
     if (activeTab === "financial" && capitalMode === "Grant") setActiveTab("decision");
     if (activeTab === "impact" && capitalMode === "Loan") setActiveTab("decision");
   }, [capitalMode]);
+
+  const [translation, setTranslation] = useState<TranslationResult | null>(null);
+  const [modeScenario, setModeScenario] = useState<ModeScenarioResult | null>(null);
+
+  useEffect(() => {
+    if (id && capitalMode) {
+      financialApi.getTranslation(id, capitalMode).then(setTranslation).catch(() => {});
+    }
+  }, [id, capitalMode]);
 
   const [toggles, setToggles] = useState({
     hasMonitoringData: false,
@@ -105,6 +115,13 @@ export default function ProjectDetail() {
     };
 
     runScenario({ id, data: scenarioInputs });
+    const toggleParams = new URLSearchParams();
+    toggleParams.set("mode", capitalMode);
+    if (toggles.hasMonitoringData) toggleParams.set("monitoring", "true");
+    if (toggles.hasLabData) toggleParams.set("lab", "true");
+    if (toggles.isIFCAligned) toggleParams.set("ifc", "true");
+    if (toggles.reducedInputs) toggleParams.set("hazards", "true");
+    fetch(`/api/financial/scenario/${id}/mode?${toggleParams.toString()}`).then(r => { if (!r.ok) throw new Error("Scenario fetch failed"); return r.json(); }).then(setModeScenario).catch(() => setModeScenario(null));
   };
 
   const handleToggle = (key: keyof typeof toggles) => {
@@ -512,38 +529,74 @@ export default function ProjectDetail() {
                               {formatPercent(project.riskScores.dataConfidence)} → {formatPercent(scenarioResult!.after.riskScores.dataConfidence)}
                             </span>
                           </div>
-                          {capitalMode === "Loan" && (
+                          {capitalMode === "Loan" && modeScenario?.mode === "Loan" && (
                             <div className="pt-2 border-t border-success/20 space-y-1">
                               <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Rate impact</span>
+                                <span className="text-muted-foreground">Rate ↓</span>
+                                <span className="font-mono text-success">-{(modeScenario.delta as any).rateReduction}% adjustment</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Insurance ↓</span>
+                                <span className="font-mono text-success">${((modeScenario.delta as any).insuranceSavings / 1000).toFixed(0)}K saved</span>
+                              </div>
+                            </div>
+                          )}
+                          {capitalMode === "Loan" && !modeScenario && (
+                            <div className="pt-2 border-t border-success/20 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Rate ↓</span>
                                 <span className="font-mono text-success">Lower risk premium</span>
                               </div>
                               <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Insurance</span>
+                                <span className="text-muted-foreground">Insurance ↓</span>
                                 <span className="font-mono text-success">Reduced uplift</span>
                               </div>
                             </div>
                           )}
-                          {capitalMode === "Grant" && (
+                          {capitalMode === "Grant" && modeScenario?.mode === "Grant" && (
                             <div className="pt-2 border-t border-success/20 space-y-1">
                               <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Impact delivery</span>
+                                <span className="text-muted-foreground">Impact ↑</span>
+                                <span className="font-mono text-success">+{(modeScenario.delta as any).impactProbabilityIncrease}% delivery probability</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Utilisation ↑</span>
+                                <span className="font-mono text-success">+{(modeScenario.delta as any).utilisationIncrease}% efficiency</span>
+                              </div>
+                            </div>
+                          )}
+                          {capitalMode === "Grant" && !modeScenario && (
+                            <div className="pt-2 border-t border-success/20 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Impact ↑</span>
                                 <span className="font-mono text-success">Higher probability</span>
                               </div>
                               <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Utilisation</span>
+                                <span className="text-muted-foreground">Utilisation ↑</span>
                                 <span className="font-mono text-success">Improved efficiency</span>
                               </div>
                             </div>
                           )}
-                          {capitalMode === "Blended" && (
+                          {capitalMode === "Blended" && modeScenario?.mode === "Blended" && (
                             <div className="pt-2 border-t border-success/20 space-y-1">
                               <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Grant component</span>
+                                <span className="text-muted-foreground">Grant % ↓</span>
+                                <span className="font-mono text-success">-{(modeScenario.delta as any).grantReduction}% grant share</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Loan viability ↑</span>
+                                <span className="font-mono text-success">{(modeScenario.delta as any).viabilityImprovement ? "Now VIABLE" : "Improved"}</span>
+                              </div>
+                            </div>
+                          )}
+                          {capitalMode === "Blended" && !modeScenario && (
+                            <div className="pt-2 border-t border-success/20 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-muted-foreground">Grant % ↓</span>
                                 <span className="font-mono text-success">Reducible</span>
                               </div>
                               <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Loan viability</span>
+                                <span className="text-muted-foreground">Loan viability ↑</span>
                                 <span className="font-mono text-success">Improved</span>
                               </div>
                             </div>

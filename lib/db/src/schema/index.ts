@@ -12,3 +12,5 @@ export * from "./regional-indices";
 export * from "./sector-benchmarks";
 export * from "./financial-impacts";
 export * from "./pipelines";
+export * from "./outcomes";
+export * from "./blended-structures";

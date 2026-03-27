@@ -64,6 +64,20 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 **6. Financial Calculation Logic**
 - Defines rules for base interest rates, risk-based penalties, confidence penalties, insurance calculations, covenant classifications (HIGH, MEDIUM, LOW), and capital constraints for high-risk allocations.
 
+**8. Unified Translation Engine (V6)**
+- `artifacts/api-server/src/lib/capital-translator.ts` — Core translation layer
+- `translateEnvironmentalIntelligence(mode, project)` routes environmental data to mode-specific outputs:
+  - LoanOutput: adjustedRate, insurancePremium, covenantLevel, capitalConstraintFlag, lifetimeFinancingImpact
+  - GrantOutput: impactDeliveryProbability, utilisationRate, costPerOutcome, disbursementRisk, impactEfficiencyScore
+  - BlendedOutput: grantPercentage, loanPercentage, concessionalityLevel, firstLossEstimate, crowdInRatio, transitionTimeline, loanViability
+- `translateScenario(mode, before, after)` computes before/after deltas for mode-specific scenario analysis
+- `translatePortfolio(projects)` aggregates per-mode portfolio metrics (loan: capitalAtRisk/weightedRisk/avgRate; grant: impactDeliveryRate/utilisationRate/disbursementVelocity/avgCostPerOutcome; blended: transitionPipeline/capitalLeverage/avgCrowdInRatio/avgFirstLoss)
+- `calculateRecommendedMode(project)`: Grant if risk>70 && confidence<50, Blended if risk>60 || confidence<60, else Loan
+- API endpoints: `GET /financial/translate/:id?mode=`, `GET /financial/scenario/:id/mode?mode=&monitoring=&lab=&ifc=&hazards=`, `GET /financial/portfolio/translate`
+- Decision tab shows translation reasoning in Core Decision section
+- Dashboard Impact tab KPIs switch by capital mode (Loan/Grant/Blended show different metrics)
+- Scenario mode endpoint accepts user toggle params (monitoring, lab, ifc, hazards) — only applies selected mitigations
+
 **7. ESL Service Scope Generator**
 - Converts risk flags and compliance gaps into concrete ESL service proposals
 - API: `artifacts/api-server/src/routes/esl-services.ts`
@@ -84,6 +98,8 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 - `audit_logs`: Stores a full audit trail of governance actions.
 - `pipelines`: Configures assessment pipeline definitions.
 - `financial_impacts`: Stores detailed financial impact data.
+- `outcomes`: Tracks outcome metrics (type, targetValue, achievedValue, projectId FK).
+- `blended_structures`: Stores blended finance structures (grantComponent, loanComponent, timeline, concessionalityLevel, firstLossEstimate, crowdInRatio, projectId FK).
 
 ### Role-Based Access Control
 - **Role Context**: `artifacts/esl-platform/src/components/role-context.tsx` — global role state via React Context

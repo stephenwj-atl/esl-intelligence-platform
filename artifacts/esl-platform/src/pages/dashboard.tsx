@@ -25,7 +25,7 @@ import {
 } from "recharts";
 import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
 import { regionalApi, type PortfolioBenchmark } from "@/lib/regional-api";
-import { financialApi, type PortfolioFinancialImpact, type ESLComparison, type PortfolioDeployment } from "@/lib/financial-api";
+import { financialApi, type PortfolioFinancialImpact, type ESLComparison, type PortfolioDeployment, type PortfolioTranslation } from "@/lib/financial-api";
 import { useCapitalMode } from "@/components/capital-mode-context";
 import { useRole } from "@/components/role-context";
 import { Briefcase } from "lucide-react";
@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [eslComparison, setEslComparison] = useState<ESLComparison | null>(null);
   const [deployment, setDeployment] = useState<PortfolioDeployment | null>(null);
   const [eslPipeline, setEslPipeline] = useState<ESLPipelineData | null>(null);
+  const [portfolioTranslation, setPortfolioTranslation] = useState<PortfolioTranslation | null>(null);
   const { role, permissions } = useRole();
   const { mode: capitalMode } = useCapitalMode();
   const [dashTab, setDashTab] = useState<DashTabId>("overview");
@@ -77,6 +78,7 @@ export default function Dashboard() {
     financialApi.getPortfolioImpact().then(setPortfolioFinancial).catch(() => {});
     financialApi.getComparison().then(setEslComparison).catch(() => {});
     financialApi.getPortfolioDeployment().then(setDeployment).catch(() => {});
+    financialApi.getPortfolioTranslation().then(setPortfolioTranslation).catch(() => {});
     fetch("/api/esl/portfolio/pipeline").then(r => r.ok ? r.json() : null).then(setEslPipeline).catch(() => {});
   }, []);
 
@@ -670,52 +672,103 @@ export default function Dashboard() {
             <AnimatedContainer delay={0.05}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {(() => {
-                  const totalProjects = projects?.length || 0;
-                  const mix = deployment?.capitalMix as any;
-                  const rd = deployment?.readiness as any;
-                  const grantProjects = mix?.grant?.count || 0;
-                  const blendedProjects = mix?.blended?.count || 0;
-                  const impactProjects = grantProjects + blendedProjects;
-                  const readyCount = rd?.ready?.count || 0;
-                  const conditionalCount = rd?.conditional?.count || 0;
-                  const notReadyCount = rd?.notReady?.count || 0;
-                  const deliveryRate = totalProjects > 0 ? Math.round((readyCount / totalProjects) * 100) : 0;
-                  const disbursementVelocity = totalProjects > 0 ? Math.round(((readyCount + conditionalCount) / totalProjects) * 100) : 0;
+                  const pt = portfolioTranslation;
+                  const lp = pt?.loanPortfolio;
+                  const gp = pt?.grantPortfolio;
+                  const bp = pt?.blendedPortfolio;
+                  if (capitalMode === "Loan") return (
+                    <>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Capital at Risk</div>
+                        <div className="text-3xl font-mono font-bold text-warning">${lp?.capitalAtRisk ?? 0}M</div>
+                        <div className="text-xs text-muted-foreground mt-1">Loan capital above risk threshold</div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Weighted Risk</div>
+                        <div className={`text-3xl font-mono font-bold ${(lp?.weightedRisk ?? 0) < 40 ? "text-success" : (lp?.weightedRisk ?? 0) < 60 ? "text-warning" : "text-destructive"}`}>{lp?.weightedRisk ?? 0}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Capital-weighted across loan portfolio</div>
+                        <div className="h-2 bg-secondary rounded-full mt-3 overflow-hidden">
+                          <div className={`h-full rounded-full ${(lp?.weightedRisk ?? 0) < 40 ? "bg-success" : (lp?.weightedRisk ?? 0) < 60 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${lp?.weightedRisk ?? 0}%` }} />
+                        </div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Avg Rate</div>
+                        <div className="text-3xl font-mono font-bold text-primary">{lp?.avgRate ?? 0}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Average risk-adjusted interest rate</div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Loan Portfolio</div>
+                        <div className="text-3xl font-mono font-bold text-primary">{lp?.count ?? 0}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Projects in loan mode</div>
+                        <div className="flex gap-2 mt-3 text-xs">
+                          <Badge variant="outline" className="font-mono">${lp?.capital ?? 0}M capital</Badge>
+                        </div>
+                      </Card>
+                    </>
+                  );
+                  if (capitalMode === "Blended") return (
+                    <>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Crowd-In Ratio</div>
+                        <div className="text-3xl font-mono font-bold text-primary">{bp?.avgCrowdInRatio ?? 0}x</div>
+                        <div className="text-xs text-muted-foreground mt-1">Private capital per grant dollar</div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Capital Leverage</div>
+                        <div className="text-3xl font-mono font-bold text-primary">{bp?.capitalLeverage ?? 0}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Avg loan component in blend</div>
+                        <div className="h-2 bg-secondary rounded-full mt-3 overflow-hidden">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${bp?.capitalLeverage ?? 0}%` }} />
+                        </div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Avg First Loss</div>
+                        <div className="text-3xl font-mono font-bold text-warning">{bp?.avgFirstLoss ?? 0}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Estimated first-loss absorption</div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Transition Pipeline</div>
+                        <div className="text-3xl font-mono font-bold text-primary">{bp?.count ?? 0}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Projects in blended mode</div>
+                        <div className="flex gap-2 mt-3 text-xs">
+                          <Badge variant="outline" className="text-success font-mono">{bp?.transitionPipeline?.viable ?? 0} viable</Badge>
+                          <Badge variant="outline" className="text-warning font-mono">{bp?.transitionPipeline?.conditional ?? 0} cond</Badge>
+                        </div>
+                      </Card>
+                    </>
+                  );
                   return (
                     <>
                       <Card className="p-6">
                         <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Impact Delivery Rate</div>
-                        <div className={`text-3xl font-mono font-bold ${deliveryRate >= 60 ? "text-success" : deliveryRate >= 40 ? "text-warning" : "text-destructive"}`}>{deliveryRate}%</div>
-                        <div className="text-xs text-muted-foreground mt-1">Projects deployment-ready</div>
+                        <div className={`text-3xl font-mono font-bold ${(gp?.impactDeliveryRate ?? 0) >= 60 ? "text-success" : (gp?.impactDeliveryRate ?? 0) >= 40 ? "text-warning" : "text-destructive"}`}>{gp?.impactDeliveryRate ?? 0}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Grant portfolio avg delivery probability</div>
                         <div className="h-2 bg-secondary rounded-full mt-3 overflow-hidden">
-                          <div className={`h-full rounded-full ${deliveryRate >= 60 ? "bg-success" : deliveryRate >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${deliveryRate}%` }} />
+                          <div className={`h-full rounded-full ${(gp?.impactDeliveryRate ?? 0) >= 60 ? "bg-success" : (gp?.impactDeliveryRate ?? 0) >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${gp?.impactDeliveryRate ?? 0}%` }} />
                         </div>
                       </Card>
                       <Card className="p-6">
                         <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Disbursement Velocity</div>
-                        <div className={`text-3xl font-mono font-bold ${disbursementVelocity >= 70 ? "text-success" : disbursementVelocity >= 50 ? "text-warning" : "text-destructive"}`}>{disbursementVelocity}%</div>
-                        <div className="text-xs text-muted-foreground mt-1">Capital deployable or conditional</div>
+                        <div className={`text-3xl font-mono font-bold ${(gp?.disbursementVelocity ?? 0) >= 60 ? "text-success" : (gp?.disbursementVelocity ?? 0) >= 40 ? "text-warning" : "text-destructive"}`}>{gp?.disbursementVelocity ?? 0}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Grants without high disbursement risk</div>
                         <div className="h-2 bg-secondary rounded-full mt-3 overflow-hidden">
-                          <div className={`h-full rounded-full ${disbursementVelocity >= 70 ? "bg-success" : disbursementVelocity >= 50 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${disbursementVelocity}%` }} />
+                          <div className={`h-full rounded-full ${(gp?.disbursementVelocity ?? 0) >= 60 ? "bg-success" : (gp?.disbursementVelocity ?? 0) >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${gp?.disbursementVelocity ?? 0}%` }} />
                         </div>
                       </Card>
                       <Card className="p-6">
-                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Impact Portfolio</div>
-                        <div className="text-3xl font-mono font-bold text-primary">{impactProjects}</div>
-                        <div className="text-xs text-muted-foreground mt-1">Grant + Blended projects</div>
-                        <div className="flex gap-2 mt-3 text-xs">
-                          <Badge variant="outline" className="font-mono">{grantProjects} Grant</Badge>
-                          <Badge variant="outline" className="font-mono">{blendedProjects} Blended</Badge>
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Utilisation Rate</div>
+                        <div className={`text-3xl font-mono font-bold ${(gp?.utilisationRate ?? 0) >= 70 ? "text-success" : (gp?.utilisationRate ?? 0) >= 50 ? "text-warning" : "text-destructive"}`}>{gp?.utilisationRate ?? 0}%</div>
+                        <div className="text-xs text-muted-foreground mt-1">Projected effective grant utilisation</div>
+                        <div className="h-2 bg-secondary rounded-full mt-3 overflow-hidden">
+                          <div className={`h-full rounded-full ${(gp?.utilisationRate ?? 0) >= 70 ? "bg-success" : (gp?.utilisationRate ?? 0) >= 50 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${gp?.utilisationRate ?? 0}%` }} />
                         </div>
                       </Card>
                       <Card className="p-6">
-                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Blocked Capital</div>
-                        <div className={`text-3xl font-mono font-bold ${notReadyCount > 3 ? "text-destructive" : notReadyCount > 0 ? "text-warning" : "text-success"}`}>{notReadyCount}</div>
-                        <div className="text-xs text-muted-foreground mt-1">Projects not ready for deployment</div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Cost Per Outcome</div>
+                        <div className="text-3xl font-mono font-bold text-primary">${gp?.avgCostPerOutcome ?? 0}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Avg environmental cost per unit</div>
                         <div className="flex gap-2 mt-3 text-xs">
-                          <Badge variant={notReadyCount > 0 ? "destructive" : "success"} className="font-mono">
-                            {notReadyCount > 0 ? "Action required" : "All clear"}
-                          </Badge>
+                          <Badge variant="outline" className="font-mono">{gp?.count ?? 0} Grant projects</Badge>
                         </div>
                       </Card>
                     </>
@@ -725,32 +778,76 @@ export default function Dashboard() {
             </AnimatedContainer>
 
             <AnimatedContainer delay={0.1}>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="p-6 border-blue-500/20">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-4 flex items-center">
+                    <DollarSign className="w-3 h-3 mr-1" /> Loan Portfolio
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Projects</span><span className="font-mono font-bold">{portfolioTranslation?.loanPortfolio?.count ?? 0}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Capital</span><span className="font-mono font-bold">${portfolioTranslation?.loanPortfolio?.capital ?? 0}M</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Capital at Risk</span><span className="font-mono font-bold text-warning">${portfolioTranslation?.loanPortfolio?.capitalAtRisk ?? 0}M</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Weighted Risk</span><span className="font-mono font-bold">{portfolioTranslation?.loanPortfolio?.weightedRisk ?? 0}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Avg Rate</span><span className="font-mono font-bold">{portfolioTranslation?.loanPortfolio?.avgRate ?? 0}%</span></div>
+                  </div>
+                </Card>
+                <Card className="p-6 border-green-500/20">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-green-400 mb-4 flex items-center">
+                    <Target className="w-3 h-3 mr-1" /> Grant Portfolio
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Projects</span><span className="font-mono font-bold">{portfolioTranslation?.grantPortfolio?.count ?? 0}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Capital</span><span className="font-mono font-bold">${portfolioTranslation?.grantPortfolio?.capital ?? 0}M</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Impact Delivery</span><span className="font-mono font-bold">{portfolioTranslation?.grantPortfolio?.impactDeliveryRate ?? 0}%</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Utilisation</span><span className="font-mono font-bold">{portfolioTranslation?.grantPortfolio?.utilisationRate ?? 0}%</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Cost/Outcome</span><span className="font-mono font-bold">${portfolioTranslation?.grantPortfolio?.avgCostPerOutcome ?? 0}</span></div>
+                  </div>
+                </Card>
+                <Card className="p-6 border-purple-500/20">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-4 flex items-center">
+                    <Layers className="w-3 h-3 mr-1" /> Blended Portfolio
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Projects</span><span className="font-mono font-bold">{portfolioTranslation?.blendedPortfolio?.count ?? 0}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Capital</span><span className="font-mono font-bold">${portfolioTranslation?.blendedPortfolio?.capital ?? 0}M</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Avg Grant %</span><span className="font-mono font-bold">{portfolioTranslation?.blendedPortfolio?.avgGrantPercent ?? 0}%</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Crowd-In Ratio</span><span className="font-mono font-bold">{portfolioTranslation?.blendedPortfolio?.avgCrowdInRatio ?? 0}x</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">First Loss</span><span className="font-mono font-bold">{portfolioTranslation?.blendedPortfolio?.avgFirstLoss ?? 0}%</span></div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Pipeline</span>
+                      <div className="flex gap-1">
+                        <Badge variant="outline" className="text-success font-mono text-[10px]">{portfolioTranslation?.blendedPortfolio?.transitionPipeline?.viable ?? 0} viable</Badge>
+                        <Badge variant="outline" className="text-warning font-mono text-[10px]">{portfolioTranslation?.blendedPortfolio?.transitionPipeline?.conditional ?? 0} cond</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </AnimatedContainer>
+
+            <AnimatedContainer delay={0.15}>
               <Card className="p-6">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6 flex items-center">
-                  <Target className="w-4 h-4 mr-2 text-primary" /> Deployment Readiness by Project
+                  <Target className="w-4 h-4 mr-2 text-primary" /> Capital Deployment by Project
                 </h3>
-                {projects && projects.length > 0 ? (
+                {portfolioTranslation?.projects && portfolioTranslation.projects.length > 0 ? (
                   <div className="space-y-3">
-                    {projects.map((p: any) => {
-                      const risk = p.riskScores?.overallRisk ?? p.overallRisk ?? 0;
-                      const conf = p.riskScores?.dataConfidence ?? p.dataConfidence ?? 0;
-                      const isReady = risk <= 40 && conf >= 60;
-                      const isConditional = !isReady && risk <= 70;
-                      const status = isReady ? "READY" : isConditional ? "CONDITIONAL" : "NOT READY";
-                      const statusColor = isReady ? "text-success" : isConditional ? "text-warning" : "text-destructive";
-                      const statusBg = isReady ? "bg-success/10" : isConditional ? "bg-warning/10" : "bg-destructive/10";
+                    {portfolioTranslation.projects.map((p) => {
+                      const modeColor = p.mode === "Loan" ? "text-blue-400" : p.mode === "Grant" ? "text-green-400" : "text-purple-400";
+                      const modeBg = p.mode === "Loan" ? "bg-blue-500/5" : p.mode === "Grant" ? "bg-green-500/5" : "bg-purple-500/5";
+                      const statusColor = p.decision.status === "READY" ? "text-success" : p.decision.status === "CONDITIONALLY_READY" ? "text-warning" : "text-destructive";
+                      const statusLabel = p.decision.status === "CONDITIONALLY_READY" ? "CONDITIONAL" : p.decision.status.replace("_", " ");
                       return (
                         <Link key={p.id} href={`/project/${p.id}`}>
-                          <div className={`flex items-center justify-between p-3 rounded-lg border border-border/30 ${statusBg} hover:border-primary/30 transition-colors cursor-pointer`}>
+                          <div className={`flex items-center justify-between p-3 rounded-lg border border-border/30 ${modeBg} hover:border-primary/30 transition-colors cursor-pointer`}>
                             <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${isReady ? "bg-success" : isConditional ? "bg-warning" : "bg-destructive"}`} />
+                              <Badge variant="outline" className={`${modeColor} font-mono text-[10px]`}>{p.mode}</Badge>
                               <span className="text-sm font-medium text-foreground">{p.name}</span>
-                              <span className="text-xs text-muted-foreground">{p.country}</span>
                             </div>
                             <div className="flex items-center gap-4">
-                              <span className="text-xs text-muted-foreground font-mono">Risk: {risk.toFixed(0)}</span>
-                              <span className="text-xs text-muted-foreground font-mono">Conf: {conf.toFixed(0)}%</span>
-                              <Badge variant="outline" className={`${statusColor} font-mono text-[10px]`}>{status}</Badge>
+                              <span className="text-xs text-muted-foreground font-mono">${p.investmentAmount}M</span>
+                              <span className="text-xs text-muted-foreground font-mono">Risk: {p.overallRisk.toFixed(0)}</span>
+                              <Badge variant="outline" className={`${statusColor} font-mono text-[10px]`}>{statusLabel}</Badge>
                               <ChevronRight className="w-4 h-4 text-muted-foreground" />
                             </div>
                           </div>

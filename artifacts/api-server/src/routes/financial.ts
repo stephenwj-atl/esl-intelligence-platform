@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, projectsTable, financialImpactsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { translateEnvironmentalIntelligence, translateScenario, translatePortfolio, type CapitalMode } from "../lib/capital-translator";
 
 const router: IRouter = Router();
 
@@ -616,6 +617,75 @@ router.get("/financial/portfolio/deployment", async (_req, res) => {
       investmentAmount: m.investmentAmount,
     })),
   });
+});
+
+router.get("/financial/translate/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+  const mode = (req.query.mode as CapitalMode) || "Loan";
+  if (!["Loan", "Grant", "Blended"].includes(mode)) { res.status(400).json({ message: "Invalid mode" }); return; }
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+
+  const result = translateEnvironmentalIntelligence(mode, project);
+  res.json(result);
+});
+
+router.get("/financial/scenario/:id/mode", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+  const mode = (req.query.mode as CapitalMode) || "Loan";
+  if (!["Loan", "Grant", "Blended"].includes(mode)) { res.status(400).json({ message: "Invalid mode" }); return; }
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+
+  const addMonitoring = req.query.monitoring === "true";
+  const addLab = req.query.lab === "true";
+  const addIFC = req.query.ifc === "true";
+  const reduceHazards = req.query.hazards === "true";
+
+  const mitigated = { ...project };
+  const mitigations: string[] = [];
+
+  if (addMonitoring) {
+    mitigated.dataConfidence = Math.min(100, mitigated.dataConfidence + 15);
+    mitigated.hasMonitoringData = true;
+    mitigations.push("Environmental monitoring program (+15% confidence)");
+  }
+  if (addLab) {
+    mitigated.dataConfidence = Math.min(100, mitigated.dataConfidence + 10);
+    mitigated.hasLabData = true;
+    mitigations.push("Lab validation protocol (+10% confidence)");
+  }
+  if (addIFC) {
+    mitigated.isIFCAligned = true;
+    mitigations.push("IFC alignment verification");
+  }
+  if (reduceHazards) {
+    mitigated.overallRisk = Math.max(0, mitigated.overallRisk * 0.85);
+    mitigated.floodRisk = Math.max(0, mitigated.floodRisk - 2);
+    mitigated.coastalExposure = Math.max(0, mitigated.coastalExposure - 1);
+    mitigations.push("Risk mitigation engineering (-15% risk)");
+  }
+
+  if (mitigations.length === 0) {
+    mitigated.dataConfidence = Math.min(100, project.dataConfidence + 25);
+    mitigated.overallRisk = Math.max(0, project.overallRisk * 0.85);
+    mitigations.push("Standard mitigation package applied");
+  }
+
+  const result = translateScenario(mode, project, mitigated as typeof project);
+  res.json({ ...result, mitigations });
+});
+
+router.get("/financial/portfolio/translate", async (_req, res) => {
+  const allProjects = await db.select().from(projectsTable);
+  if (allProjects.length === 0) {
+    res.json({ totalCapital: 0, totalProjects: 0, loanPortfolio: {}, grantPortfolio: {}, blendedPortfolio: {}, projects: [] });
+    return;
+  }
+  const result = translatePortfolio(allProjects);
+  res.json(result);
 });
 
 export default router;

@@ -5,6 +5,7 @@ import {
   type ProjectStructure,
   type ProjectImpactAssessment,
   type ProjectFinancialImpact,
+  type TranslationResult,
 } from "@/lib/financial-api";
 import {
   Layers, CheckCircle, XCircle, Clock, AlertTriangle,
@@ -17,6 +18,7 @@ interface DecisionData {
   structure: ProjectStructure | null;
   impact: ProjectImpactAssessment | null;
   financial: ProjectFinancialImpact | null;
+  translation: TranslationResult | null;
 }
 
 const readinessCfg: Record<string, { color: string; bg: string; border: string; icon: any; badge: "success" | "warning" | "destructive" }> = {
@@ -26,24 +28,27 @@ const readinessCfg: Record<string, { color: string; bg: string; border: string; 
 };
 
 export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
-  const [data, setData] = useState<DecisionData>({ structure: null, impact: null, financial: null });
+  const [data, setData] = useState<DecisionData>({ structure: null, impact: null, financial: null, translation: null });
   const [loading, setLoading] = useState(true);
   const { mode: capitalMode } = useCapitalMode();
 
   useEffect(() => {
+    setLoading(true);
     const fetches = [
       financialApi.getProjectStructure(projectId).catch(() => null),
       financialApi.getProjectImpactAssessment(projectId).catch(() => null),
       financialApi.getProjectImpact(projectId).catch(() => null),
+      financialApi.getTranslation(projectId, capitalMode).catch(() => null),
     ];
-    Promise.all(fetches).then(([structure, impact, financial]) => {
+    Promise.all(fetches).then(([structure, impact, financial, translation]) => {
       setData({
         structure: structure as ProjectStructure | null,
         impact: impact as ProjectImpactAssessment | null,
         financial: financial as ProjectFinancialImpact | null,
+        translation: translation as TranslationResult | null,
       });
     }).finally(() => setLoading(false));
-  }, [projectId]);
+  }, [projectId, capitalMode]);
 
   if (loading) {
     return (
@@ -56,7 +61,7 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
     );
   }
 
-  const { structure, impact, financial } = data;
+  const { structure, impact, financial, translation } = data;
 
   if (!structure) {
     return (
@@ -145,6 +150,9 @@ export function CapitalDecisionSummary({ projectId }: { projectId: number }) {
                   <div className="text-xs text-muted-foreground">
                     {isOverride ? "User selected" : "System recommendation"}
                   </div>
+                  {translation?.decision?.reasoning && (
+                    <div className="text-[11px] text-foreground/60 mt-1 leading-relaxed">{translation.decision.reasoning}</div>
+                  )}
                 </div>
               </div>
             </div>
