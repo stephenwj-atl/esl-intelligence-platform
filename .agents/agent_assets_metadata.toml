@@ -18,3 +18,9 @@ id = "bLJnqFnzPjYIwqHPPx7gl"
 uri = "file://ESL_Platform_Summary.md"
 type = "text"
 title = "Condensed Platform Summary — Panel Map, Data Flow & Decision Impact"
+
+[[outputs]]
+id = "P7rCoj2r6BDmkfST9y-PP"
+uri = "file://artifacts/esl-platform/ESL_Platform_Prospect_Walkthrough.md"
+type = "text"
+title = "ESL Intelligence Platform — Prospect Walkthrough"
