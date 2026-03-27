@@ -27,6 +27,17 @@ import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
 import { regionalApi, type PortfolioBenchmark } from "@/lib/regional-api";
 import { financialApi, type PortfolioFinancialImpact, type ESLComparison, type PortfolioDeployment } from "@/lib/financial-api";
 import { useCapitalMode } from "@/components/capital-mode-context";
+import { Briefcase } from "lucide-react";
+
+interface ESLPipelineData {
+  totalRevenue: number;
+  criticalRevenue: number;
+  totalCapital: number;
+  eslAsPercentOfCapital: number;
+  summary: { totalServices: number; criticalServices: number; projectsWithCritical: number; totalProjects: number };
+  serviceBreakdown: Array<{ name: string; category: string; count: number; revenue: number; criticalCount: number }>;
+  topProjects: Array<{ id: number; name: string; country: string; investmentAmount: number; overallRisk: number; serviceCount: number; criticalCount: number; totalFee: number }>;
+}
 
 const ROLES = ["Analyst", "Investment Officer", "Admin"] as const;
 type Role = (typeof ROLES)[number];
@@ -52,6 +63,7 @@ export default function Dashboard() {
   const [portfolioFinancial, setPortfolioFinancial] = useState<PortfolioFinancialImpact | null>(null);
   const [eslComparison, setEslComparison] = useState<ESLComparison | null>(null);
   const [deployment, setDeployment] = useState<PortfolioDeployment | null>(null);
+  const [eslPipeline, setEslPipeline] = useState<ESLPipelineData | null>(null);
   const [role, setRole] = useState<Role>("Analyst");
   const { mode: capitalMode } = useCapitalMode();
   const [dashTab, setDashTab] = useState<DashTabId>("overview");
@@ -64,6 +76,7 @@ export default function Dashboard() {
     financialApi.getPortfolioImpact().then(setPortfolioFinancial).catch(() => {});
     financialApi.getComparison().then(setEslComparison).catch(() => {});
     financialApi.getPortfolioDeployment().then(setDeployment).catch(() => {});
+    fetch("/api/esl/portfolio/pipeline").then(r => r.ok ? r.json() : null).then(setEslPipeline).catch(() => {});
   }, []);
 
   const isLoading = projectsLoading || summaryLoading;
@@ -701,6 +714,84 @@ export default function Dashboard() {
                       ))}
                     </div>
                   )}
+                </Card>
+              </AnimatedContainer>
+            )}
+
+            {eslPipeline && eslPipeline.totalRevenue > 0 && (
+              <AnimatedContainer delay={0.08}>
+                <Card className="p-6 border-primary/20">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6 flex items-center">
+                    <Briefcase className="w-4 h-4 mr-2 text-primary" /> ESL Service Pipeline
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-mono font-bold text-primary">
+                        {eslPipeline.totalRevenue >= 1_000_000 ? `$${(eslPipeline.totalRevenue / 1_000_000).toFixed(1)}M` : `$${(eslPipeline.totalRevenue / 1_000).toFixed(0)}K`}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Total Revenue Opportunity</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-mono font-bold text-red-400">
+                        {eslPipeline.criticalRevenue >= 1_000_000 ? `$${(eslPipeline.criticalRevenue / 1_000_000).toFixed(1)}M` : `$${(eslPipeline.criticalRevenue / 1_000).toFixed(0)}K`}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Critical Services</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-mono font-bold text-foreground">{eslPipeline.summary.totalServices}</div>
+                      <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Service Engagements</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-mono font-bold text-foreground">{eslPipeline.eslAsPercentOfCapital}%</div>
+                      <div className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Of Total Capital</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Service Breakdown</h4>
+                      <div className="space-y-2">
+                        {eslPipeline.serviceBreakdown.slice(0, 6).map((svc, i) => (
+                          <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm text-foreground truncate">{svc.name}</span>
+                              {svc.criticalCount > 0 && <Badge variant="destructive" className="text-[9px] px-1 py-0">{svc.criticalCount}</Badge>}
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-xs text-muted-foreground">{svc.count} projects</span>
+                              <span className="text-sm font-mono font-bold text-primary">
+                                {svc.revenue >= 1_000_000 ? `$${(svc.revenue / 1_000_000).toFixed(1)}M` : `$${(svc.revenue / 1_000).toFixed(0)}K`}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">Top Projects by Service Value</h4>
+                      <div className="space-y-2">
+                        {eslPipeline.topProjects.slice(0, 6).map((proj, i) => (
+                          <Link key={i} href={`/project/${proj.id}`}>
+                            <div className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0 hover:bg-secondary/30 px-2 -mx-2 rounded cursor-pointer transition-colors">
+                              <div className="min-w-0">
+                                <span className="text-sm text-foreground truncate block">{proj.name}</span>
+                                <span className="text-xs text-muted-foreground">{proj.country} • Risk {proj.overallRisk.toFixed(0)}</span>
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <div className="text-right">
+                                  <span className="text-sm font-mono font-bold text-primary block">
+                                    {proj.totalFee >= 1_000_000 ? `$${(proj.totalFee / 1_000_000).toFixed(1)}M` : `$${(proj.totalFee / 1_000).toFixed(0)}K`}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground">{proj.serviceCount} services</span>
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </Card>
               </AnimatedContainer>
             )}

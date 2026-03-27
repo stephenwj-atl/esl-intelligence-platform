@@ -8,7 +8,7 @@ import {
   Droplet, Factory, Users, Gavel, Loader2, Target,
   TrendingUp, TrendingDown, CalendarX, DollarSign, ActivitySquare, Wand2, ArrowRight,
   Clock, Shield, FileCheck, ClipboardList, Activity, History, FileText,
-  Layers, CheckCircle, Beaker, Eye, FlaskConical, Gauge
+  Layers, CheckCircle, Beaker, Eye, FlaskConical, Gauge, Briefcase
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -25,11 +25,13 @@ import {
   FrameworkAlignmentTab, CovenantsTab, EsapTab, MonitoringTab,
   AuditTrailTab, ReportTab, BreachAlert
 } from "@/components/governance-tabs";
+import { ESLServicesTab } from "@/components/esl-services-tab";
 
 const TABS = [
   { id: "decision", label: "Decision", icon: ShieldCheck },
   { id: "structure", label: "Structure", icon: Layers },
   { id: "financial", label: "Financial", icon: DollarSign },
+  { id: "esl", label: "ESL Services", icon: Briefcase },
   { id: "impact", label: "Impact", icon: Target },
   { id: "drivers", label: "Drivers", icon: Gauge },
   { id: "evidence", label: "Evidence", icon: FlaskConical },
@@ -219,6 +221,8 @@ export default function ProjectDetail() {
           {activeTab === "structure" && <StructureTab projectId={id} />}
 
           {activeTab === "financial" && <FinancialImpactPanel projectId={id} />}
+
+          {activeTab === "esl" && <ESLServicesTab projectId={id} />}
 
           {activeTab === "impact" && <ImpactTab projectId={id} />}
 

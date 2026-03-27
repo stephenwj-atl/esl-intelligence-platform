@@ -61,6 +61,18 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 **6. Financial Calculation Logic**
 - Defines rules for base interest rates, risk-based penalties, confidence penalties, insurance calculations, covenant classifications (HIGH, MEDIUM, LOW), and capital constraints for high-risk allocations.
 
+**7. ESL Service Scope Generator**
+- Converts risk flags and compliance gaps into concrete ESL service proposals
+- API: `artifacts/api-server/src/routes/esl-services.ts`
+  - `GET /api/esl/project/:id/services` — scopes services for single project
+  - `GET /api/esl/portfolio/pipeline` — aggregate ESL revenue across portfolio
+- Service catalog: EIA, Lab Validation, Monitoring Program, IFC Compliance, Climate Risk Assessment, Regulatory Advisory, Contamination Assessment, Water Resource Assessment
+- Each service: trigger conditions from project risk profile, scope items, deliverables, timeline (weeks), estimated fee (based on project value), priority (CRITICAL/RECOMMENDED), risk reduction points, confidence gain
+- Fee calculation: percentage of project value with min/max caps per service type
+- Frontend: "ESL Services" tab on project detail (`artifacts/esl-platform/src/components/esl-services-tab.tsx`)
+- Dashboard: "ESL Service Pipeline" panel on Intelligence tab showing total revenue opportunity, service breakdown, top projects
+- "Generate Proposal" button exports scope document as text file
+
 ### Database Schema Highlights
 - `projects`: Stores project inputs, scores, financial risks, decisions, investment amounts.
 - `portfolios`: Manages named portfolio groupings.

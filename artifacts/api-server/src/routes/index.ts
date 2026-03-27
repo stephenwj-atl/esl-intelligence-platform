@@ -7,6 +7,7 @@ import governanceRouter from "./governance";
 import regionalRouter from "./regional";
 import financialRouter from "./financial";
 import pipelinesRouter from "./pipelines";
+import eslServicesRouter from "./esl-services";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(governanceRouter);
 router.use(regionalRouter);
 router.use(financialRouter);
 router.use(pipelinesRouter);
+router.use(eslServicesRouter);
 
 export default router;
