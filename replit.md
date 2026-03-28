@@ -4,6 +4,28 @@
 
 The ESL Environmental Intelligence Platform is a Bloomberg-style Portfolio Command Center designed for Environmental Solutions Limited. Its primary purpose is to transform environmental data into actionable investment risk signals, enabling clear "Proceed," "Condition," or "Decline" decisions across a portfolio of projects. The platform includes a comprehensive institutional governance lifecycle layer. Its vision is to provide a robust tool for managing environmental investment risks, enhancing decision-making, and optimizing capital deployment in environmental projects.
 
+## Core System Logic
+
+**Governing document:** `docs/core-system-logic.md`
+
+All features must align with the mandatory 7-stage flow. No feature should bypass stages or allow direct movement from risk to full deployment.
+
+```
+Stage 1 — Intake Screening
+Stage 2 — Baseline Data Formation
+Stage 3 — Risk Characterisation
+Stage 4 — Decision and Capital Sequencing
+Stage 5 — Deployment Control
+Stage 6 — Transition Validation
+Stage 7 — Risk Resolution
+```
+
+**Non-negotiable rules:**
+1. No skipping stages
+2. No full deployment under unresolved uncertainty
+3. No decision without confidence weighting
+4. No transition without validation
+
 ## User Preferences
 
 I prefer iterative development with clear, concise communication. Please ask before making any major architectural changes or significant modifications to existing features. Ensure all explanations are straightforward and avoid overly technical jargon where possible. I like to be informed about the implications of changes on the overall system.
