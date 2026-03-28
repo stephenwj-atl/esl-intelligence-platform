@@ -1,0 +1,168 @@
+MASTER REPLIT PROMPT
+Add Stage Flow Layer (Without Breaking Existing UI)
+ROLE
+
+You are enhancing an existing environmental intelligence platform UI.
+
+The current UI is:
+
+decision-first
+tab-based
+working correctly
+OBJECTIVE
+
+Add a system flow layer that:
+
+reflects the 7-stage logic
+provides context and trust
+does NOT disrupt existing UI
+CORE PRINCIPLE
+Keep the UI as-is
+Add stage awareness on top
+MODULE 1 — STAGE FLOW BAR (TOP LEVEL)
+Add persistent component above page content:
+FLOW:
+
+[ Screening ] → [ Baseline ] → [ Risk ] → [ Decision ] → [ Control ] → [ Validation ] → [ Resolution ]
+Behavior:
+Highlight current stage
+Grey out future stages
+Completed stages shown as “done”
+Stage mapping:
+stages = [
+  { id: 1, name: "Screening" },
+  { id: 2, name: "Baseline" },
+  { id: 3, name: "Risk" },
+  { id: 4, name: "Decision" },
+  { id: 5, name: "Control" },
+  { id: 6, name: "Validation" },
+  { id: 7, name: "Resolution" }
+]
+MODULE 2 — CURRENT STAGE ENGINE
+Create function:
+function determineStage(project) {
+  if (!project.screened) return 1
+  if (!project.baselineComplete) return 2
+  if (!project.riskCalculated) return 3
+  if (!project.decisionMade) return 4
+  if (!project.conditionsDefined) return 5
+  if (!project.validationComplete) return 6
+  return 7
+}
+MODULE 3 — STAGE STATUS PANEL (CRITICAL)
+Add to Project Overview (top of page)
+UI:
+CURRENT STAGE: Risk Characterisation (Stage 3)
+
+NEXT STAGE: Decision and Capital Sequencing
+
+BLOCKING CONDITIONS:
+- Data confidence below threshold
+- Missing lab validation
+- Monitoring not established
+RULE:
+
+This must be:
+
+short
+readable in 5 seconds
+always visible
+MODULE 4 — LINK TABS TO STAGES
+Do NOT rename tabs
+Add small label inside each tab:
+Example:
+Drivers tab → Stage 3: Risk Characterisation
+Decision tab → Stage 4: Decision
+Structure tab → Stage 5: Deployment Control
+Monitoring tab → Stage 6: Validation
+Scenario tab → Stage 3–5
+Evidence tab → Stage 2
+Purpose:
+
+👉 makes system logic visible
+👉 without changing navigation
+
+MODULE 5 — DECISION TAB UPGRADE
+Add one line:
+This decision reflects Stage 4 — Capital Sequencing
+
+👉 Reinforces system thinking
+
+MODULE 6 — SCENARIO TAB UPGRADE
+Add:
+Scenario impact on stage progression:
+
+Before:
+Stage 3 → blocked
+
+After:
+Stage 3 → Stage 4 enabled
+
+👉 This is extremely powerful
+
+MODULE 7 — PORTFOLIO VIEW (ADD LIGHT LAYER)
+Add:
+Panel:
+PORTFOLIO STAGE DISTRIBUTION
+
+Stage 3 (Risk): 5 projects  
+Stage 4 (Decision): 3 projects  
+Stage 5 (Control): 2 projects  
+
+👉 Shows pipeline maturity
+
+MODULE 8 — DESIGN RULES
+Must:
+
+✔ minimal
+✔ subtle
+✔ non-intrusive
+
+Must NOT:
+
+❌ replace current UI
+❌ overwhelm screen
+❌ create new navigation complexity
+
+MODULE 9 — FINAL SYSTEM BEHAVIOR
+
+User experiences:
+
+See decision (fast)
+↓
+Understand stage (context)
+↓
+Explore tabs (depth)
+FINAL TEST
+Ask:
+
+Can a user now answer:
+
+Where am I in the process?
+What is blocking progress?
+What must happen next?
+
+If YES:
+
+👉 system is aligned
+
+FINAL PURPOSE
+
+This upgrade:
+
+👉 adds trust
+👉 adds clarity
+👉 aligns UI with system logic
+
+WITHOUT:
+
+👉 breaking what already works
+
+FINAL NOTE
+
+This is one of the highest leverage changes you’ll make.
+
+Because now:
+
+👉 your system is not just smart
+👉 it is understandable and defensible

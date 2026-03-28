@@ -86,7 +86,20 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 **6. Financial Calculation Logic**
 - Defines rules for base interest rates, risk-based penalties, confidence penalties, insurance calculations, covenant classifications (HIGH, MEDIUM, LOW), and capital constraints for high-risk allocations.
 
-**8. Unified Translation Engine (V6)**
+**8. Stage Flow Layer**
+- Governed by `docs/core-system-logic.md` — 7-stage mandatory flow
+- Stage engine: `artifacts/esl-platform/src/lib/stage-engine.ts`
+  - `determineStage(project)` returns currentStage, stageName, nextStage, blockingConditions, completedStages
+  - `determineScenarioStageImpact(before, after)` shows stage progression from scenario
+  - `TAB_STAGE_MAP` maps each tab to its stage(s)
+- Stage Flow Bar: `artifacts/esl-platform/src/components/stage-flow-bar.tsx` — persistent 7-stage progress bar on project detail
+- Stage Status Panel: `artifacts/esl-platform/src/components/stage-status-panel.tsx` — current stage, next stage, blocking conditions
+- Tab stage labels: each project tab shows its stage reference (e.g., "Decision Stage 4: Decision")
+- Scenario tab shows stage progression impact (before/after stage with stage unlock detection)
+- Dashboard: Portfolio Stage Distribution panel on Overview tab showing project counts per stage
+- Stage determination logic: Screening→Baseline(lab/monitoring+conf≥40)→Risk(conf≥50)→Decision(PROCEED/CONDITION)→Control(PROCEED or CONDITION+conf≥60)→Validation(monitoring+lab+IFC+conf≥70)→Resolution
+
+**9. Unified Translation Engine (V6)**
 - `artifacts/api-server/src/lib/capital-translator.ts` — Core translation layer
 - `translateEnvironmentalIntelligence(mode, project)` routes environmental data to mode-specific outputs:
   - LoanOutput: adjustedRate, insurancePremium, covenantLevel, capitalConstraintFlag, lifetimeFinancingImpact

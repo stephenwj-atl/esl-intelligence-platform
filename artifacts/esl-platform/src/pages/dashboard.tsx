@@ -29,6 +29,7 @@ import { financialApi, type PortfolioFinancialImpact, type ESLComparison, type P
 import { useCapitalMode } from "@/components/capital-mode-context";
 import { useRole } from "@/components/role-context";
 import { Briefcase } from "lucide-react";
+import { determineStage, STAGES } from "@/lib/stage-engine";
 
 interface ESLPipelineData {
   totalRevenue: number;
@@ -261,6 +262,37 @@ export default function Dashboard() {
                 </Card>
               </div>
             </AnimatedContainer>
+
+            {projects && projects.length > 0 && (
+              <AnimatedContainer delay={0.12}>
+                <Card className="p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Activity className="w-4 h-4 text-primary" />
+                    <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Portfolio Stage Distribution</h3>
+                  </div>
+                  <div className="grid grid-cols-7 gap-2">
+                    {(() => {
+                      const stageCounts = STAGES.map(s => ({ ...s, count: 0 }));
+                      projects.forEach((p: any) => {
+                        const sr = determineStage(p);
+                        const idx = stageCounts.findIndex(s => s.id === sr.currentStage);
+                        if (idx >= 0) stageCounts[idx].count++;
+                      });
+                      const maxCount = Math.max(1, ...stageCounts.map(s => s.count));
+                      return stageCounts.map(s => (
+                        <div key={s.id} className="text-center">
+                          <div className="text-lg font-mono font-bold text-foreground">{s.count}</div>
+                          <div className="h-1.5 rounded-full bg-secondary overflow-hidden mt-1 mb-2">
+                            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(s.count / maxCount) * 100}%` }} />
+                          </div>
+                          <div className="text-[10px] text-muted-foreground font-medium leading-tight">{s.shortName}</div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </Card>
+              </AnimatedContainer>
+            )}
 
             {deployment && permissions.canViewCapitalDeployment && (
               <AnimatedContainer delay={0.15}>

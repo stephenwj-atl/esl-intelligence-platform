@@ -28,6 +28,9 @@ import {
 } from "@/components/governance-tabs";
 import { ESLServicesTab } from "@/components/esl-services-tab";
 import { useRole } from "@/components/role-context";
+import { determineStage, determineScenarioStageImpact, TAB_STAGE_MAP, STAGES } from "@/lib/stage-engine";
+import { StageFlowBar } from "@/components/stage-flow-bar";
+import { StageStatusPanel } from "@/components/stage-status-panel";
 
 const TABS = [
   { id: "decision", label: "Decision", icon: ShieldCheck },
@@ -131,6 +134,7 @@ export default function ProjectDetail() {
   const activeData = scenarioResult ? scenarioResult.after : project;
   const { riskScores, financialRisk, decision } = activeData;
   const isScenarioMode = !!scenarioResult;
+  const stageResult = determineStage(project);
   
   const chartData = [
     { name: 'Environmental', value: riskScores.environmentalRisk },
@@ -186,7 +190,15 @@ export default function ProjectDetail() {
           )}
         </AnimatedContainer>
 
+        <AnimatedContainer delay={0.04}>
+          <StageFlowBar stageResult={stageResult} />
+        </AnimatedContainer>
+
         <AnimatedContainer delay={0.05}>
+          <StageStatusPanel stageResult={stageResult} />
+        </AnimatedContainer>
+
+        <AnimatedContainer delay={0.06}>
           <div className={`rounded-2xl border ${dConf.border} ${dConf.bg} p-6 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden backdrop-blur-md`}>
             {isScenarioMode && (
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-4 py-1 rounded-bl-xl text-xs font-bold uppercase tracking-wider shadow-lg flex items-center">
@@ -224,6 +236,7 @@ export default function ProjectDetail() {
               return true;
             }).map(tab => {
               const Icon = tab.icon;
+              const stageLabel = TAB_STAGE_MAP[tab.id];
               return (
                 <button
                   key={tab.id}
@@ -235,7 +248,12 @@ export default function ProjectDetail() {
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  {stageLabel && (
+                    <span className={`text-[9px] font-mono ${activeTab === tab.id ? "text-primary-foreground/60" : "text-muted-foreground/50"}`}>
+                      {stageLabel}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -245,6 +263,9 @@ export default function ProjectDetail() {
         <AnimatedContainer delay={0.15}>
           {activeTab === "decision" && (
             <div className="space-y-6">
+              <div className="text-[11px] text-muted-foreground/60 font-mono tracking-wide">
+                This decision reflects Stage 4 — Capital Sequencing
+              </div>
               <CapitalDecisionSummary projectId={id} />
             </div>
           )}
@@ -603,6 +624,35 @@ export default function ProjectDetail() {
                           )}
                         </div>
                       </div>
+
+                      {(() => {
+                        const afterStageData = {
+                          inputs: {
+                            hasLabData: project.inputs.hasLabData || toggles.hasLabData,
+                            hasMonitoringData: project.inputs.hasMonitoringData || toggles.hasMonitoringData,
+                            isIFCAligned: project.inputs.isIFCAligned || toggles.isIFCAligned,
+                          },
+                          riskScores: scenarioResult!.after.riskScores,
+                          decision: scenarioResult!.after.decision,
+                        };
+                        const impact = determineScenarioStageImpact(project, afterStageData);
+                        if (impact.stagesUnlocked > 0) return (
+                          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+                            <div className="text-[10px] text-primary uppercase tracking-wider font-bold mb-1.5">Stage Progression Impact</div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-muted-foreground">Stage {impact.beforeStage} ({STAGES[impact.beforeStage - 1]?.shortName})</span>
+                              <ArrowRight className="w-3 h-3 text-primary" />
+                              <span className="text-primary font-bold">Stage {impact.afterStage} ({STAGES[impact.afterStage - 1]?.shortName}) enabled</span>
+                            </div>
+                          </div>
+                        );
+                        return (
+                          <div className="rounded-xl border border-border/20 bg-secondary/10 p-3">
+                            <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold mb-1">Stage Progression</div>
+                            <div className="text-xs text-muted-foreground">Remains at Stage {impact.beforeStage} — additional mitigations needed to advance</div>
+                          </div>
+                        );
+                      })()}
 
                       <div className="space-y-2">
                         <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Subscore Changes</div>
