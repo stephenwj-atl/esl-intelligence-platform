@@ -1,7 +1,7 @@
 const BASE = "/api";
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(`${BASE}${url}`);
+  const res = await fetch(`${BASE}${url}`, { credentials: "include" });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
@@ -10,6 +10,7 @@ async function postJson<T>(url: string, body: any): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -20,6 +21,7 @@ async function patchJson<T>(url: string, body: any): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);

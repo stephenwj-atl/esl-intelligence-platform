@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
 import { db, projectsTable } from "@workspace/db";
+import { decryptProjectFields } from "../lib/project-encryption";
 
 const router: IRouter = Router();
 
 router.get("/portfolio/summary", async (_req, res) => {
-  const projects = await db.select().from(projectsTable);
+  const projects = (await db.select().from(projectsTable)).map(decryptProjectFields);
 
   if (projects.length === 0) {
     res.json({
@@ -95,7 +96,7 @@ router.get("/portfolio/summary", async (_req, res) => {
 });
 
 router.get("/portfolio/optimize", async (_req, res) => {
-  const projects = await db.select().from(projectsTable);
+  const projects = (await db.select().from(projectsTable)).map(decryptProjectFields);
 
   if (projects.length === 0) {
     res.json({
@@ -170,7 +171,7 @@ router.get("/portfolio/optimize", async (_req, res) => {
 });
 
 router.get("/portfolio/intelligence", async (_req, res) => {
-  const projects = await db.select().from(projectsTable);
+  const projects = (await db.select().from(projectsTable)).map(decryptProjectFields);
 
   if (projects.length === 0) {
     res.json({ patterns: [], insights: [] });
@@ -289,7 +290,7 @@ router.get("/portfolio/intelligence", async (_req, res) => {
 });
 
 router.get("/portfolio/confidence", async (_req, res) => {
-  const projects = await db.select().from(projectsTable);
+  const projects = (await db.select().from(projectsTable)).map(decryptProjectFields);
 
   if (projects.length === 0) {
     res.json({
@@ -344,7 +345,7 @@ router.get("/portfolio/confidence", async (_req, res) => {
 });
 
 router.get("/portfolio/decision", async (_req, res) => {
-  const projects = await db.select().from(projectsTable);
+  const projects = (await db.select().from(projectsTable)).map(decryptProjectFields);
 
   if (projects.length === 0) {
     res.json({

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, projectsTable, portfoliosTable, portfolioProjectsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { decryptProjectFields } from "../lib/project-encryption";
 
 const router: IRouter = Router();
 
@@ -145,7 +146,7 @@ const SERVICE_CATALOG = {
   },
 };
 
-function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVICE_CATALOG], project: typeof projectsTable.$inferSelect): number {
+function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVICE_CATALOG], project: { investmentAmount: number; [key: string]: unknown }): number {
   const projectValue = project.investmentAmount * 1_000_000;
   const baseMultipliers: Record<string, number> = {
     eia: 0.008,
@@ -187,7 +188,7 @@ function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVIC
   return Math.round(fee / 1000) * 1000;
 }
 
-function scopeServicesForProject(project: typeof projectsTable.$inferSelect): ESLService[] {
+function scopeServicesForProject(project: { investmentAmount: number; overallRisk: number; regulatoryComplexity: number; contaminationRisk: number; coastalExposure: number; floodRisk: number; waterStress: number; hasLabData: boolean; hasMonitoringData: boolean; isIFCAligned: boolean; dataConfidence: number; [key: string]: unknown }): ESLService[] {
   const services: ESLService[] = [];
 
   const needsEIA = project.overallRisk > 40 || project.regulatoryComplexity > 5;
@@ -308,8 +309,9 @@ router.get("/esl/project/:id/services", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
 
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
-  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+  const [rawProject] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!rawProject) { res.status(404).json({ message: "Project not found" }); return; }
+  const project = decryptProjectFields(rawProject);
 
   const services = scopeServicesForProject(project);
 
@@ -350,7 +352,7 @@ router.get("/esl/project/:id/services", async (req, res) => {
 });
 
 router.get("/esl/portfolio/pipeline", async (req, res) => {
-  const projects = await db.select().from(projectsTable);
+  const projects = (await db.select().from(projectsTable)).map(decryptProjectFields);
   if (projects.length === 0) {
     res.json({ totalRevenue: 0, services: [], projects: [], summary: { totalServices: 0 } });
     return;

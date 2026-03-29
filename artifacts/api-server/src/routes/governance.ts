@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import { db, covenantsTable, esapItemsTable, monitoringEventsTable, auditLogsTable, frameworkAlignmentsTable, projectsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { requireRole } from "../middleware/auth";
+import { decryptProjectFields } from "../lib/project-encryption";
 
 const router: IRouter = Router();
 
@@ -194,15 +196,15 @@ router.get("/projects/:id/covenants", async (req, res) => {
   await db.insert(auditLogsTable).values({
     projectId: id,
     action: "Covenants Generated",
-    user: "System",
+    user: req.user?.email || "System",
     details: `${inserted.length} covenants auto-generated from risk profile`
   });
 
   res.json(inserted);
 });
 
-router.patch("/covenants/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.patch("/covenants/:id", requireRole("Investment Officer", "Admin"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid ID" }); return; }
 
   const { status } = req.body;
@@ -219,7 +221,7 @@ router.patch("/covenants/:id", async (req, res) => {
   await db.insert(auditLogsTable).values({
     projectId: existing.projectId,
     action: "Covenant Status Updated",
-    user: req.body.user || "Analyst",
+    user: req.user?.email || "Unknown",
     details: `Covenant ${id}: ${existing.status} → ${status}`
   });
 
@@ -249,15 +251,15 @@ router.get("/projects/:id/esap", async (req, res) => {
   await db.insert(auditLogsTable).values({
     projectId: id,
     action: "ESAP Generated",
-    user: "System",
+    user: req.user?.email || "System",
     details: `${inserted.length} ESAP items auto-generated from risk profile`
   });
 
   res.json(inserted);
 });
 
-router.patch("/esap/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.patch("/esap/:id", requireRole("Investment Officer", "Admin"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid ID" }); return; }
 
   const { status, evidence } = req.body;
@@ -279,7 +281,7 @@ router.patch("/esap/:id", async (req, res) => {
   await db.insert(auditLogsTable).values({
     projectId: existing.projectId,
     action: "ESAP Item Updated",
-    user: req.body.user || "Analyst",
+    user: req.user?.email || "Unknown",
     details: `ESAP ${id}: ${existing.status} → ${status || existing.status}`
   });
 
@@ -294,8 +296,8 @@ router.get("/projects/:id/monitoring", async (req, res) => {
   res.json(events);
 });
 
-router.post("/projects/:id/monitoring", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.post("/projects/:id/monitoring", requireRole("Investment Officer", "Admin"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid ID" }); return; }
 
   const { date, type, result, status, findings } = req.body;
@@ -316,22 +318,22 @@ router.post("/projects/:id/monitoring", async (req, res) => {
   await db.insert(auditLogsTable).values({
     projectId: id,
     action: "Monitoring Event Added",
-    user: req.body.user || "Analyst",
+    user: req.user?.email || "Unknown",
     details: `${type}: ${result} (${status || "Verified"})`
   });
 
   res.json(event);
 });
 
-router.get("/projects/:id/audit-log", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.get("/projects/:id/audit-log", requireRole("Admin", "Investment Officer"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid ID" }); return; }
 
   const logs = await db.select().from(auditLogsTable).where(eq(auditLogsTable.projectId, id)).orderBy(desc(auditLogsTable.createdAt));
   res.json(logs);
 });
 
-router.get("/audit-log", async (_req, res) => {
+router.get("/audit-log", requireRole("Admin", "Investment Officer"), async (_req, res) => {
   const logs = await db.select().from(auditLogsTable).orderBy(desc(auditLogsTable.createdAt)).limit(200);
   res.json(logs);
 });
@@ -381,8 +383,9 @@ router.get("/projects/:id/report", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid ID" }); return; }
 
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
-  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+  const [rawProject] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!rawProject) { res.status(404).json({ message: "Project not found" }); return; }
+  const project = decryptProjectFields(rawProject);
 
   const covenants = await db.select().from(covenantsTable).where(eq(covenantsTable.projectId, id));
   const esapItems = await db.select().from(esapItemsTable).where(eq(esapItemsTable.projectId, id));

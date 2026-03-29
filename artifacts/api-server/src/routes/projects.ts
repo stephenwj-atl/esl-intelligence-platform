@@ -3,10 +3,13 @@ import { CreateProjectBody, GetProjectParams, DeleteProjectParams, RunScenarioPa
 import { db, projectsTable, riskHistoryTable } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
 import { analyzeProject } from "../lib/risk-engine";
+import { requireRole } from "../middleware/auth";
+import { decryptProjectFields, encryptProjectSensitiveFields } from "../lib/project-encryption";
 
 const router: IRouter = Router();
 
-function formatProject(p: typeof projectsTable.$inferSelect) {
+function formatProject(rawProject: typeof projectsTable.$inferSelect) {
+  const p = decryptProjectFields(rawProject);
   return {
     id: p.id,
     name: p.name,
@@ -52,7 +55,7 @@ router.get("/projects", async (_req, res) => {
   res.json(projects.map(formatProject));
 });
 
-router.post("/projects", async (req, res) => {
+router.post("/projects", requireRole("Investment Officer", "Admin"), async (req, res) => {
   const parsed = CreateProjectBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: parsed.error.message });
@@ -76,7 +79,6 @@ router.post("/projects", async (req, res) => {
     name: input.name,
     country: input.country ?? "Jamaica",
     projectType: input.projectType,
-    investmentAmount: input.investmentAmount,
     floodRisk: input.floodRisk,
     coastalExposure: input.coastalExposure,
     contaminationRisk: input.contaminationRisk,
@@ -92,13 +94,7 @@ router.post("/projects", async (req, res) => {
     regulatoryRisk: analysis.riskScores.regulatoryRisk,
     dataConfidence: analysis.riskScores.dataConfidence,
     overallRisk: analysis.riskScores.overallRisk,
-    delayRiskPercent: analysis.financialRisk.delayRiskPercent,
-    costOverrunPercent: analysis.financialRisk.costOverrunPercent,
-    covenantBreachPercent: analysis.financialRisk.covenantBreachPercent,
-    reputationalRisk: analysis.financialRisk.reputationalRisk,
-    decisionOutcome: analysis.decision.outcome,
-    decisionConditions: analysis.decision.conditions,
-    decisionInsight: analysis.decision.insight,
+    ...encryptProjectSensitiveFields(analysis, input.investmentAmount),
   }).returning();
 
   res.status(201).json(formatProject(project));
@@ -120,7 +116,7 @@ router.get("/projects/:id", async (req, res) => {
   res.json(formatProject(project));
 });
 
-router.delete("/projects/:id", async (req, res) => {
+router.delete("/projects/:id", requireRole("Admin"), async (req, res) => {
   const parsed = DeleteProjectParams.safeParse({ id: req.params.id });
   if (!parsed.success) {
     res.status(400).json({ message: "Invalid project ID" });

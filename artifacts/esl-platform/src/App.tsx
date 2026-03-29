@@ -4,7 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CapitalModeProvider } from "@/components/capital-mode-context";
 import { RoleProvider } from "@/components/role-context";
+import { AuthProvider, useAuth } from "@/components/auth-context";
 import NotFound from "@/pages/not-found";
+import LoginPage from "@/pages/login";
 
 import Dashboard from "@/pages/dashboard";
 import NewProject from "@/pages/new-project";
@@ -14,6 +16,7 @@ import AuthorityDashboard from "@/pages/authority-dashboard";
 import PipelineList from "@/pages/pipeline-list";
 import PipelineNew from "@/pages/pipeline-new";
 import PipelineDetail from "@/pages/pipeline-detail";
+import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,7 +27,21 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+function ProtectedRoutes() {
+  const { isAuthenticated, isLoading, requiresTwoFactor, requiresTotpSetup } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || requiresTwoFactor || requiresTotpSetup) {
+    return <LoginPage />;
+  }
+
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
@@ -43,16 +60,18 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RoleProvider>
-        <CapitalModeProvider>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </CapitalModeProvider>
-      </RoleProvider>
+      <AuthProvider>
+        <RoleProvider>
+          <CapitalModeProvider>
+            <TooltipProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <ProtectedRoutes />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </CapitalModeProvider>
+        </RoleProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

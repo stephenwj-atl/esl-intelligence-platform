@@ -1,6 +1,7 @@
 import type { projectsTable } from "@workspace/db";
+import type { DecryptedProject } from "./project-encryption";
 
-type Project = typeof projectsTable.$inferSelect;
+type Project = DecryptedProject<typeof projectsTable.$inferSelect>;
 
 export type CapitalMode = "Loan" | "Grant" | "Blended";
 

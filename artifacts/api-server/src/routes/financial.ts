@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, projectsTable, financialImpactsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { translateEnvironmentalIntelligence, translateScenario, translatePortfolio, type CapitalMode } from "../lib/capital-translator";
+import { decryptProjectFields, type DecryptedProject } from "../lib/project-encryption";
 
 const router: IRouter = Router();
 
@@ -9,7 +10,19 @@ const BASE_RATE = 8.0;
 const BASE_PREMIUM_RATE = 0.01;
 const LOAN_TERM_YEARS = 10;
 
-function calculateFinancialImpact(project: typeof projectsTable.$inferSelect) {
+type DecryptedProjectRow = DecryptedProject<typeof projectsTable.$inferSelect>;
+
+async function fetchProject(id: number): Promise<DecryptedProjectRow | null> {
+  const [raw] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  return raw ? decryptProjectFields(raw) : null;
+}
+
+async function fetchAllProjects(): Promise<DecryptedProjectRow[]> {
+  const raw = await db.select().from(projectsTable);
+  return raw.map(decryptProjectFields);
+}
+
+function calculateFinancialImpact(project: DecryptedProjectRow) {
   let rateAdjustment = 0;
   if (project.overallRisk > 75) rateAdjustment = 1.5;
   else if (project.overallRisk >= 60) rateAdjustment = 1.0;
@@ -69,12 +82,12 @@ function calculateFinancialImpact(project: typeof projectsTable.$inferSelect) {
 router.get("/financial/project/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  const project = await fetchProject(id);
   if (!project) { res.status(404).json({ message: "Project not found" }); return; }
 
   const impact = calculateFinancialImpact(project);
 
-  const highRiskProjects = await db.select().from(projectsTable);
+  const highRiskProjects = await fetchAllProjects();
   const totalCapital = highRiskProjects.reduce((s, p) => s + p.investmentAmount, 0);
   const highRiskCapital = highRiskProjects.filter(p => p.overallRisk > 70).reduce((s, p) => s + p.investmentAmount, 0);
   const highRiskPercent = totalCapital > 0 ? Math.round((highRiskCapital / totalCapital) * 100) : 0;
@@ -122,7 +135,7 @@ router.get("/financial/project/:id", async (req, res) => {
 });
 
 router.get("/financial/portfolio", async (_req, res) => {
-  const allProjects = await db.select().from(projectsTable);
+  const allProjects = await fetchAllProjects();
   if (allProjects.length === 0) {
     res.json({ totalFinancingCost: 0, totalInsuranceUplift: 0, totalRiskCost: 0, projects: [], capitalConstraint: {} });
     return;
@@ -130,7 +143,7 @@ router.get("/financial/portfolio", async (_req, res) => {
 
   let totalFinancingCost = 0;
   let totalInsuranceUplift = 0;
-  const projectImpacts: any[] = [];
+  const projectImpacts: Array<{ id: number; name: string; overallRisk: number; rateAdjustment: number; finalRate: number; premiumIncrease: number; covenantLevel: string; lifetimeImpact: number }> = [];
 
   const totalCapital = allProjects.reduce((s, p) => s + p.investmentAmount, 0);
   const highRiskCapital = allProjects.filter(p => p.overallRisk > 70).reduce((s, p) => s + p.investmentAmount, 0);
@@ -170,7 +183,7 @@ router.get("/financial/portfolio", async (_req, res) => {
 });
 
 router.get("/financial/comparison", async (_req, res) => {
-  const allProjects = await db.select().from(projectsTable);
+  const allProjects = await fetchAllProjects();
   if (allProjects.length === 0) {
     res.json({ withoutESL: {}, withESL: {}, savings: {} });
     return;
@@ -257,7 +270,7 @@ router.get("/financial/comparison", async (_req, res) => {
 router.get("/financial/scenario/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  const project = await fetchProject(id);
   if (!project) { res.status(404).json({ message: "Project not found" }); return; }
 
   const before = calculateFinancialImpact(project);
@@ -304,7 +317,7 @@ router.get("/financial/scenario/:id", async (req, res) => {
   });
 });
 
-function calculateDeploymentReadiness(project: typeof projectsTable.$inferSelect) {
+function calculateDeploymentReadiness(project: DecryptedProjectRow) {
   const hasMonitoring = project.hasMonitoringData;
   const hasLab = project.hasLabData;
   const hasIFC = project.isIFCAligned;
@@ -316,13 +329,13 @@ function calculateDeploymentReadiness(project: typeof projectsTable.$inferSelect
   return "NOT READY";
 }
 
-export function calculateCapitalMode(project: typeof projectsTable.$inferSelect) {
+export function calculateCapitalMode(project: DecryptedProjectRow) {
   if (project.overallRisk > 70 && project.dataConfidence < 50) return "Grant";
   if (project.overallRisk > 60 || project.dataConfidence < 60) return "Blended";
   return "Loan";
 }
 
-export function calculateBlendedGrantPercent(project: typeof projectsTable.$inferSelect): number {
+export function calculateBlendedGrantPercent(project: DecryptedProjectRow): number {
   const split = calculateBlendedSplit(project);
   return split.grantPercent;
 }
@@ -334,7 +347,7 @@ interface BlendedSplitResult {
   drivers: { factor: string; contribution: number; detail: string }[];
 }
 
-function calculateBlendedSplit(project: typeof projectsTable.$inferSelect): BlendedSplitResult {
+function calculateBlendedSplit(project: DecryptedProjectRow): BlendedSplitResult {
   const drivers: { factor: string; contribution: number; detail: string }[] = [];
 
   let riskComponent = 0;
@@ -406,7 +419,7 @@ function calculateBlendedSplit(project: typeof projectsTable.$inferSelect): Blen
 router.get("/financial/project/:id/structure", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  const project = await fetchProject(id);
   if (!project) { res.status(404).json({ message: "Project not found" }); return; }
 
   const impact = calculateFinancialImpact(project);
@@ -502,7 +515,7 @@ router.get("/financial/project/:id/structure", async (req, res) => {
 router.get("/financial/project/:id/impact", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  const project = await fetchProject(id);
   if (!project) { res.status(404).json({ message: "Project not found" }); return; }
 
   let deliveryRisk = "LOW";
@@ -556,7 +569,7 @@ router.get("/financial/project/:id/impact", async (req, res) => {
 });
 
 router.get("/financial/portfolio/deployment", async (_req, res) => {
-  const allProjects = await db.select().from(projectsTable);
+  const allProjects = await fetchAllProjects();
   if (allProjects.length === 0) {
     res.json({ capitalMix: {}, readiness: {}, efficiency: {} });
     return;
@@ -624,7 +637,7 @@ router.get("/financial/translate/:id", async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
   const mode = (req.query.mode as CapitalMode) || "Loan";
   if (!["Loan", "Grant", "Blended"].includes(mode)) { res.status(400).json({ message: "Invalid mode" }); return; }
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  const project = await fetchProject(id);
   if (!project) { res.status(404).json({ message: "Project not found" }); return; }
 
   const result = translateEnvironmentalIntelligence(mode, project);
@@ -636,7 +649,7 @@ router.get("/financial/scenario/:id/mode", async (req, res) => {
   if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
   const mode = (req.query.mode as CapitalMode) || "Loan";
   if (!["Loan", "Grant", "Blended"].includes(mode)) { res.status(400).json({ message: "Invalid mode" }); return; }
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  const project = await fetchProject(id);
   if (!project) { res.status(404).json({ message: "Project not found" }); return; }
 
   const addMonitoring = req.query.monitoring === "true";
@@ -679,7 +692,7 @@ router.get("/financial/scenario/:id/mode", async (req, res) => {
 });
 
 router.get("/financial/portfolio/translate", async (_req, res) => {
-  const allProjects = await db.select().from(projectsTable);
+  const allProjects = await fetchAllProjects();
   if (allProjects.length === 0) {
     res.json({ totalCapital: 0, totalProjects: 0, loanPortfolio: {}, grantPortfolio: {}, blendedPortfolio: {}, projects: [] });
     return;

@@ -1,5 +1,18 @@
 import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable, covenantsTable, esapItemsTable, monitoringEventsTable, auditLogsTable, frameworkAlignmentsTable, regionalDataTable, regionalIndicesTable, sectorBenchmarksTable, dataLayersTable, projectDataLayersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
+import crypto from "crypto";
+
+function seedEncrypt(plaintext: string): string {
+  const keyHex = process.env.ENCRYPTION_KEY;
+  if (!keyHex) throw new Error("ENCRYPTION_KEY environment variable is required for seeding");
+  const key = Buffer.from(keyHex, "hex");
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  let encrypted = cipher.update(plaintext, "utf8", "hex");
+  encrypted += cipher.final("hex");
+  const tag = cipher.getAuthTag();
+  return iv.toString("hex") + ":" + tag.toString("hex") + ":" + encrypted;
+}
 
 function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val));
@@ -228,19 +241,20 @@ async function seed() {
     const analysis = analyzeProject(proj);
     const [inserted] = await db.insert(projectsTable).values({
       ...proj,
+      investmentAmount: seedEncrypt(String(proj.investmentAmount)),
       environmentalRisk: analysis.riskScores.environmentalRisk,
       infrastructureRisk: analysis.riskScores.infrastructureRisk,
       humanExposureRisk: analysis.riskScores.humanExposureRisk,
       regulatoryRisk: analysis.riskScores.regulatoryRisk,
       dataConfidence: analysis.riskScores.dataConfidence,
       overallRisk: analysis.riskScores.overallRisk,
-      delayRiskPercent: analysis.financialRisk.delayRiskPercent,
-      costOverrunPercent: analysis.financialRisk.costOverrunPercent,
-      covenantBreachPercent: analysis.financialRisk.covenantBreachPercent,
-      reputationalRisk: analysis.financialRisk.reputationalRisk,
-      decisionOutcome: analysis.decision.outcome,
-      decisionConditions: analysis.decision.conditions,
-      decisionInsight: analysis.decision.insight,
+      delayRiskPercent: seedEncrypt(String(analysis.financialRisk.delayRiskPercent)),
+      costOverrunPercent: seedEncrypt(String(analysis.financialRisk.costOverrunPercent)),
+      covenantBreachPercent: seedEncrypt(String(analysis.financialRisk.covenantBreachPercent)),
+      reputationalRisk: seedEncrypt(analysis.financialRisk.reputationalRisk),
+      decisionOutcome: seedEncrypt(analysis.decision.outcome),
+      decisionConditions: seedEncrypt(JSON.stringify(analysis.decision.conditions)),
+      decisionInsight: seedEncrypt(analysis.decision.insight),
     }).returning();
     insertedProjects.push({ ...inserted, ...proj, analysis });
     console.log(`  ${proj.name} -> ${analysis.decision.outcome} (Risk: ${analysis.riskScores.overallRisk}, $${proj.investmentAmount}M)`);

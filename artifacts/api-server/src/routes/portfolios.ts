@@ -9,6 +9,8 @@ import {
 } from "@workspace/api-zod";
 import { db, portfoliosTable, portfolioProjectsTable, projectsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { decryptField } from "../lib/encryption";
+import { requireRole } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -54,7 +56,7 @@ async function getPortfolioWithProjects(portfolioId: number) {
       stage: e.stage,
       riskScore: e.riskScore,
       dataConfidence: e.dataConfidence,
-      decision: e.decision,
+      decision: decryptField(e.decision) || e.decision,
     })),
     metrics: {
       totalInvestment: Math.round(totalInvestment * 10) / 10,
@@ -76,7 +78,7 @@ router.get("/portfolios", async (_req, res) => {
   res.json(results);
 });
 
-router.post("/portfolios", async (req, res) => {
+router.post("/portfolios", requireRole("Investment Officer", "Admin"), async (req, res) => {
   const parsed = CreatePortfolioBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: parsed.error.message });
@@ -104,7 +106,7 @@ router.get("/portfolios/:id", async (req, res) => {
   res.json(full);
 });
 
-router.delete("/portfolios/:id", async (req, res) => {
+router.delete("/portfolios/:id", requireRole("Admin"), async (req, res) => {
   const parsed = DeletePortfolioParams.safeParse({ id: req.params.id });
   if (!parsed.success) {
     res.status(400).json({ message: "Invalid portfolio ID" });
@@ -120,7 +122,7 @@ router.delete("/portfolios/:id", async (req, res) => {
   res.status(204).send();
 });
 
-router.post("/portfolios/:id/projects", async (req, res) => {
+router.post("/portfolios/:id/projects", requireRole("Investment Officer", "Admin"), async (req, res) => {
   const paramsParsed = AddProjectToPortfolioParams.safeParse({ id: req.params.id });
   if (!paramsParsed.success) {
     res.status(400).json({ message: "Invalid portfolio ID" });
@@ -175,7 +177,7 @@ router.post("/portfolios/:id/projects", async (req, res) => {
   res.status(201).json(full);
 });
 
-router.delete("/portfolios/:id/projects/:projectId", async (req, res) => {
+router.delete("/portfolios/:id/projects/:projectId", requireRole("Investment Officer", "Admin"), async (req, res) => {
   const parsed = RemoveProjectFromPortfolioParams.safeParse({
     id: req.params.id,
     projectId: req.params.projectId,

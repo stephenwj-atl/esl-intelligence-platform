@@ -3,6 +3,8 @@ import { db, projectsTable, portfoliosTable, portfolioProjectsTable, pipelinesTa
 import { eq } from "drizzle-orm";
 import { analyzeProject } from "../lib/risk-engine";
 import { calculateCapitalMode, calculateBlendedGrantPercent } from "./financial";
+import { requireRole } from "../middleware/auth";
+import { decryptProjectFields, encryptProjectSensitiveFields } from "../lib/project-encryption";
 
 const router: IRouter = Router();
 
@@ -19,7 +21,7 @@ const FRAMEWORK_OPTIONS = [
   { id: "caricom-resilience", name: "CARICOM Climate Resilience Standards", category: "Regional" },
 ];
 
-function checkFrameworkCompliance(project: typeof projectsTable.$inferSelect, frameworks: string[]): { framework: string; status: "PASS" | "FAIL" | "PARTIAL"; gaps: string[] }[] {
+function checkFrameworkCompliance(project: { overallRisk: number; dataConfidence: number; hasLabData: boolean; hasMonitoringData: boolean; isIFCAligned: boolean; coastalExposure: number; floodRisk: number; contaminationRisk: number; waterStress: number; regulatoryComplexity: number; communitySensitivity: number; environmentalRisk: number; humanExposureRisk: number; regulatoryRisk: number; infrastructureRisk: number; [key: string]: unknown }, frameworks: string[]): { framework: string; status: "PASS" | "FAIL" | "PARTIAL"; gaps: string[] }[] {
   return frameworks.map(fw => {
     const gaps: string[] = [];
 
@@ -70,7 +72,7 @@ router.get("/pipelines", async (_req, res) => {
   res.json(pipelines);
 });
 
-router.post("/pipelines", async (req, res) => {
+router.post("/pipelines", requireRole("Investment Officer", "Admin"), async (req, res) => {
   const { name, description, orgType, frameworks, thresholds, capitalModeDefault, capitalConstraints } = req.body;
 
   if (!name) {
@@ -106,8 +108,8 @@ router.get("/pipelines/:id", async (req, res) => {
   res.json(pipeline);
 });
 
-router.delete("/pipelines/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.delete("/pipelines/:id", requireRole("Admin"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid pipeline ID" }); return; }
 
   const [deleted] = await db.delete(pipelinesTable).where(eq(pipelinesTable.id, id)).returning();
@@ -116,8 +118,8 @@ router.delete("/pipelines/:id", async (req, res) => {
   res.json({ message: "Pipeline deleted" });
 });
 
-router.post("/pipelines/:id/upload", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.post("/pipelines/:id/upload", requireRole("Investment Officer", "Admin"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   if (isNaN(id)) { res.status(400).json({ message: "Invalid pipeline ID" }); return; }
 
   const [pipeline] = await db.select().from(pipelinesTable).where(eq(pipelinesTable.id, id));
@@ -164,7 +166,7 @@ router.post("/pipelines/:id/upload", async (req, res) => {
       });
 
       const [project] = await db.insert(projectsTable).values({
-        name, country, projectType, investmentAmount,
+        name, country, projectType,
         floodRisk, coastalExposure, contaminationRisk,
         regulatoryComplexity, communitySensitivity, waterStress,
         hasLabData, hasMonitoringData, isIFCAligned,
@@ -174,20 +176,14 @@ router.post("/pipelines/:id/upload", async (req, res) => {
         regulatoryRisk: analysis.riskScores.regulatoryRisk,
         dataConfidence: analysis.riskScores.dataConfidence,
         overallRisk: analysis.riskScores.overallRisk,
-        delayRiskPercent: analysis.financialRisk.delayRiskPercent,
-        costOverrunPercent: analysis.financialRisk.costOverrunPercent,
-        covenantBreachPercent: analysis.financialRisk.covenantBreachPercent,
-        reputationalRisk: analysis.financialRisk.reputationalRisk,
-        decisionOutcome: analysis.decision.outcome,
-        decisionConditions: analysis.decision.conditions,
-        decisionInsight: analysis.decision.insight,
+        ...encryptProjectSensitiveFields(analysis, investmentAmount),
       }).returning();
 
       if (pipeline.portfolioId) {
         await db.insert(portfolioProjectsTable).values({
           portfolioId: pipeline.portfolioId,
           projectId: project.id,
-          investmentAmount: project.investmentAmount,
+          investmentAmount,
           stage: "Screening",
         });
       }
@@ -197,13 +193,13 @@ router.post("/pipelines/:id/upload", async (req, res) => {
         name: project.name,
         country: project.country,
         projectType: project.projectType,
-        investmentAmount: project.investmentAmount,
+        investmentAmount,
         overallRisk: project.overallRisk,
         dataConfidence: project.dataConfidence,
         decision: analysis.decision.outcome,
       });
-    } catch (err: any) {
-      errors.push({ row: i + 1, name: row.name || `Row ${i + 1}`, error: err.message || "Unknown error" });
+    } catch (err) {
+      errors.push({ row: i + 1, name: row.name || `Row ${i + 1}`, error: err instanceof Error ? err.message : "Unknown error" });
     }
   }
 
@@ -242,7 +238,7 @@ router.get("/pipelines/:id/screening", async (req, res) => {
   }
 
   const allProjects = await db.select().from(projectsTable);
-  const projects = allProjects.filter(p => projectIds.includes(p.id));
+  const projects = allProjects.filter(p => projectIds.includes(p.id)).map(decryptProjectFields);
 
   const thresholds = pipeline.thresholds as any || {};
   const maxRisk = thresholds.maxRisk || 100;

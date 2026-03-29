@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { useAuth } from "./auth-context";
 
 export const ROLES = ["Analyst", "Investment Officer", "Admin"] as const;
 export type Role = (typeof ROLES)[number];
@@ -65,20 +66,26 @@ const ROLE_PERMISSIONS: Record<Role, RolePermissions> = {
 
 interface RoleContextType {
   role: Role;
-  setRole: (role: Role) => void;
   permissions: RolePermissions;
 }
 
 const RoleContext = createContext<RoleContextType>({
   role: "Analyst",
-  setRole: () => {},
   permissions: ROLE_PERMISSIONS.Analyst,
 });
 
 export function RoleProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [role, setRole] = useState<Role>("Analyst");
+
+  useEffect(() => {
+    if (user?.role && ROLES.includes(user.role as Role)) {
+      setRole(user.role as Role);
+    }
+  }, [user?.role]);
+
   return (
-    <RoleContext.Provider value={{ role, setRole, permissions: ROLE_PERMISSIONS[role] }}>
+    <RoleContext.Provider value={{ role, permissions: ROLE_PERMISSIONS[role] }}>
       {children}
     </RoleContext.Provider>
   );
