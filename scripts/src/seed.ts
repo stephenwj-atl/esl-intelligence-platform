@@ -1,4 +1,4 @@
-import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable, covenantsTable, esapItemsTable, monitoringEventsTable, auditLogsTable, frameworkAlignmentsTable, regionalDataTable, regionalIndicesTable, sectorBenchmarksTable } from "@workspace/db";
+import { db, projectsTable, portfoliosTable, portfolioProjectsTable, riskHistoryTable, covenantsTable, esapItemsTable, monitoringEventsTable, auditLogsTable, frameworkAlignmentsTable, regionalDataTable, regionalIndicesTable, sectorBenchmarksTable, dataLayersTable, projectDataLayersTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
 function clamp(val: number, min: number, max: number): number {
@@ -143,6 +143,8 @@ function generateRiskHistory(projectId: number, baseRisk: number, baseConfidence
 
 async function seed() {
   console.log("Clearing existing data...");
+  await db.execute(sql`TRUNCATE TABLE project_data_layers RESTART IDENTITY CASCADE`);
+  await db.execute(sql`TRUNCATE TABLE data_layers RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE audit_logs RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE monitoring_events RESTART IDENTITY CASCADE`);
   await db.execute(sql`TRUNCATE TABLE esap_items RESTART IDENTITY CASCADE`);
@@ -528,6 +530,70 @@ async function seed() {
   }
   console.log(`  ${sectorData.length * 4} sector benchmark entries`);
 
+  console.log("Seeding Jamaica data layers...");
+  const jamaicaLayers = [
+    { layerId: "1.1", layerName: "Flood Hazard Maps", category: "Environmental Hazards", country: "Jamaica", sourceName: "Water Resources Authority (WRA)", sourceUrl: "https://www.wra.gov.jm/resources/maps/", format: "Feature service / Web GIS", resolution: "Mapped flood boundaries", coverageArea: "National (select floodplains)", accessMethod: "Public ArcGIS service + agency request", quality: "Partial", notes: "WRA ArcGIS services for national flood boundaries; includes Rio Cobre return-period layers but limited coverage", riskDomain: "environmental", confidenceWeight: 1.5 },
+    { layerId: "1.2", layerName: "Storm Surge / Coastal Inundation", category: "Environmental Hazards", country: "Jamaica", sourceName: "ODPEM / CCRIF / CDEMA", sourceUrl: "https://www.odpem.org.jm/", format: "Web GIS / PDF maps", resolution: "Variable", coverageArea: "Coastal zones", accessMethod: "Public portals + agency request", quality: "Partial", notes: "ODPEM hazard maps available; no single national storm-surge raster grid yet", riskDomain: "environmental", confidenceWeight: 1.5 },
+    { layerId: "1.3", layerName: "Seismic Hazard", category: "Environmental Hazards", country: "Jamaica", sourceName: "Earthquake Unit (UWI)", sourceUrl: "https://www.mona.uwi.edu/earthquake/", format: "Web maps / PDF", resolution: "National", coverageArea: "National", accessMethod: "Public", quality: "Good", notes: "UWI Earthquake Unit provides seismic hazard maps and historical event data", riskDomain: "environmental", confidenceWeight: 1.0 },
+    { layerId: "1.4", layerName: "Contamination Sources (PRTR)", category: "Environmental Hazards", country: "Jamaica", sourceName: "NEPA PRTR services", sourceUrl: "https://www.nepa.gov.jm/", format: "Feature service", resolution: "Point locations", coverageArea: "National", accessMethod: "Public ArcGIS service", quality: "Good", notes: "Official NEPA PRTR services identified in tightening pass; moved from Partial to Good", riskDomain: "environmental", confidenceWeight: 1.2 },
+    { layerId: "1.5", layerName: "Hurricane Tracks / Wind History", category: "Environmental Hazards", country: "Jamaica", sourceName: "IBTrACS (NOAA)", sourceUrl: "https://www.ncei.noaa.gov/products/international-best-track-archive", format: "Shapefile / CSV", resolution: "Track-level", coverageArea: "Caribbean basin", accessMethod: "Public download", quality: "Good", notes: "IBTrACS provides comprehensive historical hurricane track data for the Caribbean", riskDomain: "environmental", confidenceWeight: 1.0 },
+    { layerId: "1.6", layerName: "Watersheds / Drainage Basins", category: "Environmental Hazards", country: "Jamaica", sourceName: "WRA + HydroSHEDS", sourceUrl: "https://www.hydrosheds.org/", format: "Shapefile / raster", resolution: "~500m (HydroSHEDS)", coverageArea: "National", accessMethod: "Public download", quality: "Good", notes: "WRA watershed boundaries plus HydroSHEDS global drainage dataset", riskDomain: "environmental", confidenceWeight: 1.0 },
+    { layerId: "2.1", layerName: "Water Stress Index", category: "Infrastructure & Utilities", country: "Jamaica", sourceName: "WRI Aqueduct", sourceUrl: "https://www.wri.org/aqueduct", format: "Web service / GeoTIFF", resolution: "Sub-basin", coverageArea: "Global (Jamaica included)", accessMethod: "Public download", quality: "Good", notes: "Aqueduct 4.0 provides baseline and projected water stress at sub-basin resolution", riskDomain: "infrastructure", confidenceWeight: 1.0 },
+    { layerId: "2.2", layerName: "Water / Sewer Service Areas", category: "Infrastructure & Utilities", country: "Jamaica", sourceName: "NWC / OUR", sourceUrl: "https://www.nwcjamaica.com/", format: "PDF / web maps", resolution: "Variable", coverageArea: "Utility service zones", accessMethod: "Public + agency request", quality: "Partial", notes: "NWC service area maps available but not in standardised GIS format", riskDomain: "infrastructure", confidenceWeight: 1.2 },
+    { layerId: "2.3", layerName: "Road Network", category: "Infrastructure & Utilities", country: "Jamaica", sourceName: "NWA + OSM", sourceUrl: "https://www.nwa.gov.jm/", format: "Shapefile / OSM extract", resolution: "Road-level", coverageArea: "National", accessMethod: "Public download", quality: "Good", notes: "NWA official road data supplemented by OpenStreetMap for complete coverage", riskDomain: "infrastructure", confidenceWeight: 0.8 },
+    { layerId: "2.4", layerName: "Power Grid / Transmission", category: "Infrastructure & Utilities", country: "Jamaica", sourceName: "JPS Co.", sourceUrl: "https://www.jpsco.com/", format: "PDF maps", resolution: "Regional", coverageArea: "National grid", accessMethod: "Public annual filings", quality: "Partial", notes: "JPS distribution network maps available as PDF; no GIS export", riskDomain: "infrastructure", confidenceWeight: 1.0 },
+    { layerId: "2.5", layerName: "Power Reliability (SAIDI/SAIFI)", category: "Infrastructure & Utilities", country: "Jamaica", sourceName: "OUR / JPS annual filing", sourceUrl: "https://our.org.jm/", format: "PDF / tabular", resolution: "District / feeder", coverageArea: "National", accessMethod: "Public regulatory filings", quality: "Partial", notes: "Reliability metrics in annual filings but not in machine-readable GIS format", riskDomain: "infrastructure", confidenceWeight: 1.0 },
+    { layerId: "3.1", layerName: "Population Density", category: "Social & Community", country: "Jamaica", sourceName: "WorldPop + STATIN", sourceUrl: "https://www.worldpop.org/", format: "GeoTIFF (100m)", resolution: "100m grid", coverageArea: "National", accessMethod: "Public download", quality: "Good", notes: "WorldPop 2020 100m raster downloaded; cross-referenced with STATIN parish-level data", riskDomain: "social", confidenceWeight: 1.0 },
+    { layerId: "3.2", layerName: "Sensitive Receptors (Health/Schools)", category: "Social & Community", country: "Jamaica", sourceName: "data.gov.jm + OSM", sourceUrl: "https://data.gov.jm/", format: "CSV with coordinates", resolution: "Point locations", coverageArea: "National", accessMethod: "Public download", quality: "Good", notes: "Health centres, hospitals, and school locations with geospatial coordinates downloaded", riskDomain: "social", confidenceWeight: 1.0 },
+    { layerId: "3.3", layerName: "Health Burden / Disease Surveillance", category: "Social & Community", country: "Jamaica", sourceName: "MOHW / PAHO", sourceUrl: "https://www.moh.gov.jm/", format: "PDF bulletins / web tables", resolution: "Parish-level", coverageArea: "National", accessMethod: "Public bulletins", quality: "Partial", notes: "Weekly epidemiological bulletins available; parish-level health burden table not yet standardised", riskDomain: "social", confidenceWeight: 1.0 },
+    { layerId: "3.4", layerName: "Informal Settlements", category: "Social & Community", country: "Jamaica", sourceName: "STATIN SDG 11.1.1 + Google Open Buildings", sourceUrl: "https://sdgnrp.statinja.gov.jm/11-1-1/", format: "Web indicator + spatial proxy", resolution: "National indicator / building footprints", coverageArea: "National", accessMethod: "Public", quality: "Partial", notes: "SDG indicator available; official polygons for informal settlements not yet published", riskDomain: "social", confidenceWeight: 1.2 },
+    { layerId: "3.5", layerName: "Employment by Industry", category: "Social & Community", country: "Jamaica", sourceName: "STATIN", sourceUrl: "https://statinja.gov.jm/labourforce/", format: "Web tables / PDF", resolution: "National / parish", coverageArea: "National", accessMethod: "Public", quality: "Partial", notes: "Labour force tables available but limited spatial granularity", riskDomain: "social", confidenceWeight: 0.8 },
+    { layerId: "4.1", layerName: "Protected Areas", category: "Regulatory & Planning", country: "Jamaica", sourceName: "WDPA + GOJ official service", sourceUrl: "https://www.protectedplanet.net/", format: "Shapefile / Feature service", resolution: "Polygon boundaries", coverageArea: "National", accessMethod: "Public download", quality: "Good", notes: "WDPA polygons plus official GOJ ArcGIS service for protected areas", riskDomain: "regulatory", confidenceWeight: 1.0 },
+    { layerId: "4.2", layerName: "Zoning / Land Use Plans", category: "Regulatory & Planning", country: "Jamaica", sourceName: "NEPA Town & Country Plans", sourceUrl: "https://www.nepa.gov.jm/planning-and-development/town-and-country-plans", format: "PDF development orders / maps", resolution: "Variable", coverageArea: "Municipal", accessMethod: "Public", quality: "Partial", notes: "Development orders publicly available but not as parcel-ready GIS polygons", riskDomain: "regulatory", confidenceWeight: 1.3 },
+    { layerId: "4.3", layerName: "Coastal Zone Management", category: "Regulatory & Planning", country: "Jamaica", sourceName: "NEPA Beach Control", sourceUrl: "https://www.nepa.gov.jm/", format: "Regulatory framework / maps", resolution: "Coastal zone", coverageArea: "National coastline", accessMethod: "Public", quality: "Partial", notes: "Beach control policies exist; spatial delineation is partial", riskDomain: "regulatory", confidenceWeight: 1.0 },
+    { layerId: "4.4", layerName: "Permit Timelines", category: "Regulatory & Planning", country: "Jamaica", sourceName: "NEPA / Parish councils", sourceUrl: "https://www.nepa.gov.jm/", format: "Tabular / reports", resolution: "National", coverageArea: "National", accessMethod: "Agency request", quality: "Proxy", notes: "No standardised permit-timeline database; anecdotal and report-based data only", riskDomain: "regulatory", confidenceWeight: 1.2 },
+    { layerId: "4.5", layerName: "Heritage Sites / Cultural Assets", category: "Regulatory & Planning", country: "Jamaica", sourceName: "JNHT", sourceUrl: "https://www.jnht.com/", format: "Web listing / PDF", resolution: "Point / polygon", coverageArea: "National", accessMethod: "Public", quality: "Partial", notes: "JNHT site listings available; no unified GIS heritage layer yet", riskDomain: "regulatory", confidenceWeight: 0.8 },
+  ];
+
+  const insertedLayers = await db.insert(dataLayersTable).values(jamaicaLayers).returning();
+  console.log(`  ${insertedLayers.length} Jamaica data layers inserted`);
+
+  console.log("Linking data layers to Jamaica projects...");
+  const projectLayerLinks: { projectId: number; dataLayerId: number; status: string; overrideQuality: string | null; notes: string | null }[] = [];
+
+  for (const project of insertedProjects) {
+    if (project.country !== "Jamaica") continue;
+
+    for (const layer of insertedLayers) {
+      let status = "Inherited";
+      let overrideQuality: string | null = null;
+      let notes: string | null = null;
+
+      if (project.hasLabData && (layer.layerId === "1.4" || layer.layerId === "3.2")) {
+        status = "Verified";
+        overrideQuality = "Good";
+        notes = "Lab data confirms site-specific conditions";
+      }
+      if (project.hasMonitoringData && (layer.layerId === "2.1" || layer.layerId === "1.1")) {
+        status = "Verified";
+        if (layer.quality === "Partial") overrideQuality = "Good";
+        notes = "Monitoring data provides ongoing site validation";
+      }
+      if (project.isIFCAligned && (layer.layerId === "4.1" || layer.layerId === "4.2")) {
+        status = "Verified";
+        if (layer.quality === "Partial") overrideQuality = "Good";
+        notes = "IFC alignment verified against planning requirements";
+      }
+
+      projectLayerLinks.push({ projectId: project.id, dataLayerId: layer.id, status, overrideQuality, notes });
+    }
+  }
+
+  if (projectLayerLinks.length > 0) {
+    await db.insert(projectDataLayersTable).values(projectLayerLinks);
+  }
+  console.log(`  ${projectLayerLinks.length} project-layer associations created`);
+
   console.log("\nSeeding complete!");
   console.log(`  ${insertedProjects.length} projects`);
   console.log(`  ${insertedProjects.length * 12} risk history entries`);
@@ -539,6 +605,8 @@ async function seed() {
   console.log(`  ${regionalDataCount} regional data points`);
   console.log(`  ${indicesCount} regional index entries`);
   console.log(`  ${sectorData.length * 4} sector benchmarks`);
+  console.log(`  ${insertedLayers.length} data layers`);
+  console.log(`  ${projectLayerLinks.length} project-layer links`);
   process.exit(0);
 }
 

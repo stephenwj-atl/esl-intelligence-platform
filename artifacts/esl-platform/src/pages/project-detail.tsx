@@ -8,7 +8,7 @@ import {
   Droplet, Factory, Users, Gavel, Loader2, Target,
   TrendingUp, TrendingDown, CalendarX, DollarSign, ActivitySquare, Wand2, ArrowRight,
   Clock, Shield, FileCheck, ClipboardList, Activity, History, FileText,
-  Layers, CheckCircle, Beaker, Eye, FlaskConical, Gauge, Briefcase
+  Layers, CheckCircle, Beaker, Eye, FlaskConical, Gauge, Briefcase, Database
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
@@ -31,9 +31,11 @@ import { useRole } from "@/components/role-context";
 import { determineStage, determineScenarioStageImpact, TAB_STAGE_MAP, STAGES } from "@/lib/stage-engine";
 import { StageFlowBar } from "@/components/stage-flow-bar";
 import { StageStatusPanel } from "@/components/stage-status-panel";
+import { DataLayersTab } from "@/components/data-layers-tab";
 
 const TABS = [
   { id: "decision", label: "Decision", icon: ShieldCheck },
+  { id: "baseline", label: "Baseline", icon: Database },
   { id: "structure", label: "Structure", icon: Layers },
   { id: "financial", label: "Financial", icon: DollarSign },
   { id: "esl", label: "ESL Services", icon: Briefcase },
@@ -393,6 +395,10 @@ export default function ProjectDetail() {
                 </div>
               </Card>
             </div>
+          )}
+
+          {activeTab === "baseline" && (
+            <DataLayersTab projectId={project.id} />
           )}
 
           {activeTab === "evidence" && (

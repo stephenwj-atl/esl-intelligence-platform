@@ -125,6 +125,22 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 - Dashboard: "ESL Service Pipeline" panel on Intelligence tab showing total revenue opportunity, service breakdown, top projects
 - "Generate Proposal" button exports scope document as text file
 
+**10. Country Data Layer System**
+- `lib/db/src/schema/data-layers.ts` — Two tables:
+  - `data_layers`: Country-level environmental data inventory (21 layers for Jamaica)
+  - `project_data_layers`: Project-specific layer overrides/verifications
+  - Unique constraints: `(country, layer_id)` and `(project_id, data_layer_id)`
+- Each layer has: layerId, layerName, category, country, source info, quality (Good/Partial/Proxy/Missing), riskDomain, confidenceWeight
+- 4 categories: Environmental Hazards (6 layers), Infrastructure & Utilities (5), Social & Community (5), Regulatory & Planning (5)
+- Data Readiness Score: `(good + partial*0.5 + proxy*0.25) / total * 100`
+- Projects inherit country data profile; site-specific verification can override quality
+- API: `GET /api/data-layers?country=`, `GET /api/data-layers/country/:country/profile`, `GET /api/projects/:id/data-layers`
+- Frontend: "Baseline" tab on project detail (`artifacts/esl-platform/src/components/data-layers-tab.tsx`)
+  - Readiness gauge, quality distribution stacked bar, category readiness bars
+  - Expandable category/layer accordion with source details and verification status
+- Jamaica baseline: 9 Good, 11 Partial, 1 Proxy, 0 Missing → 70% country readiness
+- Source: `attached_assets/JM_data_inventory_1774760252265.xlsx` — ESL research brief inventory
+
 ### Database Schema Highlights
 - `projects`: Stores project inputs, scores, financial risks, decisions, investment amounts.
 - `portfolios`: Manages named portfolio groupings.
@@ -135,6 +151,8 @@ The project is a pnpm workspace monorepo utilizing TypeScript.
 - `financial_impacts`: Stores detailed financial impact data.
 - `outcomes`: Tracks outcome metrics (type, targetValue, achievedValue, projectId FK).
 - `blended_structures`: Stores blended finance structures (grantComponent, loanComponent, timeline, concessionalityLevel, firstLossEstimate, crowdInRatio, projectId FK).
+- `data_layers`: Country-level environmental data layer inventory (layerId, layerName, category, country, quality, riskDomain, confidenceWeight).
+- `project_data_layers`: Project-specific layer status overrides (projectId FK, dataLayerId FK, status, overrideQuality).
 
 ### Role-Based Access Control
 - **Role Context**: `artifacts/esl-platform/src/components/role-context.tsx` — global role state via React Context
