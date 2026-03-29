@@ -24,6 +24,7 @@ import {
   ResponsiveContainer, ReferenceLine, Cell, PieChart, Pie, BarChart, Bar
 } from "recharts";
 import { governanceApi, type GovernanceSummary } from "@/lib/governance-api";
+import { complianceApi, type ComplianceSummary as ComplianceSummaryData } from "@/lib/compliance-api";
 import { regionalApi, type PortfolioBenchmark } from "@/lib/regional-api";
 import { financialApi, type PortfolioFinancialImpact, type ESLComparison, type PortfolioDeployment, type PortfolioTranslation } from "@/lib/financial-api";
 import { useCapitalMode } from "@/components/capital-mode-context";
@@ -67,6 +68,7 @@ export default function Dashboard() {
   const [deployment, setDeployment] = useState<PortfolioDeployment | null>(null);
   const [eslPipeline, setEslPipeline] = useState<ESLPipelineData | null>(null);
   const [portfolioTranslation, setPortfolioTranslation] = useState<PortfolioTranslation | null>(null);
+  const [complianceSummary, setComplianceSummary] = useState<ComplianceSummaryData | null>(null);
   const { role, permissions } = useRole();
   const { mode: capitalMode } = useCapitalMode();
   const [dashTab, setDashTab] = useState<DashTabId>("overview");
@@ -81,6 +83,7 @@ export default function Dashboard() {
     financialApi.getPortfolioDeployment().then(setDeployment).catch(() => {});
     financialApi.getPortfolioTranslation().then(setPortfolioTranslation).catch(() => {});
     fetch("/api/esl/portfolio/pipeline").then(r => r.ok ? r.json() : null).then(setEslPipeline).catch(() => {});
+    complianceApi.getSummary().then(setComplianceSummary).catch(() => {});
   }, []);
 
   const isLoading = projectsLoading || summaryLoading;
@@ -454,6 +457,44 @@ export default function Dashboard() {
                 </div>
               </Card>
             </AnimatedContainer>
+
+            {complianceSummary && (
+              <AnimatedContainer delay={0.35}>
+                <Link href="/compliance">
+                  <Card className="p-5 hover:bg-secondary/10 transition-colors cursor-pointer group">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-primary" />
+                        <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">Compliance Posture</h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-mono font-bold" style={{ color: complianceSummary.overallScore >= 80 ? "#10b981" : complianceSummary.overallScore >= 60 ? "#f59e0b" : "#f43f5e" }}>
+                          {complianceSummary.overallScore}%
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-3">
+                      {complianceSummary.frameworks.map(fw => (
+                        <div key={fw.id} className="text-center">
+                          <div className="text-sm font-mono font-bold" style={{ color: fw.score >= 80 ? "#10b981" : fw.score >= 60 ? "#f59e0b" : "#f43f5e" }}>
+                            {fw.score}%
+                          </div>
+                          <div className="h-1 w-full bg-secondary rounded-full overflow-hidden mt-1 mb-1.5">
+                            <div className="h-full rounded-full" style={{ width: `${fw.score}%`, backgroundColor: fw.score >= 80 ? "#10b981" : fw.score >= 60 ? "#f59e0b" : "#f43f5e" }} />
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">{fw.shortName}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/[0.05] text-[11px] text-muted-foreground">
+                      <span>{complianceSummary.implemented}/{complianceSummary.totalControls} controls implemented</span>
+                      <span>{complianceSummary.gap > 0 ? `${complianceSummary.gap} gaps remaining` : "No gaps"}</span>
+                    </div>
+                  </Card>
+                </Link>
+              </AnimatedContainer>
+            )}
           </div>
         )}
 

@@ -9,6 +9,7 @@ import financialRouter from "./financial";
 import pipelinesRouter from "./pipelines";
 import eslServicesRouter from "./esl-services";
 import dataLayersRouter from "./data-layers";
+import complianceRouter from "./compliance";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(financialRouter);
 router.use(pipelinesRouter);
 router.use(eslServicesRouter);
 router.use(dataLayersRouter);
+router.use(complianceRouter);
 
 export default router;

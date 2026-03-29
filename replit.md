@@ -46,6 +46,8 @@ All features must align with a mandatory 7-stage flow: Intake Screening, Baselin
 
 9.  **ESL Service Scope Generator**: Converts risk flags and compliance gaps into concrete ESL service proposals (e.g., EIA, Monitoring Program) with defined scope, deliverables, timelines, estimated fees, and risk reduction/confidence gain points.
 
+9a. **Compliance Dashboard**: Dedicated `/compliance` page with framework selector (SOC 2 Type II, ISO 27001, ISO 27701, IFC Performance Standards). Real-time control status evaluation engine. Accordion-expandable controls with status badges (Implemented/Partial/Planned/Gap), evidence links, platform feature mapping. Overall compliance score gauges per framework and aggregate posture. Compliance summary widget on dashboard Overview tab. Export capability (JSON). API: `GET /api/compliance/frameworks`, `/frameworks/:id`, `/summary`, `/export`. Files: `compliance.ts` (API), `compliance-api.ts` (client), `compliance.tsx` (page).
+
 10. **Country Data Layer System**: Manages country-level environmental data (21 layers for Jamaica example) and project-specific overrides. Data layers are categorized (Environmental Hazards, Infrastructure, Social, Regulatory) and contribute to a Data Readiness Score.
 
 **Database Schema Highlights:** Key tables include `projects`, `portfolios`, `risk_history`, `covenants`, `esap_items`, `monitoring_events`, `audit_logs`, `pipelines`, `financial_impacts`, `outcomes`, `blended_structures`, `data_layers`, and `project_data_layers`.

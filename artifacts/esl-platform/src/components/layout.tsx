@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe, FileStack, User, LogOut, Shield } from "lucide-react";
+import { Activity, LayoutDashboard, Plus, Leaf, Settings, HelpCircle, Layers, Globe, FileStack, User, LogOut, Shield, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CapitalModeSwitch } from "./capital-mode-context";
 import { useRole } from "./role-context";
@@ -15,6 +15,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/authority", label: "Authority Index", icon: Globe },
     { href: "/portfolios", label: "Portfolios", icon: Layers },
     { href: "/pipelines", label: "Pipelines", icon: FileStack },
+    { href: "/compliance", label: "Compliance", icon: ShieldCheck },
     { href: "/new", label: "+ New Analysis", icon: Plus },
   ];
 

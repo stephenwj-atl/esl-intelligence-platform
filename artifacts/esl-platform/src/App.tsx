@@ -16,6 +16,7 @@ import AuthorityDashboard from "@/pages/authority-dashboard";
 import PipelineList from "@/pages/pipeline-list";
 import PipelineNew from "@/pages/pipeline-new";
 import PipelineDetail from "@/pages/pipeline-detail";
+import CompliancePage from "@/pages/compliance";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -52,6 +53,7 @@ function ProtectedRoutes() {
       <Route path="/pipelines" component={PipelineList} />
       <Route path="/pipelines/new" component={PipelineNew} />
       <Route path="/pipelines/:id" component={PipelineDetail} />
+      <Route path="/compliance" component={CompliancePage} />
       <Route component={NotFound} />
     </Switch>
   );
