@@ -305,6 +305,13 @@ router.get("/regional/authority-summary", async (_req, res) => {
       waterStressScore: i.waterStressScore,
       confidence: i.confidence,
     })).sort((a, b) => b.riskScore - a.riskScore),
+    dataProvenance: {
+      status: "SIMULATED",
+      label: "Demonstration Data",
+      detail: "Country risk scores, CERI index, and sector benchmarks use simulated baselines with statistical variance. Jamaica data layer metadata (21 layers) is sourced from verified ESL research. Production deployment requires connection to live data sources (WRI Aqueduct, NOAA IBTrACS, GOJ ArcGIS services, etc.).",
+      realSources: ["Jamaica Data Layers (21 layers from ESL research brief)", "Country/region geography", "Institutional source references and URLs"],
+      simulatedSources: ["Country risk scores and CERI composite", "Infrastructure and water stress indices", "Sector benchmarks and sample sizes", "Data Moat statistics (lab samples, monitoring points)", "5-year trend data"],
+    },
   });
 });
 

@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout";
 import { Card, Badge, AnimatedContainer } from "@/components/ui";
 import {
   Globe, TrendingUp, TrendingDown, Database, Shield, BarChart3,
-  Activity, Zap, ChevronDown, ChevronUp, AlertTriangle, Layers
+  Activity, Zap, ChevronDown, ChevronUp, AlertTriangle, Layers, Info
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -72,6 +72,18 @@ export default function AuthorityDashboard() {
           <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">Caribbean Environmental Authority</h1>
           <p className="text-muted-foreground mt-1">Regional intelligence, benchmarking, and risk indexing across {summary.totalCountries} Caribbean markets.</p>
         </div>
+
+        {summary.dataProvenance?.status === "SIMULATED" && (
+          <div className="flex items-start gap-3 px-4 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <Info className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <span className="font-semibold text-yellow-500">{summary.dataProvenance.label}</span>
+              <span className="text-muted-foreground ml-1">
+                {summary.dataProvenance.detail}
+              </span>
+            </div>
+          </div>
+        )}
 
         <AnimatedContainer>
           <Card className="p-6 bg-gradient-to-r from-primary/5 via-card to-primary/5 border-primary/20">

@@ -30,3 +30,9 @@ id = "XOdhOtrdS6EXpKHrZFSBE"
 uri = "file://artifacts/esl-platform/ESL_Platform_Gap_Analysis.md"
 type = "text"
 title = "ESL Platform Gap Analysis — Evaluation Against Capital Deployment Positioning"
+
+[[outputs]]
+id = "s5MZ-aTmM-2hhl-cNSBrC"
+uri = "file://docs/REAL_DATA_SOURCE_INTEGRATION.md"
+type = "text"
+title = "Real Data Source Integration Guide"

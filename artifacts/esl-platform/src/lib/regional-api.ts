@@ -29,6 +29,13 @@ export interface AuthoritySummary {
     waterStressScore: number;
     confidence: number;
   }>;
+  dataProvenance?: {
+    status: "SIMULATED" | "LIVE";
+    label: string;
+    detail: string;
+    realSources: string[];
+    simulatedSources: string[];
+  };
 }
 
 export interface RegionalIndices {
