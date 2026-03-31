@@ -36,6 +36,9 @@ const COUNTRY_WATER_DATA: Record<string, { indicators: Record<string, number>; r
   "Belize": { indicators: { bws: 1.2, bwd: 0.8, iav: 2.6, sev: 2.3, gtd: 0.6 }, resolution: "basin" },
   "St. Lucia": { indicators: { bws: 1.9, bwd: 1.4, iav: 2.2, sev: 2.0, gtd: 1.1 }, resolution: "country" },
   "Grenada": { indicators: { bws: 1.7, bwd: 1.3, iav: 2.1, sev: 1.9, gtd: 1.0 }, resolution: "country" },
+  "Antigua & Barbuda": { indicators: { bws: 2.3, bwd: 1.7, iav: 1.9, sev: 1.7, gtd: 1.5 }, resolution: "country" },
+  "St. Vincent & the Grenadines": { indicators: { bws: 1.6, bwd: 1.1, iav: 2.3, sev: 2.1, gtd: 0.9 }, resolution: "country" },
+  "Dominica": { indicators: { bws: 1.1, bwd: 0.7, iav: 2.7, sev: 2.4, gtd: 0.5 }, resolution: "country" },
 };
 
 function computeWaterStressScore(indicators: Record<string, number>): number {

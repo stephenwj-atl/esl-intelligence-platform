@@ -52,7 +52,20 @@ All features must align with a mandatory 7-stage flow: Intake Screening, Baselin
 
 11. **Data Provenance System**: Dynamic provenance derived from `data_source_freshness` table. Status is `SIMULATED` (no pipelines), `PARTIAL` (<3 pipelines connected), or `LIVE` (≥3 pipelines, avg confidence ≥50%). Authority dashboard shows yellow (simulated) or blue (partial) banner. Provenance threshold checks distinct pipeline names (aqueduct, ibtracs, opendata-jamaica, arcgis-jamaica), not raw source rows.
 
-12. **Live Data Ingestion System**: Located at `artifacts/api-server/src/services/data-ingestion/`. Four source adapters: Aqueduct (WRI water stress, 14 countries — currently uses hardcoded reference data until WRI API credentials obtained), IBTrACS (NOAA hurricane tracks CSV from `/access/csv/` path, ~55MB download, 9880+ Caribbean storm points), Open-Data Jamaica (health facility CSVs from data.gov.jm, 345 facilities), ArcGIS Jamaica (7 GOJ/MSET FeatureServer endpoints — 4/7 active: mortality, protected areas, planning proposals, planning boundaries; 3 unreachable: flood, PRTR). Orchestrator runs pipelines sequentially, then triggers scoring engine. Scheduler uses pipeline name keys matching adapter names (hyphenated). Admin-only ingestion API routes at `/api/ingestion/run`, `/api/ingestion/run-all`, `/api/ingestion/status`. Standalone runner script at `src/scripts/run-ingestion.ts` (exits non-zero on pipeline failures). Scoring engine computes weighted country risk from ingested datasets and writes to `regional_data`.
+12. **Live Data Ingestion System**: Located at `artifacts/api-server/src/services/data-ingestion/`. Twelve source adapters across 17 Caribbean countries and 20+ environmental data layers:
+    - **Aqueduct** (WRI water stress, 17 countries — uses hardcoded reference data until WRI API credentials obtained)
+    - **IBTrACS** (NOAA hurricane tracks CSV from `/access/csv/` path, ~55MB download, 9880+ Caribbean storm points)
+    - **Open-Data Jamaica** (health facility CSVs from data.gov.jm, 345 facilities)
+    - **ArcGIS Jamaica** (7 GOJ/MSET FeatureServer endpoints — 4/7 active; 3 unreachable: flood, PRTR)
+    - **WDPA** (Protected Planet protected areas — 17 countries, land/marine coverage, requires `WDPA_API_TOKEN` for live API)
+    - **WorldPop** (population density & urban exposure — 17 countries, live API validation)
+    - **SoilGrids** (ISRIC soil classification — clay/sand/pH/organic carbon per country centroid, live REST API)
+    - **Coral Reef Watch** (NOAA CRW — SST, DHW, bleaching alerts, 17 countries)
+    - **USGS Earthquake** (20-year M3.0+ seismic events in Caribbean bbox, live FDSNWS API, ~2000 events)
+    - **World Bank** (10 development indicators per country via WB API — GDP, electricity, water, sanitation, CO2, forest, unemployment, poverty, homicides)
+    - **WHO GHO** (7 health indicators via GHO API — life expectancy, mortality, physician/bed density, health expenditure)
+    - **UNESCO WHC** (World Heritage sites — count and heritage risk per country)
+    Shared utility: `utils/freshness.ts` provides `upsertFreshness()` for conflict-safe freshness writes. Orchestrator runs pipelines sequentially, then triggers scoring engine. Scoring engine computes weighted risk across 4 pillars (Environmental 30%, Infrastructure 25%, Community 25%, Regulatory 20%) using 13 dataset types. Admin-only ingestion API routes at `/api/ingestion/run`, `/api/ingestion/run-all`, `/api/ingestion/status`. Standalone runner: `pnpm --filter @workspace/api-server run ingestion:run-all`.
 
 **Database Schema Highlights:** Key tables include `projects`, `portfolios`, `risk_history`, `covenants`, `esap_items`, `monitoring_events`, `audit_logs`, `pipelines`, `financial_impacts`, `outcomes`, `blended_structures`, `data_layers`, `project_data_layers`, `raw_data_cache`, `data_source_freshness`, and `ingestion_runs`.
 

@@ -101,21 +101,24 @@ export const PROVENANCE_CRITERIA = {
   MIN_AVG_CONFIDENCE: 50,
 } as const;
 
-export const CARIBBEAN_COUNTRIES: Record<string, { iso3: string; bbox: [number, number, number, number] }> = {
-  "Jamaica": { iso3: "JAM", bbox: [17.7, -78.4, 18.5, -76.2] },
-  "Dominican Republic": { iso3: "DOM", bbox: [17.5, -72.0, 19.9, -68.3] },
-  "Trinidad & Tobago": { iso3: "TTO", bbox: [10.0, -62.0, 11.4, -60.5] },
-  "Barbados": { iso3: "BRB", bbox: [13.0, -59.7, 13.4, -59.4] },
-  "Bahamas": { iso3: "BHS", bbox: [20.9, -79.3, 27.3, -72.7] },
-  "Guyana": { iso3: "GUY", bbox: [1.2, -61.4, 8.6, -56.5] },
-  "Suriname": { iso3: "SUR", bbox: [1.8, -58.1, 6.0, -54.0] },
-  "Haiti": { iso3: "HTI", bbox: [18.0, -74.5, 20.1, -71.6] },
-  "Cuba": { iso3: "CUB", bbox: [19.8, -84.9, 23.3, -74.1] },
-  "Puerto Rico": { iso3: "PRI", bbox: [17.9, -67.3, 18.5, -65.6] },
-  "Cayman Islands": { iso3: "CYM", bbox: [19.2, -81.4, 19.8, -79.7] },
-  "Belize": { iso3: "BLZ", bbox: [15.9, -89.2, 18.5, -87.5] },
-  "St. Lucia": { iso3: "LCA", bbox: [13.7, -61.1, 14.1, -60.9] },
-  "Grenada": { iso3: "GRD", bbox: [11.98, -61.80, 12.24, -61.59] },
+export const CARIBBEAN_COUNTRIES: Record<string, { iso3: string; iso2: string; bbox: [number, number, number, number] }> = {
+  "Jamaica": { iso3: "JAM", iso2: "JM", bbox: [17.7, -78.4, 18.5, -76.2] },
+  "Dominican Republic": { iso3: "DOM", iso2: "DO", bbox: [17.5, -72.0, 19.9, -68.3] },
+  "Trinidad & Tobago": { iso3: "TTO", iso2: "TT", bbox: [10.0, -62.0, 11.4, -60.5] },
+  "Barbados": { iso3: "BRB", iso2: "BB", bbox: [13.0, -59.7, 13.4, -59.4] },
+  "Bahamas": { iso3: "BHS", iso2: "BS", bbox: [20.9, -79.3, 27.3, -72.7] },
+  "Guyana": { iso3: "GUY", iso2: "GY", bbox: [1.2, -61.4, 8.6, -56.5] },
+  "Suriname": { iso3: "SUR", iso2: "SR", bbox: [1.8, -58.1, 6.0, -54.0] },
+  "Haiti": { iso3: "HTI", iso2: "HT", bbox: [18.0, -74.5, 20.1, -71.6] },
+  "Cuba": { iso3: "CUB", iso2: "CU", bbox: [19.8, -84.9, 23.3, -74.1] },
+  "Puerto Rico": { iso3: "PRI", iso2: "PR", bbox: [17.9, -67.3, 18.5, -65.6] },
+  "Cayman Islands": { iso3: "CYM", iso2: "KY", bbox: [19.2, -81.4, 19.8, -79.7] },
+  "Belize": { iso3: "BLZ", iso2: "BZ", bbox: [15.9, -89.2, 18.5, -87.5] },
+  "St. Lucia": { iso3: "LCA", iso2: "LC", bbox: [13.7, -61.1, 14.1, -60.9] },
+  "Grenada": { iso3: "GRD", iso2: "GD", bbox: [11.98, -61.80, 12.24, -61.59] },
+  "Antigua & Barbuda": { iso3: "ATG", iso2: "AG", bbox: [16.99, -62.35, 17.73, -61.66] },
+  "St. Vincent & the Grenadines": { iso3: "VCT", iso2: "VC", bbox: [12.58, -61.46, 13.38, -61.12] },
+  "Dominica": { iso3: "DMA", iso2: "DM", bbox: [15.20, -61.48, 15.65, -61.24] },
 };
 
 export const PIPELINE_SCHEDULES: Record<string, string> = {
@@ -123,4 +126,12 @@ export const PIPELINE_SCHEDULES: Record<string, string> = {
   ibtracs: "weekly",
   "opendata-jamaica": "monthly",
   "arcgis-jamaica": "weekly",
+  wdpa: "monthly",
+  worldpop: "quarterly",
+  soilgrids: "quarterly",
+  "coral-reef-watch": "daily",
+  "usgs-earthquake": "weekly",
+  "world-bank": "quarterly",
+  "who-gho": "quarterly",
+  "unesco-whc": "monthly",
 };
