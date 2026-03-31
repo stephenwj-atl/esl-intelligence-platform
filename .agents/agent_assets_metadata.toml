@@ -36,3 +36,9 @@ id = "s5MZ-aTmM-2hhl-cNSBrC"
 uri = "file://docs/REAL_DATA_SOURCE_INTEGRATION.md"
 type = "text"
 title = "Real Data Source Integration Guide"
+
+[[outputs]]
+id = "OB_oDhVZ60P_oDSsHoyUM"
+uri = "file://attached_assets/ESL_Researcher_Manual_Data_Acquisition_Brief.md"
+type = "text"
+title = "Researcher Manual Data Acquisition Brief"
