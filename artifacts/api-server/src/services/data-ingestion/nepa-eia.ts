@@ -45,8 +45,9 @@ const NEPA_ENFORCEMENTS_URL = `${NEPA_BASE}/index.php/enforcements`;
 const NEPA_CONSULTATIONS_URL = `${NEPA_BASE}/public-consultations`;
 const NEPA_ARCHIVE_URL = "https://websitearchive2020.nepa.gov.jm/new/services_products/applications/eias/index.php";
 
+const MAX_EIA_PAGES = 16;
 const MAX_DECISION_PAGES = 10;
-const DECISION_PAGE_DELAY_MS = 800;
+const PAGE_DELAY_MS = 800;
 
 interface NEPADocument {
   title: string;
@@ -268,15 +269,28 @@ export const nepaEiaAdapter: SourceAdapter = {
       let allDocs: NEPADocument[] = [];
 
       try {
-        log.info(PIPELINE_NAME, "Fetching NEPA EIA page...");
-        const html = await fetchNEPAPage(NEPA_EIA_URL);
-        const docs = extractPDFDocuments(html, "eia");
-        const grouped = groupEIAProjects(docs);
-        allDocs.push(...grouped);
-        sourceStatus.eia = true;
-        log.info(PIPELINE_NAME, `EIA page: ${docs.length} documents (${docs.filter(d => !isAnnexOrSupplementary(d.title)).length} main projects, ${docs.filter(d => isAnnexOrSupplementary(d.title)).length} annexes)`);
+        log.info(PIPELINE_NAME, `Fetching NEPA EIA pages (up to ${MAX_EIA_PAGES} pages)...`);
+        let totalEIADocs = 0;
+        for (let page = 0; page < MAX_EIA_PAGES; page++) {
+          try {
+            const url = page === 0 ? NEPA_EIA_URL : `${NEPA_EIA_URL}?page=${page}`;
+            const html = await fetchNEPAPage(url);
+            const docs = extractPDFDocuments(html, "eia");
+            if (docs.length === 0) break;
+            allDocs.push(...docs);
+            totalEIADocs += docs.length;
+            if (page < MAX_EIA_PAGES - 1) await delay(PAGE_DELAY_MS);
+          } catch {
+            log.warn(PIPELINE_NAME, `Failed to fetch EIA page ${page}`);
+            break;
+          }
+        }
+        sourceStatus.eia = totalEIADocs > 0;
+        const mainCount = allDocs.filter(d => d.category === "eia" && !isAnnexOrSupplementary(d.title)).length;
+        const annexCount = allDocs.filter(d => d.category === "eia" && isAnnexOrSupplementary(d.title)).length;
+        log.info(PIPELINE_NAME, `EIA pages: ${totalEIADocs} total documents (${mainCount} main projects, ${annexCount} annexes)`);
       } catch (err) {
-        log.warn(PIPELINE_NAME, `Failed to fetch EIA page: ${err instanceof Error ? err.message : String(err)}`);
+        log.warn(PIPELINE_NAME, `Failed to fetch EIA pages: ${err instanceof Error ? err.message : String(err)}`);
       }
 
       try {
@@ -290,7 +304,7 @@ export const nepaEiaAdapter: SourceAdapter = {
             if (docs.length === 0) break;
             allDocs.push(...docs);
             totalDecisions += docs.length;
-            if (page < MAX_DECISION_PAGES - 1) await delay(DECISION_PAGE_DELAY_MS);
+            if (page < MAX_DECISION_PAGES - 1) await delay(PAGE_DELAY_MS);
           } catch {
             log.warn(PIPELINE_NAME, `Failed to fetch decisions page ${page}`);
             break;
