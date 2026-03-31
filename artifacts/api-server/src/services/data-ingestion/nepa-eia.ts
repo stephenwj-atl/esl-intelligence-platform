@@ -49,12 +49,28 @@ const MAX_EIA_PAGES = 16;
 const MAX_DECISION_PAGES = 10;
 const PAGE_DELAY_MS = 800;
 
+type AssessmentType =
+  | "eia"
+  | "eis"
+  | "sea"
+  | "aia"
+  | "sia"
+  | "tor"
+  | "addendum"
+  | "public_meeting"
+  | "verbatim_minutes"
+  | "permit_licence"
+  | "technical_study"
+  | "project_brief"
+  | "unclassified";
+
 interface NEPADocument {
   title: string;
   documentUrl: string;
   dateFolder?: string;
   year?: number;
   parish?: string;
+  assessmentType?: AssessmentType;
   projectType?: string;
   category: "eia" | "decision" | "enforcement" | "consultation";
   source: "current" | "archive";
@@ -114,6 +130,26 @@ function isAnnexOrSupplementary(title: string): boolean {
   return /^annex\s/i.test(lower) || /^appendix\s/i.test(lower) || lower.includes("verbatim notes");
 }
 
+function classifyAssessmentType(title: string, url: string): AssessmentType {
+  const t = (title + " " + url).toLowerCase().replace(/[-_]/g, " ");
+
+  if (/\btor\b|terms of reference/i.test(t)) return "tor";
+  if (/verbatim|veb min/i.test(t)) return "verbatim_minutes";
+  if (/addendum|corrigend|amendment/i.test(t)) return "addendum";
+  if (/public[\s]*(meeting|consultation|noti|present)|notice.*public|notification.*meeting|advisory.*stakeholder|stakeholder.*consultation|public noti|public meeting|meeting[\s]*report|meeting[\s]*notes|overall document public|attendance register|response to comment/i.test(t)) return "public_meeting";
+  if (/\baia\b|archaeolog|cockpit country/i.test(t)) return "aia";
+  if (/social impact assess|\bsia\b/i.test(t)) return "sia";
+  if (/\bsea\b|strategic environmental assess/i.test(t)) return "sea";
+  if (/\beis\b|environmental impact statement|eis report/i.test(t)) return "eis";
+  if (/permit|licence|license|certificate of approval|compliance order/i.test(t)) return "permit_licence";
+  if (/project[\s]*brief|screening|batching plant.*brief/i.test(t)) return "project_brief";
+  if (/^annex|^appendix|noise assess|flora|fauna|air emission|heritage[\s]*survey|baseline|aermod|coral[\s]*reloc|change[\s]*matri|elevation|site[\s]*plan|geotechnical|hydrological|traffic impact|drainage|engineering[\s]*(report|geological)|preliminary[\s]*technical|geological[\s]*survey|monitoring|soil[\s]*report|sewage[\s]*treatment|resistivity|subdivision[\s]*plan|containment|lot[\s]*areas|hydrodynamic|assessment of currents|valuation assessment|rapid nrv|current.*study|wind.*study|wave.*study/i.test(t)) return "technical_study";
+  if (/environmental impact assess|environmental[\s]*impact[\s]*asses|\beia\b|final[\s]*report.*eia|eia[\s]*report|wind.*environmental.*assessment/i.test(t)) return "eia";
+  if (/project[\s]*description|project[\s]*document|project[\s]*summary|notification|notice\.pdf|public presentation|court battle/i.test(t)) return "project_brief";
+
+  return "unclassified";
+}
+
 function extractPDFDocuments(html: string, category: NEPADocument["category"]): NEPADocument[] {
   const docs: NEPADocument[] = [];
   const linkPattern = /<a\s[^>]*href=["']([^"']*\.pdf[^"']*)["'][^>]*(?:title=["']([^"']*)["'])?[^>]*>([^<]*)<\/a>/gi;
@@ -135,12 +171,14 @@ function extractPDFDocuments(html: string, category: NEPADocument["category"]): 
     const contextEnd = Math.min(html.length, match.index + match[0].length + 500);
     const context = html.substring(contextStart, contextEnd);
 
+    const cleanTitle = displayTitle.replace(/\s+/g, " ").trim();
     docs.push({
-      title: displayTitle.replace(/\s+/g, " ").trim(),
+      title: cleanTitle,
       documentUrl: url,
       dateFolder,
       year: (dateFolder ? extractYearFromDateFolder(dateFolder) : undefined) || extractYear(displayTitle) || extractYear(decodedUrl),
       parish: extractParish(displayTitle) || extractParish(decodedUrl) || extractParish(context),
+      assessmentType: category === "eia" ? classifyAssessmentType(cleanTitle, decodedUrl) : undefined,
       projectType: classifyProject(displayTitle) || classifyProject(decodedUrl),
       category,
       source: "current",
@@ -163,11 +201,13 @@ function parseArchiveSiteHTML(html: string): NEPADocument[] {
     const url = rawUrl.startsWith("http") ? rawUrl : `https://websitearchive2020.nepa.gov.jm${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
     const decodedUrl = decodeURIComponent(url);
 
+    const cleanTitle = linkText.replace(/\s+/g, " ").trim();
     docs.push({
-      title: linkText.replace(/\s+/g, " ").trim(),
+      title: cleanTitle,
       documentUrl: url,
       year: extractYear(decodedUrl) || extractYear(linkText),
       parish: extractParish(decodedUrl) || extractParish(linkText),
+      assessmentType: classifyAssessmentType(cleanTitle, decodedUrl),
       projectType: classifyProject(linkText) || classifyProject(decodedUrl),
       category: "eia",
       source: "archive",
@@ -199,16 +239,28 @@ function delay(ms: number): Promise<void> {
 }
 
 function computeRegulatoryAnalysis(allDocs: NEPADocument[]) {
-  const eiaDocs = allDocs.filter(d => d.category === "eia" && !isAnnexOrSupplementary(d.title));
+  const eiaPageDocs = allDocs.filter(d => d.category === "eia");
   const decisionDocs = allDocs.filter(d => d.category === "decision");
   const enforcementDocs = allDocs.filter(d => d.category === "enforcement");
   const consultationDocs = allDocs.filter(d => d.category === "consultation");
+
+  const assessmentTypeCounts: Record<string, number> = {};
+  for (const d of eiaPageDocs) {
+    const at = d.assessmentType || "unclassified";
+    assessmentTypeCounts[at] = (assessmentTypeCounts[at] || 0) + 1;
+  }
+
+  const primaryAssessments = eiaPageDocs.filter(d =>
+    d.assessmentType === "eia" || d.assessmentType === "eis" ||
+    d.assessmentType === "sea" || d.assessmentType === "aia" ||
+    d.assessmentType === "sia" || d.assessmentType === "unclassified"
+  );
 
   const projectTypeCounts: Record<string, number> = {};
   const parishCounts: Record<string, number> = {};
   const yearCounts: Record<number, number> = {};
 
-  for (const d of eiaDocs) {
+  for (const d of primaryAssessments) {
     if (d.projectType) projectTypeCounts[d.projectType] = (projectTypeCounts[d.projectType] || 0) + 1;
     if (d.parish) parishCounts[d.parish] = (parishCounts[d.parish] || 0) + 1;
     if (d.year) yearCounts[d.year] = (yearCounts[d.year] || 0) + 1;
@@ -216,7 +268,7 @@ function computeRegulatoryAnalysis(allDocs: NEPADocument[]) {
 
   const years = Object.keys(yearCounts).map(Number).sort();
   const yearSpan = years.length > 1 ? years[years.length - 1] - years[0] + 1 : 1;
-  const avgEIAPerYear = roundTo(eiaDocs.length / Math.max(yearSpan, 1));
+  const avgAssessmentsPerYear = roundTo(primaryAssessments.length / Math.max(yearSpan, 1));
 
   const decisionYears: Record<number, number> = {};
   for (const d of decisionDocs) {
@@ -227,7 +279,7 @@ function computeRegulatoryAnalysis(allDocs: NEPADocument[]) {
   const avgDecisionsPerYear = roundTo(decisionDocs.length / Math.max(decisionYearSpan, 1));
 
   let densityScore = 0;
-  densityScore += Math.min(eiaDocs.length * 3, 30);
+  densityScore += Math.min(primaryAssessments.length * 0.5, 30);
   densityScore += Math.min(decisionDocs.length * 0.3, 30);
   const uniqueTypes = Object.keys(projectTypeCounts).length;
   densityScore += Math.min(uniqueTypes * 3, 15);
@@ -238,8 +290,21 @@ function computeRegulatoryAnalysis(allDocs: NEPADocument[]) {
   if (enforcementDocs.length > 0) densityScore += 7;
 
   return {
-    eiaCount: eiaDocs.length,
-    eiaWithAnnexes: allDocs.filter(d => d.category === "eia").length,
+    assessmentTypeCounts,
+    primaryAssessmentCount: primaryAssessments.length,
+    eiaCount: assessmentTypeCounts["eia"] || 0,
+    eisCount: assessmentTypeCounts["eis"] || 0,
+    seaCount: assessmentTypeCounts["sea"] || 0,
+    aiaCount: assessmentTypeCounts["aia"] || 0,
+    siaCount: assessmentTypeCounts["sia"] || 0,
+    torCount: assessmentTypeCounts["tor"] || 0,
+    addendumCount: assessmentTypeCounts["addendum"] || 0,
+    publicMeetingCount: assessmentTypeCounts["public_meeting"] || 0,
+    verbatimMinutesCount: assessmentTypeCounts["verbatim_minutes"] || 0,
+    technicalStudyCount: assessmentTypeCounts["technical_study"] || 0,
+    projectBriefCount: assessmentTypeCounts["project_brief"] || 0,
+    permitCount: assessmentTypeCounts["permit_licence"] || 0,
+    eiaPageTotalDocs: eiaPageDocs.length,
     decisionCount: decisionDocs.length,
     enforcementCount: enforcementDocs.length,
     consultationCount: consultationDocs.length,
@@ -247,7 +312,7 @@ function computeRegulatoryAnalysis(allDocs: NEPADocument[]) {
     projectTypeCounts,
     parishCounts,
     yearCounts,
-    avgEIAPerYear,
+    avgAssessmentsPerYear,
     avgDecisionsPerYear,
     decisionYearRange: decisionYearKeys.length > 0 ? `${decisionYearKeys[0]}-${decisionYearKeys[decisionYearKeys.length - 1]}` : "unknown",
     regulatoryDensityScore: roundTo(clamp(densityScore, 0, 100)),
@@ -361,16 +426,30 @@ export const nepaEiaAdapter: SourceAdapter = {
 
       const analysis = computeRegulatoryAnalysis(allDocs);
 
+      const now = new Date();
+      const jr = (dt: string, v: number, u: string) => ({ country: "Jamaica", region: "Caribbean", datasetType: dt, value: v, unit: u, timestamp: now });
       const dataRecords = [
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA EIA Project Count", value: analysis.eiaCount, unit: "count", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA EIA Total Documents", value: analysis.eiaWithAnnexes, unit: "count", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Board Decision Count", value: analysis.decisionCount, unit: "count", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Enforcement Count", value: analysis.enforcementCount, unit: "count", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Public Consultation Count", value: analysis.consultationCount, unit: "count", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Total Regulatory Documents", value: analysis.totalDocuments, unit: "count", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Regulatory Density Score", value: analysis.regulatoryDensityScore, unit: "score", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Avg EIA Projects Per Year", value: analysis.avgEIAPerYear, unit: "per_year", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Avg Board Decisions Per Year", value: analysis.avgDecisionsPerYear, unit: "per_year", timestamp: new Date() },
+        jr("NEPA EIA Count", analysis.eiaCount, "count"),
+        jr("NEPA EIS Count", analysis.eisCount, "count"),
+        jr("NEPA SEA Count", analysis.seaCount, "count"),
+        jr("NEPA AIA Count", analysis.aiaCount, "count"),
+        jr("NEPA SIA Count", analysis.siaCount, "count"),
+        jr("NEPA Primary Assessment Count", analysis.primaryAssessmentCount, "count"),
+        jr("NEPA TOR Count", analysis.torCount, "count"),
+        jr("NEPA Addendum Count", analysis.addendumCount, "count"),
+        jr("NEPA Public Meeting Record Count", analysis.publicMeetingCount, "count"),
+        jr("NEPA Verbatim Minutes Count", analysis.verbatimMinutesCount, "count"),
+        jr("NEPA Technical Study Count", analysis.technicalStudyCount, "count"),
+        jr("NEPA Project Brief Count", analysis.projectBriefCount, "count"),
+        jr("NEPA Permit/Licence Count", analysis.permitCount, "count"),
+        jr("NEPA EIA Page Total Documents", analysis.eiaPageTotalDocs, "count"),
+        jr("NEPA Board Decision Count", analysis.decisionCount, "count"),
+        jr("NEPA Enforcement Count", analysis.enforcementCount, "count"),
+        jr("NEPA Public Consultation Count", analysis.consultationCount, "count"),
+        jr("NEPA Total Regulatory Documents", analysis.totalDocuments, "count"),
+        jr("NEPA Regulatory Density Score", analysis.regulatoryDensityScore, "score"),
+        jr("NEPA Avg Assessments Per Year", analysis.avgAssessmentsPerYear, "per_year"),
+        jr("NEPA Avg Board Decisions Per Year", analysis.avgDecisionsPerYear, "per_year"),
       ];
 
       for (const [type, count] of Object.entries(analysis.projectTypeCounts)) {
@@ -402,6 +481,7 @@ export const nepaEiaAdapter: SourceAdapter = {
           documents: allDocs.map(d => ({
             title: d.title,
             category: d.category,
+            assessmentType: d.assessmentType,
             parish: d.parish,
             projectType: d.projectType,
             year: d.year,
@@ -436,7 +516,13 @@ export const nepaEiaAdapter: SourceAdapter = {
       });
 
       log.success(PIPELINE_NAME, `Completed: ${analysis.totalDocuments} documents, ${recordsWritten} data points`, {
-        eiaProjects: analysis.eiaCount,
+        assessmentTypes: analysis.assessmentTypeCounts,
+        eia: analysis.eiaCount,
+        eis: analysis.eisCount,
+        sea: analysis.seaCount,
+        aia: analysis.aiaCount,
+        sia: analysis.siaCount,
+        primaryAssessments: analysis.primaryAssessmentCount,
         decisions: analysis.decisionCount,
         enforcements: analysis.enforcementCount,
         consultations: analysis.consultationCount,
@@ -454,8 +540,13 @@ export const nepaEiaAdapter: SourceAdapter = {
         countriesAffected,
         confidence,
         summary: {
-          eiaProjects: analysis.eiaCount,
-          eiaWithAnnexes: analysis.eiaWithAnnexes,
+          assessmentTypes: analysis.assessmentTypeCounts,
+          primaryAssessments: analysis.primaryAssessmentCount,
+          eia: analysis.eiaCount,
+          eis: analysis.eisCount,
+          sea: analysis.seaCount,
+          aia: analysis.aiaCount,
+          sia: analysis.siaCount,
           boardDecisions: analysis.decisionCount,
           enforcements: analysis.enforcementCount,
           consultations: analysis.consultationCount,
@@ -463,7 +554,7 @@ export const nepaEiaAdapter: SourceAdapter = {
           projectTypes: analysis.projectTypeCounts,
           parishes: analysis.parishCounts,
           decisionYearRange: analysis.decisionYearRange,
-          avgEIAPerYear: analysis.avgEIAPerYear,
+          avgAssessmentsPerYear: analysis.avgAssessmentsPerYear,
           avgDecisionsPerYear: analysis.avgDecisionsPerYear,
           regulatoryDensityScore: analysis.regulatoryDensityScore,
           sourceStatus,
