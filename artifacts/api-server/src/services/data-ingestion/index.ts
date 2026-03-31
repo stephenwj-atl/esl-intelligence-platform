@@ -16,6 +16,7 @@ import { noaaSlrAdapter } from "./noaa-slr";
 import { hydroshedsAdapter } from "./hydrosheds";
 import { openBuildingsAdapter } from "./open-buildings";
 import { nepaEiaAdapter } from "./nepa-eia";
+import { caribbeanEiaAdapter } from "./caribbean-eia";
 import { computeCountryScores, writeScoresToDB } from "./scoring";
 import { ingestionLogger as log } from "./utils/logger";
 import type { SourceAdapter, IngestionResult } from "./types";
@@ -41,6 +42,7 @@ const adapters: Record<string, SourceAdapter> = {
   hydrosheds: hydroshedsAdapter,
   "open-buildings": openBuildingsAdapter,
   "nepa-eia": nepaEiaAdapter,
+  "caribbean-eia": caribbeanEiaAdapter,
 };
 
 export async function runPipeline(name: string): Promise<IngestionResult> {
