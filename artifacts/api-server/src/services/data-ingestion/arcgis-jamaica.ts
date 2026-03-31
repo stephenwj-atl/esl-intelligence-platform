@@ -1,4 +1,5 @@
-import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { eq } from "drizzle-orm";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo, hashString } from "./utils/normalize";
@@ -254,7 +255,7 @@ export const arcgisJamaicaAdapter: SourceAdapter = {
         const derivedScores = deriveScoresFromServiceResults(serviceResults);
 
         for (const score of derivedScores) {
-          await db.insert(regionalDataTable).values({
+          await upsertRegionalData({
             country: "Jamaica",
             region: "National",
             datasetType: score.datasetType,

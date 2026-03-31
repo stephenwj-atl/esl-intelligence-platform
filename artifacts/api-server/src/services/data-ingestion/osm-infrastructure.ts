@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -170,7 +171,7 @@ export const osmInfrastructureAdapter: SourceAdapter = {
         const vulnScore = computeInfrastructureVulnerability(totalRoads, primaryRoads, ref.bridges, ref.powerLines, ref.hospitals, areaKm2);
         const roadDensity = roundTo(totalRoads / areaKm2, 2);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Road Segments Total", value: totalRoads, unit: "count", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Primary Road Segments", value: primaryRoads, unit: "count", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Bridge Count", value: ref.bridges, unit: "count", timestamp: new Date() },

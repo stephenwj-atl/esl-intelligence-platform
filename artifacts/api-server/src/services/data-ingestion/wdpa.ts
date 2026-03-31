@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -105,7 +106,7 @@ export const wdpaAdapter: SourceAdapter = {
         recordsRead++;
         const riskScore = computeProtectedAreaRisk(protectedPct, marineProtectedPct);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Protected Area Coverage", value: roundTo(protectedPct), unit: "percent", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Marine Protected Area Coverage", value: roundTo(marineProtectedPct), unit: "percent", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Protected Area Conflict Risk", value: riskScore, unit: "score", timestamp: new Date() },

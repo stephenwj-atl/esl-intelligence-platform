@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -128,7 +129,7 @@ export const usgsEarthquakeAdapter: SourceAdapter = {
 
         const risk = computeSeismicRisk(nearbyQuakes);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Seismic Risk Score", value: risk.score, unit: "score", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Max Earthquake Magnitude", value: risk.maxMagnitude, unit: "magnitude", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Significant Seismic Events (20yr)", value: risk.significantEvents, unit: "count", timestamp: new Date() },

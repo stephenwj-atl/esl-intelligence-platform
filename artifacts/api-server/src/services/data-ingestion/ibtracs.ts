@@ -1,4 +1,5 @@
-import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { eq } from "drizzle-orm";
 import { fetchText } from "./utils/fetchWithRetry";
 import { getCountryForPoint } from "./utils/geo";
@@ -195,7 +196,7 @@ export const ibtracAdapter: SourceAdapter = {
         exposures.push(exposure);
         countriesAffected.push(country);
 
-        await db.insert(regionalDataTable).values({
+        await upsertRegionalData({
           country,
           region: "National",
           datasetType: "Hurricane Exposure",
@@ -204,7 +205,7 @@ export const ibtracAdapter: SourceAdapter = {
           timestamp: new Date(),
         });
 
-        await db.insert(regionalDataTable).values({
+        await upsertRegionalData({
           country,
           region: "National",
           datasetType: "Hurricane Frequency",
@@ -213,7 +214,7 @@ export const ibtracAdapter: SourceAdapter = {
           timestamp: new Date(),
         });
 
-        await db.insert(regionalDataTable).values({
+        await upsertRegionalData({
           country,
           region: "National",
           datasetType: "Hurricane Intensity",

@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { roundTo, clamp } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
 import { ingestionLogger as log } from "./utils/logger";
@@ -65,7 +66,7 @@ export const openBuildingsAdapter: SourceAdapter = {
         recordsRead++;
         const vulnScore = computeHousingVulnerabilityScore(data.informalSettlementPct, data.coastalBuildingPct, data.avgBuildingAreaM2);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Total Buildings", value: data.totalBuildings, unit: "count", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Building Density", value: data.buildingsPerKm2, unit: "per_km2", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Avg Building Area", value: data.avgBuildingAreaM2, unit: "m2", timestamp: new Date() },

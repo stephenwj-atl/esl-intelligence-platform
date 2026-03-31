@@ -1,7 +1,22 @@
 import { runAllPipelines, runPipeline } from "../services/data-ingestion";
+import { computeCountryScores, writeScoresToDB } from "../services/data-ingestion/scoring";
 
 async function main() {
   const filterArg = process.argv[2];
+
+  if (filterArg === "scoring-only") {
+    console.log("=== ESL Scoring Engine ===\n");
+    const scores = await computeCountryScores();
+    const countriesUpdated = await writeScoresToDB(scores);
+    console.log(`\nScoring complete: ${countriesUpdated} countries updated`);
+    for (const s of scores) {
+      if (s.overallRisk !== null) {
+        console.log(`  ${s.country}: risk=${s.overallRisk.toFixed(1)} env=${s.environmental?.toFixed(1) ?? "N/A"} inf=${s.infrastructure?.toFixed(1) ?? "N/A"} com=${s.community?.toFixed(1) ?? "N/A"} reg=${s.regulatory?.toFixed(1) ?? "N/A"} conf=${s.confidence.toFixed(1)}%`);
+      }
+    }
+    process.exit(0);
+  }
+
   const pipelineFilter = filterArg ? filterArg.split(",") : null;
 
   console.log("=== ESL Data Ingestion Runner ===");

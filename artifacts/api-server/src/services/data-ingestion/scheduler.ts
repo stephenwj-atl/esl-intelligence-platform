@@ -1,64 +1,119 @@
+import { db, dataSourceFreshnessTable } from "@workspace/db";
 import { ingestionLogger as log } from "./utils/logger";
 import { PIPELINE_SCHEDULES } from "./types";
+import { computeCountryScores, writeScoresToDB } from "./scoring";
 
 const PIPELINE_NAME = "scheduler";
 
-interface ScheduleEntry {
+export interface StaleCheckResult {
   pipeline: string;
   frequency: string;
-  lastRun: Date | null;
-  nextRun: Date | null;
+  priority: "critical" | "standard" | "low";
+  intervalHours: number;
+  lastSuccess: Date | null;
+  hoursElapsed: number | null;
+  isStale: boolean;
+  neverRun: boolean;
 }
 
-const FREQUENCY_MS: Record<string, number> = {
-  weekly: 7 * 24 * 60 * 60 * 1000,
-  monthly: 30 * 24 * 60 * 60 * 1000,
-};
+export async function checkStalePipelines(): Promise<StaleCheckResult[]> {
+  const freshness = await db.select().from(dataSourceFreshnessTable);
+  const now = new Date();
+  const results: StaleCheckResult[] = [];
 
-const scheduleState: Map<string, ScheduleEntry> = new Map();
-let intervalHandle: ReturnType<typeof setInterval> | null = null;
+  for (const [name, schedule] of Object.entries(PIPELINE_SCHEDULES)) {
+    const sources = freshness.filter(f => f.pipelineName === name);
+    const latestSuccess = sources
+      .filter(s => s.lastSuccessAt)
+      .sort((a, b) => (b.lastSuccessAt?.getTime() ?? 0) - (a.lastSuccessAt?.getTime() ?? 0))[0];
 
-export function initScheduler(runPipeline: (name: string) => Promise<void>): void {
-  for (const [pipeline, frequency] of Object.entries(PIPELINE_SCHEDULES)) {
-    const name = pipeline.toLowerCase();
-    scheduleState.set(name, {
+    const lastSuccess = latestSuccess?.lastSuccessAt ?? null;
+    const hoursElapsed = lastSuccess ? (now.getTime() - lastSuccess.getTime()) / (1000 * 60 * 60) : null;
+    const neverRun = lastSuccess === null;
+    const isStale = neverRun || (hoursElapsed !== null && hoursElapsed > schedule.intervalHours);
+
+    results.push({
       pipeline: name,
-      frequency,
-      lastRun: null,
-      nextRun: new Date(Date.now() + FREQUENCY_MS[frequency]),
+      frequency: schedule.frequency,
+      priority: schedule.priority,
+      intervalHours: schedule.intervalHours,
+      lastSuccess,
+      hoursElapsed: hoursElapsed !== null ? Math.round(hoursElapsed * 10) / 10 : null,
+      isStale,
+      neverRun,
     });
   }
 
-  log.info(PIPELINE_NAME, "Scheduler initialized", {
-    pipelines: Object.keys(PIPELINE_SCHEDULES),
-  });
+  return results;
+}
 
-  intervalHandle = setInterval(async () => {
-    const now = new Date();
-    for (const [name, entry] of scheduleState.entries()) {
-      if (entry.nextRun && now >= entry.nextRun) {
-        log.info(PIPELINE_NAME, `Scheduled run triggered for ${name}`);
+export async function getStalePipelineNames(): Promise<string[]> {
+  const results = await checkStalePipelines();
+  return results
+    .filter(r => r.isStale)
+    .sort((a, b) => {
+      const priorityOrder = { critical: 0, standard: 1, low: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    })
+    .map(r => r.pipeline);
+}
+
+let schedulerInterval: ReturnType<typeof setInterval> | null = null;
+
+export function startScheduler(runPipeline: (name: string) => Promise<any>, checkIntervalMs = 3600000): void {
+  if (schedulerInterval) {
+    log.info(PIPELINE_NAME, "Scheduler already running");
+    return;
+  }
+
+  log.info(PIPELINE_NAME, `Starting pipeline scheduler (check every ${checkIntervalMs / 60000} min)`);
+
+  const runStale = async () => {
+    try {
+      const stale = await getStalePipelineNames();
+      if (stale.length === 0) {
+        log.info(PIPELINE_NAME, "All pipelines fresh");
+        return;
+      }
+
+      log.info(PIPELINE_NAME, `${stale.length} stale pipelines: ${stale.join(", ")}`);
+      let successCount = 0;
+      for (const name of stale) {
         try {
           await runPipeline(name);
-          entry.lastRun = now;
-          entry.nextRun = new Date(now.getTime() + FREQUENCY_MS[entry.frequency]);
+          successCount++;
         } catch (err) {
-          log.error(PIPELINE_NAME, `Scheduled run failed for ${name}`, err);
-          entry.nextRun = new Date(now.getTime() + 60 * 60 * 1000);
+          log.error(PIPELINE_NAME, `Scheduled run of ${name} failed: ${err}`);
         }
       }
+
+      if (successCount > 0) {
+        try {
+          log.info(PIPELINE_NAME, "Re-running scoring engine after stale refresh");
+          const scores = await computeCountryScores();
+          await writeScoresToDB(scores);
+          log.success(PIPELINE_NAME, `Scoring updated for ${scores.length} countries`);
+        } catch (err) {
+          log.error(PIPELINE_NAME, `Post-refresh scoring failed: ${err}`);
+        }
+      }
+    } catch (err) {
+      log.error(PIPELINE_NAME, `Scheduler check failed: ${err}`);
     }
-  }, 60 * 1000);
+  };
+
+  schedulerInterval = setInterval(runStale, checkIntervalMs);
+  log.success(PIPELINE_NAME, "Pipeline scheduler started");
 }
 
 export function stopScheduler(): void {
-  if (intervalHandle) {
-    clearInterval(intervalHandle);
-    intervalHandle = null;
-    log.info(PIPELINE_NAME, "Scheduler stopped");
+  if (schedulerInterval) {
+    clearInterval(schedulerInterval);
+    schedulerInterval = null;
+    log.info(PIPELINE_NAME, "Pipeline scheduler stopped");
   }
 }
 
-export function getScheduleStatus(): ScheduleEntry[] {
-  return Array.from(scheduleState.values());
+export function getScheduleStatus(): StaleCheckResult[] | Promise<StaleCheckResult[]> {
+  return checkStalePipelines();
 }

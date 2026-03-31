@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -131,7 +132,7 @@ export const unescoWhcAdapter: SourceAdapter = {
         const hasDanger = sites.some(s => s.danger);
         const riskScore = computeHeritageRiskScore(sites.length, hasNatural, hasDanger);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "UNESCO World Heritage Sites", value: sites.length, unit: "count", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Heritage Risk Score", value: riskScore, unit: "score", timestamp: new Date() },
         ]);

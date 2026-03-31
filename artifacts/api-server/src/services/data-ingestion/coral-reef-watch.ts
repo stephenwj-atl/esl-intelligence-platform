@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -137,7 +138,7 @@ export const coralReefWatchAdapter: SourceAdapter = {
         recordsRead++;
         const riskScore = computeCoralRiskScore(sst, dhw, bleachingAlert);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Sea Surface Temperature", value: roundTo(sst, 1), unit: "celsius", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Degree Heating Weeks", value: roundTo(dhw, 1), unit: "dhw", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Bleaching Alert Level", value: bleachingAlert, unit: "level", timestamp: new Date() },

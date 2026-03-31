@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable, rawDataCacheTable } from "@workspace/db";
+import { db, ingestionRunsTable, rawDataCacheTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import https from "https";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -566,7 +567,7 @@ export const caribbeanEiaAdapter: SourceAdapter = {
       }
 
       if (dataRecords.length > 0) {
-        await db.insert(regionalDataTable).values(dataRecords);
+        await upsertRegionalData(dataRecords);
         recordsWritten = dataRecords.length;
       }
 

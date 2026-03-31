@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -132,7 +133,7 @@ export const whoGhoAdapter: SourceAdapter = {
         rows.push({ country, region: "Caribbean", datasetType: "Health Vulnerability Score", value: vulnScore, unit: "score", timestamp: new Date() });
 
         if (rows.length > 0) {
-          await db.insert(regionalDataTable).values(rows);
+          await upsertRegionalData(rows);
           recordsWritten += rows.length;
           countriesAffected.push(country);
         }

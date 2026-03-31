@@ -1,4 +1,5 @@
-import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { eq } from "drizzle-orm";
 import { fetchText } from "./utils/fetchWithRetry";
 import { clamp, roundTo, hashString, parseFloatSafe } from "./utils/normalize";
@@ -179,7 +180,7 @@ export const opendataJamaicaAdapter: SourceAdapter = {
       const uniqueFacilities = deduplicateFacilities(allFacilities);
       const metrics = computeReceptorMetrics(uniqueFacilities);
 
-      await db.insert(regionalDataTable).values({
+      await upsertRegionalData({
         country: "Jamaica",
         region: "National",
         datasetType: "Health Facility Density",
@@ -189,7 +190,7 @@ export const opendataJamaicaAdapter: SourceAdapter = {
       });
       recordsWritten++;
 
-      await db.insert(regionalDataTable).values({
+      await upsertRegionalData({
         country: "Jamaica",
         region: "National",
         datasetType: "Health Facility Count",
@@ -199,7 +200,7 @@ export const opendataJamaicaAdapter: SourceAdapter = {
       });
       recordsWritten++;
 
-      await db.insert(regionalDataTable).values({
+      await upsertRegionalData({
         country: "Jamaica",
         region: "National",
         datasetType: "Hospital Count",
@@ -210,7 +211,7 @@ export const opendataJamaicaAdapter: SourceAdapter = {
       recordsWritten++;
 
       for (const [parish, count] of Object.entries(metrics.parishCoverage)) {
-        await db.insert(regionalDataTable).values({
+        await upsertRegionalData({
           country: "Jamaica",
           region: parish,
           datasetType: "Health Facility Count",

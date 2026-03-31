@@ -1,4 +1,5 @@
-import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable, regionalIndicesTable, regionalDataTable } from "@workspace/db";
+import { db, rawDataCacheTable, dataSourceFreshnessTable, ingestionRunsTable, regionalIndicesTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { eq, and, sql } from "drizzle-orm";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo, hashString } from "./utils/normalize";
@@ -132,7 +133,7 @@ export const aqueductAdapter: SourceAdapter = {
 
         for (const [indicator, value] of Object.entries(result.indicators)) {
           const indicatorName = AQUEDUCT_INDICATORS[indicator as keyof typeof AQUEDUCT_INDICATORS]?.name || indicator;
-          await db.insert(regionalDataTable).values({
+          await upsertRegionalData({
             country: result.country,
             region: "National",
             datasetType: `Water Stress - ${indicatorName}`,

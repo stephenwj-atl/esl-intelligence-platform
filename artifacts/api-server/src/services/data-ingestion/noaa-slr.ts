@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -119,7 +120,7 @@ export const noaaSlrAdapter: SourceAdapter = {
           proj.currentRateMmYr
         );
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "SLR Current Rate", value: proj.currentRateMmYr, unit: "mm_per_yr", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "SLR Projected 2050 RCP4.5", value: proj.projected2050RCP45cm, unit: "cm", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "SLR Projected 2050 RCP8.5", value: proj.projected2050RCP85cm, unit: "cm", timestamp: new Date() },

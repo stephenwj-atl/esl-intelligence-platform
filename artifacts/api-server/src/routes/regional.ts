@@ -373,4 +373,85 @@ router.get("/regional/authority-summary", async (_req, res) => {
   });
 });
 
+router.get("/regional/assessment-intelligence", async (_req, res) => {
+  const allData = await db.select().from(regionalDataTable);
+
+  const seaTypes = ["NEPA SEA Count", "SEA Document Count"];
+  const esiaTypes = ["ESIA Document Count"];
+  const eiaTypes = ["NEPA EIA Count", "EIA Document Count", "NEPA EIS Count", "EIS Document Count"];
+  const frameworkTypes = ["SEA Framework Exists", "EIA Legally Required"];
+  const assessmentCountTypes = ["Primary Assessment Count", "Total Regulatory Documents"];
+
+  const countries: Record<string, {
+    country: string;
+    seaFramework: boolean;
+    eiaRequired: boolean;
+    seaDocuments: number;
+    esiaDocuments: number;
+    eiaDocuments: number;
+    totalAssessments: number;
+    strategicReadiness: "HIGH" | "MODERATE" | "LOW" | "NONE";
+    assessmentGap: string;
+  }> = {};
+
+  for (const d of allData) {
+    if (!countries[d.country]) {
+      countries[d.country] = {
+        country: d.country,
+        seaFramework: false,
+        eiaRequired: false,
+        seaDocuments: 0,
+        esiaDocuments: 0,
+        eiaDocuments: 0,
+        totalAssessments: 0,
+        strategicReadiness: "NONE",
+        assessmentGap: "",
+      };
+    }
+    const c = countries[d.country];
+
+    if (d.datasetType === "SEA Framework Exists") c.seaFramework = d.value === 1;
+    if (d.datasetType === "EIA Legally Required") c.eiaRequired = d.value === 1;
+    if (seaTypes.includes(d.datasetType)) c.seaDocuments += d.value;
+    if (esiaTypes.includes(d.datasetType)) c.esiaDocuments += d.value;
+    if (eiaTypes.includes(d.datasetType)) c.eiaDocuments += d.value;
+    if (assessmentCountTypes.includes(d.datasetType)) c.totalAssessments += d.value;
+  }
+
+  for (const c of Object.values(countries)) {
+    if (c.seaDocuments > 0 || c.esiaDocuments > 0) {
+      c.strategicReadiness = c.seaDocuments > 3 || c.esiaDocuments > 3 ? "HIGH" : "MODERATE";
+      c.assessmentGap = c.seaDocuments > 0
+        ? `${c.seaDocuments} SEA documents available as strategic intelligence`
+        : `${c.esiaDocuments} ESIA documents provide integrated assessment evidence`;
+    } else if (c.seaFramework) {
+      c.strategicReadiness = "LOW";
+      c.assessmentGap = "SEA framework exists in law but no published SEA documents found — ESL can deliver first-mover strategic assessment";
+    } else {
+      c.strategicReadiness = "NONE";
+      c.assessmentGap = c.eiaDocuments > 0
+        ? `Only ${c.eiaDocuments} EIA documents available (permitting only) — no strategic assessment capacity. ESL SEA/ESIA recommended.`
+        : "No environmental assessment documents found — full ESL engagement required (SEA + ESIA + EIA)";
+    }
+  }
+
+  const sorted = Object.values(countries).sort((a, b) => {
+    const order = { HIGH: 0, MODERATE: 1, LOW: 2, NONE: 3 };
+    return order[a.strategicReadiness] - order[b.strategicReadiness] || b.totalAssessments - a.totalAssessments;
+  });
+
+  const summary = {
+    countriesWithSEA: sorted.filter(c => c.seaDocuments > 0).length,
+    countriesWithESIA: sorted.filter(c => c.esiaDocuments > 0).length,
+    countriesEIAOnly: sorted.filter(c => c.eiaDocuments > 0 && c.seaDocuments === 0 && c.esiaDocuments === 0).length,
+    countriesNoAssessments: sorted.filter(c => c.totalAssessments === 0 && c.eiaDocuments === 0).length,
+    totalSEADocuments: sorted.reduce((s, c) => s + c.seaDocuments, 0),
+    totalESIADocuments: sorted.reduce((s, c) => s + c.esiaDocuments, 0),
+    totalEIADocuments: sorted.reduce((s, c) => s + c.eiaDocuments, 0),
+    insight: "Most Caribbean countries lack published SEA/ESIA documents despite having legal frameworks. This represents ESL's primary service opportunity — delivering strategic assessments that meet DFI standards where none currently exist.",
+  };
+
+  res.json({ countries: sorted, summary });
+});
+
 export default router;

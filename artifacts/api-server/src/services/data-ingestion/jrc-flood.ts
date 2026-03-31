@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { clamp, roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -93,7 +94,7 @@ export const jrcFloodAdapter: SourceAdapter = {
         recordsRead++;
         const riskScore = computeFloodRiskScore(ref.floodProne100yr, ref.coastalExposure, ref.riverFloodRisk);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Flood Prone Area 25yr", value: roundTo(ref.floodProne25yr, 1), unit: "percent", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Flood Prone Area 100yr", value: roundTo(ref.floodProne100yr, 1), unit: "percent", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Population Flood Exposed 100yr", value: ref.popExposed100yr, unit: "count", timestamp: new Date() },

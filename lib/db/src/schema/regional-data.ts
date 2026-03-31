@@ -1,4 +1,4 @@
-import { pgTable, serial, text, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, real, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const regionalDataTable = pgTable("regional_data", {
   id: serial("id").primaryKey(),
@@ -9,4 +9,6 @@ export const regionalDataTable = pgTable("regional_data", {
   unit: text("unit").notNull().default("score"),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (table) => [
+  uniqueIndex("regional_data_country_region_dataset_idx").on(table.country, table.region, table.datasetType),
+]);

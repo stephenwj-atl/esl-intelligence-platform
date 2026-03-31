@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { roundTo, clamp } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
 import { ingestionLogger as log } from "./utils/logger";
@@ -67,7 +68,7 @@ export const hydroshedsAdapter: SourceAdapter = {
         recordsRead++;
         const riskScore = computeWatershedFloodRisk(data.drainageDensityKmPerKm2, data.floodplainPct, data.majorBasins);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Major Drainage Basins", value: data.majorBasins, unit: "count", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Sub-Basins", value: data.subBasins, unit: "count", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Total Stream Length", value: data.totalStreamKm, unit: "km", timestamp: new Date() },

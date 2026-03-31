@@ -111,4 +111,11 @@ app.use("/api", authRouter);
 app.use("/api", authMiddleware);
 app.use("/api", router);
 
+import { startScheduler } from "./services/data-ingestion/scheduler";
+import { runPipeline } from "./services/data-ingestion";
+
+if (process.env.NODE_ENV !== "test") {
+  startScheduler(runPipeline);
+}
+
 export default app;

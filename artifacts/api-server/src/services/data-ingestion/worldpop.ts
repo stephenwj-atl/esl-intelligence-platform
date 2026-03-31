@@ -1,4 +1,5 @@
-import { db, ingestionRunsTable, regionalDataTable } from "@workspace/db";
+import { db, ingestionRunsTable } from "@workspace/db";
+import { upsertRegionalData } from "./utils/upsert-regional";
 import { fetchJson } from "./utils/fetchWithRetry";
 import { roundTo } from "./utils/normalize";
 import { upsertFreshness } from "./utils/freshness";
@@ -77,7 +78,7 @@ export const worldpopAdapter: SourceAdapter = {
         recordsRead++;
         const exposureScore = computePopulationExposureScore(ref.densityPerKm2, ref.urbanPct);
 
-        await db.insert(regionalDataTable).values([
+        await upsertRegionalData([
           { country, region: "Caribbean", datasetType: "Population", value: ref.population, unit: "count", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Population Density", value: ref.densityPerKm2, unit: "per_km2", timestamp: new Date() },
           { country, region: "Caribbean", datasetType: "Urban Population Pct", value: roundTo(ref.urbanPct), unit: "percent", timestamp: new Date() },

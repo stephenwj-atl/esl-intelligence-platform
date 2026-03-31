@@ -228,6 +228,59 @@ function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVIC
   return Math.round(fee / 1000) * 1000;
 }
 
+interface LenderRequirement {
+  lender: string;
+  framework: string;
+  assessmentRequired: "ESIA" | "SEA" | "EIA" | "ESIA_or_SEA";
+  categoryTrigger: string;
+  description: string;
+}
+
+const LENDER_REQUIREMENTS: LenderRequirement[] = [
+  {
+    lender: "Inter-American Development Bank (IDB)",
+    framework: "Environmental & Social Policy Framework (ESPF)",
+    assessmentRequired: "ESIA",
+    categoryTrigger: "Category A (significant adverse impacts) or Category B (limited adverse impacts)",
+    description: "IDB requires ESIA for all Category A and B operations. ESIAs must address environmental and social risks per IDB's 10 Environmental and Social Performance Standards.",
+  },
+  {
+    lender: "Caribbean Development Bank (CDB)",
+    framework: "Environmental & Social Review Procedures (ESRP)",
+    assessmentRequired: "ESIA",
+    categoryTrigger: "Category A (significant environmental/social effects) or Category B (less significant effects)",
+    description: "CDB requires ESIA for Category A projects and environmental analysis for Category B. Must comply with CDB's Environmental Review Guidelines.",
+  },
+  {
+    lender: "World Bank / IFC",
+    framework: "Environmental & Social Framework (ESF) / IFC Performance Standards",
+    assessmentRequired: "ESIA_or_SEA",
+    categoryTrigger: "High or Substantial risk classification",
+    description: "World Bank ESF requires ESIA for high/substantial risk projects under ESS1. IFC Performance Standards mandate ESIA for Category A. SEA required for programmatic or sectoral lending.",
+  },
+  {
+    lender: "Green Climate Fund (GCF)",
+    framework: "Environmental & Social Policy",
+    assessmentRequired: "ESIA",
+    categoryTrigger: "Category A (significant adverse impacts) or Intermediation 1",
+    description: "GCF requires full ESIA for Category A projects and intermediary activities with high E&S risk. Must include gender assessment and indigenous peoples plan where applicable.",
+  },
+  {
+    lender: "European Investment Bank (EIB)",
+    framework: "Environmental & Social Standards",
+    assessmentRequired: "ESIA",
+    categoryTrigger: "Projects in Annex I/II of EU EIA Directive or equivalent outside EU",
+    description: "EIB requires ESIA aligned with EU EIA Directive standards. For projects outside the EU, assessment must meet equivalent international standards.",
+  },
+  {
+    lender: "Equator Principles Financial Institutions",
+    framework: "Equator Principles (EP4)",
+    assessmentRequired: "ESIA",
+    categoryTrigger: "Category A or B projects with capital costs ≥ US$10 million",
+    description: "EP4 requires ESIA for Category A and B projects. Assessment must align with IFC Performance Standards and World Bank Group EHS Guidelines.",
+  },
+];
+
 const EIA_REQUIRED_COUNTRIES: Record<string, boolean> = {
   "Jamaica": true,
   "Belize": true,
@@ -435,6 +488,69 @@ router.get("/esl/project/:id/services", async (req, res) => {
       projectedRiskAfterESL: projectedRisk,
       projectedConfidenceAfterESL: projectedConfidence,
       eslFeeAsPercentOfInvestment: Math.round((totalFee / (project.investmentAmount * 1_000_000)) * 10000) / 100,
+    },
+  });
+});
+
+router.get("/esl/lender-requirements", (_req, res) => {
+  res.json({
+    lenders: LENDER_REQUIREMENTS,
+    summary: {
+      totalLenders: LENDER_REQUIREMENTS.length,
+      esiaRequired: LENDER_REQUIREMENTS.filter(l => l.assessmentRequired === "ESIA" || l.assessmentRequired === "ESIA_or_SEA").length,
+      seaRequired: LENDER_REQUIREMENTS.filter(l => l.assessmentRequired === "SEA" || l.assessmentRequired === "ESIA_or_SEA").length,
+      eiaOnly: LENDER_REQUIREMENTS.filter(l => l.assessmentRequired === "EIA").length,
+    },
+    guidance: "All major Caribbean development finance institutions require ESIA — not EIA — for project-level due diligence. EIA alone satisfies national permitting but does not meet lender standards. SEA is additionally required for programmatic, sectoral, or policy-level investments.",
+  });
+});
+
+router.get("/esl/project/:id/lender-requirements", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+
+  const [rawProject] = await db.select().from(projectsTable).where(eq(projectsTable.id, id));
+  if (!rawProject) { res.status(404).json({ message: "Project not found" }); return; }
+  const project = decryptProjectFields(rawProject);
+
+  const applicableLenders = LENDER_REQUIREMENTS.map(lr => {
+    const isHighRisk = project.overallRisk > 50;
+    const isLargeProject = project.investmentAmount > 10;
+    const applicable = isHighRisk || isLargeProject;
+
+    return {
+      ...lr,
+      applicable,
+      projectCategory: isHighRisk ? "Category A / High Risk" : "Category B / Moderate Risk",
+      assessmentGap: applicable ? `${lr.assessmentRequired} required by ${lr.lender} — ${lr.framework}` : null,
+    };
+  });
+
+  const countryRequiresEIA = EIA_REQUIRED_COUNTRIES[project.country] ?? false;
+
+  res.json({
+    project: {
+      id: project.id,
+      name: project.name,
+      country: project.country,
+      overallRisk: project.overallRisk,
+      investmentAmount: project.investmentAmount,
+    },
+    lenders: applicableLenders,
+    countryPermitting: {
+      country: project.country,
+      eiaRequired: countryRequiresEIA,
+      note: countryRequiresEIA
+        ? `${project.country} law requires EIA for permitting — but EIA alone does not satisfy lender due diligence requirements`
+        : `No statutory EIA requirement identified for ${project.country}`,
+    },
+    assessmentStrategy: {
+      primary: "ESIA",
+      primaryReason: "Required by all major DFIs (IDB, CDB, World Bank, GCF) for project-level financing",
+      secondary: countryRequiresEIA ? "EIA" : null,
+      secondaryReason: countryRequiresEIA ? `Statutory requirement under ${project.country} national law for permitting` : null,
+      strategic: project.overallRisk > 60 ? "SEA" : null,
+      strategicReason: project.overallRisk > 60 ? "High risk warrants strategic environmental assessment to evaluate alternatives and cumulative impacts before project commitment" : null,
     },
   });
 });
