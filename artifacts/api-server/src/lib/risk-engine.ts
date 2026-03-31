@@ -175,7 +175,7 @@ export function makeDecision(scores: RiskScores, inputs: RiskInputs): Decision {
       conditions.push("Community engagement plan and social impact assessment required");
     }
     if (scores.regulatoryRisk > 50) {
-      conditions.push("Regulatory compliance audit and permitting risk assessment required");
+      conditions.push("Strategic Environmental Assessment (SEA) or ESIA required before permitting — regulatory complexity demands pre-investment analysis");
     }
   }
 

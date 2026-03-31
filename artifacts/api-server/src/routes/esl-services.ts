@@ -22,20 +22,54 @@ interface ESLService {
 }
 
 const SERVICE_CATALOG = {
+  sea: {
+    id: "sea",
+    name: "Strategic Environmental Assessment",
+    category: "Assessment" as const,
+    description: "Pre-investment strategic assessment evaluating cumulative impacts, alternative locations, carrying capacity, and policy alignment to guide capital deployment decisions.",
+    scope: [
+      "Cumulative impact assessment across project influence area",
+      "Alternative site/route/technology analysis",
+      "Environmental carrying capacity evaluation",
+      "Policy and regulatory alignment review",
+      "Stakeholder mapping and engagement strategy",
+      "Strategic risk and opportunity identification",
+      "Recommendations for project design optimization",
+    ],
+    deliverables: ["SEA Report", "Alternatives Analysis", "Carrying Capacity Assessment", "Strategic Risk Matrix", "Investment Decision Brief"],
+    valueProposition: "Guides the investment decision itself — determines whether, where, and how to deploy capital. Prevents committing to locations or designs that face insurmountable environmental barriers. Required by IDB, CDB, and multilateral lenders for programmatic/sectoral investments.",
+  },
+  esia: {
+    id: "esia",
+    name: "Environmental & Social Impact Assessment",
+    category: "Assessment" as const,
+    description: "Integrated environmental and social assessment meeting IDB, World Bank, and DFI due diligence standards. Combines environmental analysis with social impact evaluation for comprehensive investment risk profiling.",
+    scope: [
+      "Baseline environmental and social survey",
+      "Environmental impact prediction and modeling",
+      "Social impact assessment (livelihoods, displacement, cultural heritage)",
+      "Stakeholder consultation and grievance mechanism design",
+      "Environmental and Social Management Plan (ESMP)",
+      "Resettlement Action Plan (where applicable)",
+      "Lender-ready documentation (IDB, CDB, World Bank format)",
+    ],
+    deliverables: ["ESIA Report", "Environmental & Social Management Plan", "Stakeholder Engagement Plan", "Grievance Mechanism", "Lender Due Diligence Package"],
+    valueProposition: "The standard required by IDB, CDB, and multilateral development finance institutions. Integrates social dimensions that EIA alone misses — resettlement, livelihoods, cultural impacts. Essential for any project seeking DFI financing.",
+  },
   eia: {
     id: "eia",
-    name: "Environmental Impact Assessment",
+    name: "Environmental Impact Assessment (Permitting)",
     category: "Assessment" as const,
-    description: "Comprehensive EIA covering baseline conditions, impact prediction, and mitigation planning for regulatory approval.",
+    description: "Regulatory EIA for jurisdictions where national law mandates it for permitting. Covers baseline conditions, impact prediction, and mitigation planning to satisfy statutory requirements.",
     scope: [
       "Baseline environmental survey (air, water, soil, ecology)",
-      "Stakeholder consultation and community engagement",
-      "Impact prediction modeling",
+      "Impact prediction modeling per national requirements",
       "Mitigation and management plan development",
-      "Regulatory submission support",
+      "Regulatory submission and permit application support",
+      "Agency liaison and public notice requirements",
     ],
-    deliverables: ["Full EIA Report", "Environmental Management Plan", "Monitoring Framework", "Regulatory Submission Package"],
-    valueProposition: "Required for regulatory approval and lender due diligence. Without EIA, project faces permitting delays of 6-18 months.",
+    deliverables: ["Statutory EIA Report", "Environmental Management Plan", "Permit Application Package", "Public Notice Documentation"],
+    valueProposition: "Satisfies national permitting requirements where EIA is legally mandated. Note: EIA alone does not provide the strategic investment guidance that SEA or ESIA delivers — it is a compliance instrument, not a decision tool.",
   },
   labValidation: {
     id: "lab-validation",
@@ -149,7 +183,9 @@ const SERVICE_CATALOG = {
 function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVICE_CATALOG], project: { investmentAmount: number; [key: string]: unknown }): number {
   const projectValue = project.investmentAmount * 1_000_000;
   const baseMultipliers: Record<string, number> = {
-    eia: 0.008,
+    sea: 0.010,
+    esia: 0.012,
+    eia: 0.006,
     labValidation: 0.003,
     monitoringProgram: 0.005,
     ifcCompliance: 0.004,
@@ -164,7 +200,9 @@ function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVIC
   let fee = projectValue * multiplier;
 
   const minFees: Record<string, number> = {
-    eia: 35000,
+    sea: 45000,
+    esia: 50000,
+    eia: 25000,
     labValidation: 15000,
     monitoringProgram: 25000,
     ifcCompliance: 20000,
@@ -174,7 +212,9 @@ function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVIC
     waterResourceAssessment: 15000,
   };
   const maxFees: Record<string, number> = {
-    eia: 250000,
+    sea: 300000,
+    esia: 400000,
+    eia: 180000,
     labValidation: 120000,
     monitoringProgram: 180000,
     ifcCompliance: 150000,
@@ -188,22 +228,70 @@ function calculateServiceFee(service: typeof SERVICE_CATALOG[keyof typeof SERVIC
   return Math.round(fee / 1000) * 1000;
 }
 
-function scopeServicesForProject(project: { investmentAmount: number; overallRisk: number; regulatoryComplexity: number; contaminationRisk: number; coastalExposure: number; floodRisk: number; waterStress: number; hasLabData: boolean; hasMonitoringData: boolean; isIFCAligned: boolean; dataConfidence: number; [key: string]: unknown }): ESLService[] {
+const EIA_REQUIRED_COUNTRIES: Record<string, boolean> = {
+  "Jamaica": true,
+  "Belize": true,
+  "Cayman Islands": true,
+  "Trinidad & Tobago": true,
+  "Guyana": true,
+  "Puerto Rico": true,
+  "Barbados": true,
+  "Bahamas": true,
+  "Antigua & Barbuda": true,
+  "Dominica": true,
+  "Dominican Republic": true,
+  "Grenada": true,
+  "Haiti": true,
+  "St. Lucia": true,
+  "St. Vincent & the Grenadines": true,
+  "Suriname": true,
+  "Cuba": true,
+};
+
+function scopeServicesForProject(project: { investmentAmount: number; overallRisk: number; regulatoryComplexity: number; contaminationRisk: number; coastalExposure: number; floodRisk: number; waterStress: number; hasLabData: boolean; hasMonitoringData: boolean; isIFCAligned: boolean; dataConfidence: number; country?: string; [key: string]: unknown }): ESLService[] {
   const services: ESLService[] = [];
 
-  const needsEIA = project.overallRisk > 40 || project.regulatoryComplexity > 5;
-  if (needsEIA) {
-    const priority = project.overallRisk > 60 ? "CRITICAL" : "RECOMMENDED";
+  const needsStrategicAssessment = project.overallRisk > 30 || project.regulatoryComplexity > 4;
+  if (needsStrategicAssessment) {
+    const useDFIFormat = !project.isIFCAligned || project.overallRisk > 50;
+
+    if (useDFIFormat) {
+      const priority = project.overallRisk > 50 ? "CRITICAL" : "RECOMMENDED";
+      services.push({
+        ...SERVICE_CATALOG.esia,
+        priority,
+        timelineWeeks: project.overallRisk > 70 ? 20 : 14,
+        estimatedFee: calculateServiceFee(SERVICE_CATALOG.esia, project),
+        trigger: project.overallRisk > 50
+          ? `Overall risk score ${project.overallRisk.toFixed(0)}/100 — ESIA required for DFI due diligence (IDB, CDB, World Bank standard)`
+          : `Pre-investment environmental and social assessment recommended to guide capital deployment decision`,
+        riskReduction: 15,
+        confidenceGain: 20,
+      });
+    } else {
+      const priority = project.overallRisk > 60 ? "CRITICAL" : "RECOMMENDED";
+      services.push({
+        ...SERVICE_CATALOG.sea,
+        priority,
+        timelineWeeks: project.overallRisk > 60 ? 14 : 10,
+        estimatedFee: calculateServiceFee(SERVICE_CATALOG.sea, project),
+        trigger: `Strategic assessment needed to evaluate cumulative impacts, alternatives, and carrying capacity before investment commitment`,
+        riskReduction: 12,
+        confidenceGain: 18,
+      });
+    }
+  }
+
+  const countryRequiresEIA = project.country ? (EIA_REQUIRED_COUNTRIES[project.country] ?? false) : false;
+  if (countryRequiresEIA) {
     services.push({
       ...SERVICE_CATALOG.eia,
-      priority,
-      timelineWeeks: project.overallRisk > 70 ? 16 : 12,
+      priority: "RECOMMENDED" as const,
+      timelineWeeks: 12,
       estimatedFee: calculateServiceFee(SERVICE_CATALOG.eia, project),
-      trigger: project.overallRisk > 60
-        ? `Overall risk score ${project.overallRisk.toFixed(0)}/100 exceeds threshold — full EIA required for regulatory and lender approval`
-        : `Regulatory complexity ${project.regulatoryComplexity}/10 requires environmental assessment`,
-      riskReduction: 12,
-      confidenceGain: 15,
+      trigger: `Statutory EIA required by ${project.country} national law for permitting — this is a regulatory compliance requirement, not a substitute for strategic assessment`,
+      riskReduction: 5,
+      confidenceGain: 8,
     });
   }
 

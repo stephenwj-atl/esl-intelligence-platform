@@ -521,7 +521,6 @@ export const caribbeanEiaAdapter: SourceAdapter = {
       }[] = [];
 
       for (const fw of REGULATORY_FRAMEWORKS) {
-        if (fw.country === "Jamaica") continue;
         const jr = (dt: string, v: number, u: string) => ({ country: fw.country, region: "Caribbean", datasetType: dt, value: v, unit: u, timestamp: now });
 
         dataRecords.push(jr("Regulatory Authority Active", 1, "boolean"));
