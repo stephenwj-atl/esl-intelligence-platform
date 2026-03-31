@@ -11,7 +11,7 @@ const PIPELINE_NAME = "ibtracs";
 const SOURCE_KEY = "noaa-ibtracs";
 
 const IBTRACS_CSV_URL = process.env.IBTRACS_CSV_URL ||
-  "https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/provisional/csv/ibtracs.NA.list.v04r01.csv";
+  "https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/ibtracs.NA.list.v04r01.csv";
 
 const YEARS_LOOKBACK = 30;
 const PROXIMITY_KM = 250;
