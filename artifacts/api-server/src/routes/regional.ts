@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, regionalDataTable, regionalIndicesTable, sectorBenchmarksTable, projectsTable } from "@workspace/db";
-import { eq, desc, avg, count, sql } from "drizzle-orm";
+import { db, regionalDataTable, regionalIndicesTable, sectorBenchmarksTable, projectsTable, dataSourceFreshnessTable, ingestionRunsTable, rawDataCacheTable } from "@workspace/db";
+import { eq, desc, avg, count, sql, gt, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -255,38 +255,91 @@ router.get("/regional/insights", async (_req, res) => {
 });
 
 router.get("/regional/authority-summary", async (_req, res) => {
-  const latestIndices = await db.select().from(regionalIndicesTable).where(eq(regionalIndicesTable.year, 2025));
+  const currentYear = new Date().getFullYear();
+  const latestIndices = await db.select().from(regionalIndicesTable).where(eq(regionalIndicesTable.year, currentYear));
+  const fallbackIndices = latestIndices.length > 0 ? latestIndices
+    : await db.select().from(regionalIndicesTable).where(eq(regionalIndicesTable.year, currentYear - 1));
+  const workingIndices = fallbackIndices.length > 0 ? fallbackIndices
+    : await db.select().from(regionalIndicesTable).where(eq(regionalIndicesTable.year, 2025));
+
   const allProjects = await db.select().from(projectsTable);
   const regionalData = await db.select().from(regionalDataTable);
   const sectorData = await db.select().from(sectorBenchmarksTable).where(eq(sectorBenchmarksTable.year, 2025));
 
-  const riskScores = latestIndices.map(i => i.riskScore);
+  const riskScores = workingIndices.map(i => i.riskScore);
   const ceri = riskScores.length > 0 ? Math.round((riskScores.reduce((a, b) => a + b, 0) / riskScores.length) * 10) / 10 : 0;
-  const confScores = latestIndices.map(i => i.confidence);
+  const confScores = workingIndices.map(i => i.confidence);
   const avgConf = confScores.length > 0 ? Math.round((confScores.reduce((a, b) => a + b, 0) / confScores.length) * 10) / 10 : 0;
 
   const dataCoverage = {
-    high: latestIndices.filter(i => i.confidence >= 70).length,
-    medium: latestIndices.filter(i => i.confidence >= 45 && i.confidence < 70).length,
-    low: latestIndices.filter(i => i.confidence < 45).length,
+    high: workingIndices.filter(i => i.confidence >= 70).length,
+    medium: workingIndices.filter(i => i.confidence >= 45 && i.confidence < 70).length,
+    low: workingIndices.filter(i => i.confidence < 45).length,
   };
-  const totalCountries = latestIndices.length;
+  const totalCountries = workingIndices.length;
   const coveragePct = totalCountries > 0 ? Math.round((dataCoverage.high / totalCountries) * 100) : 0;
 
+  const [cacheCount] = await db.select({ count: count() }).from(rawDataCacheTable);
+  const [runCount] = await db.select({ count: count() }).from(ingestionRunsTable);
+
   const dataMoat = {
-    projectsAnalyzed: 120 + allProjects.length,
-    labSamples: 4500,
-    monitoringPoints: 300 + regionalData.length,
-    countriesCovered: totalCountries,
+    projectsAnalyzed: allProjects.length,
     dataPoints: regionalData.length,
+    ingestionRuns: runCount?.count || 0,
+    cachedResponses: cacheCount?.count || 0,
+    countriesCovered: totalCountries,
+    monitoringPoints: regionalData.length,
   };
 
-  const highRiskCountries = latestIndices.filter(i => i.riskScore >= 60).map(i => ({ country: i.country, riskScore: i.riskScore, confidence: i.confidence })).sort((a, b) => b.riskScore - a.riskScore);
+  const highRiskCountries = workingIndices.filter(i => i.riskScore >= 60).map(i => ({ country: i.country, riskScore: i.riskScore, confidence: i.confidence })).sort((a, b) => b.riskScore - a.riskScore);
 
   const sectorOverview = sectorData
     .filter(s => s.metric === "Overall Risk")
     .map(s => ({ sector: s.sector, avgRisk: s.avgRisk, avgConfidence: s.avgConfidence, sampleSize: s.sampleSize }))
     .sort((a, b) => b.avgRisk - a.avgRisk);
+
+  const freshnessSources = await db.select().from(dataSourceFreshnessTable);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const PIPELINE_NAMES = ["aqueduct", "ibtracs", "opendata-jamaica", "arcgis-jamaica"];
+
+  const pipelineLevel = freshnessSources.filter(s => PIPELINE_NAMES.includes(s.pipelineName));
+  const connectedPipelines = pipelineLevel.filter(s => s.status === "success" && s.lastSuccessAt && s.lastSuccessAt > thirtyDaysAgo);
+  const stalePipelines = pipelineLevel.filter(s => s.status === "success" && s.lastSuccessAt && s.lastSuccessAt <= thirtyDaysAgo);
+  const failedPipelines = pipelineLevel.filter(s => s.status === "failed");
+
+  const allConnected = freshnessSources.filter(s => s.status === "success" && s.lastSuccessAt && s.lastSuccessAt > thirtyDaysAgo);
+  const allStale = freshnessSources.filter(s => s.status === "success" && s.lastSuccessAt && s.lastSuccessAt <= thirtyDaysAgo);
+  const allFailed = freshnessSources.filter(s => s.status === "failed");
+
+  const avgSourceConfidence = connectedPipelines.length > 0
+    ? connectedPipelines.reduce((sum, s) => sum + s.confidence, 0) / connectedPipelines.length
+    : 0;
+
+  const MIN_SUCCESSFUL_PIPELINES = 3;
+  const MIN_AVG_CONFIDENCE = 50;
+
+  let provenanceStatus: "LIVE" | "PARTIAL" | "SIMULATED";
+  let provenanceLabel: string;
+  let provenanceDetail: string;
+
+  if (connectedPipelines.length >= MIN_SUCCESSFUL_PIPELINES && avgSourceConfidence >= MIN_AVG_CONFIDENCE) {
+    provenanceStatus = "LIVE";
+    provenanceLabel = "Live Data";
+    provenanceDetail = `Connected to ${connectedPipelines.length} verified data pipelines with ${Math.round(avgSourceConfidence)}% average confidence. Data refreshed within the last 30 days.`;
+  } else if (connectedPipelines.length > 0) {
+    provenanceStatus = "PARTIAL";
+    provenanceLabel = "Partially Connected";
+    provenanceDetail = `${connectedPipelines.length} of ${MIN_SUCCESSFUL_PIPELINES} required live pipelines connected. ${stalePipelines.length} stale, ${failedPipelines.length} failed. Some indices still use seed baselines until more pipelines are active.`;
+  } else {
+    provenanceStatus = "SIMULATED";
+    provenanceLabel = "Demonstration Data";
+    provenanceDetail = "Country risk scores, CERI index, and sector benchmarks use seed baselines. Run data ingestion pipelines to connect live sources (WRI Aqueduct, NOAA IBTrACS, GOJ ArcGIS services).";
+  }
+
+  const lastRefresh = allConnected.length > 0
+    ? new Date(Math.max(...allConnected.map(s => s.lastSuccessAt!.getTime()))).toISOString()
+    : null;
 
   res.json({
     ceri,
@@ -298,7 +351,7 @@ router.get("/regional/authority-summary", async (_req, res) => {
     dataCoverage,
     highRiskCountries,
     sectorOverview,
-    countries: latestIndices.map(i => ({
+    countries: workingIndices.map(i => ({
       country: i.country,
       riskScore: i.riskScore,
       infrastructureScore: i.infrastructureScore,
@@ -306,11 +359,16 @@ router.get("/regional/authority-summary", async (_req, res) => {
       confidence: i.confidence,
     })).sort((a, b) => b.riskScore - a.riskScore),
     dataProvenance: {
-      status: "SIMULATED",
-      label: "Demonstration Data",
-      detail: "Country risk scores, CERI index, and sector benchmarks use simulated baselines with statistical variance. Jamaica data layer metadata (21 layers) is sourced from verified ESL research. Production deployment requires connection to live data sources (WRI Aqueduct, NOAA IBTrACS, GOJ ArcGIS services, etc.).",
-      realSources: ["Jamaica Data Layers (21 layers from ESL research brief)", "Country/region geography", "Institutional source references and URLs"],
-      simulatedSources: ["Country risk scores and CERI composite", "Infrastructure and water stress indices", "Sector benchmarks and sample sizes", "Data Moat statistics (lab samples, monitoring points)", "5-year trend data"],
+      status: provenanceStatus,
+      label: provenanceLabel,
+      detail: provenanceDetail,
+    },
+    sourceCoverage: {
+      connectedSources: allConnected.map(s => ({ key: s.sourceKey, pipeline: s.pipelineName, confidence: s.confidence, lastSuccess: s.lastSuccessAt, records: s.recordsLoaded })),
+      staleSources: allStale.map(s => ({ key: s.sourceKey, pipeline: s.pipelineName, lastSuccess: s.lastSuccessAt })),
+      failedSources: allFailed.map(s => ({ key: s.sourceKey, pipeline: s.pipelineName, error: s.errorMessage, lastAttempt: s.lastAttemptAt })),
+      lastRefreshAt: lastRefresh,
+      avgConfidence: Math.round(avgSourceConfidence * 10) / 10,
     },
   });
 });

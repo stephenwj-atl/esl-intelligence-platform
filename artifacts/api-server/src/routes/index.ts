@@ -10,6 +10,7 @@ import pipelinesRouter from "./pipelines";
 import eslServicesRouter from "./esl-services";
 import dataLayersRouter from "./data-layers";
 import complianceRouter from "./compliance";
+import ingestionRouter from "./ingestion";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(pipelinesRouter);
 router.use(eslServicesRouter);
 router.use(dataLayersRouter);
 router.use(complianceRouter);
+router.use(ingestionRouter);
 
 export default router;

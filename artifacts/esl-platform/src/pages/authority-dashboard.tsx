@@ -73,14 +73,27 @@ export default function AuthorityDashboard() {
           <p className="text-muted-foreground mt-1">Regional intelligence, benchmarking, and risk indexing across {summary.totalCountries} Caribbean markets.</p>
         </div>
 
-        {summary.dataProvenance?.status === "SIMULATED" && (
-          <div className="flex items-start gap-3 px-4 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <Info className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+        {summary.dataProvenance && summary.dataProvenance.status !== "LIVE" && (
+          <div className={`flex items-start gap-3 px-4 py-3 rounded-lg border ${
+            summary.dataProvenance.status === "PARTIAL"
+              ? "bg-blue-500/10 border-blue-500/30"
+              : "bg-yellow-500/10 border-yellow-500/30"
+          }`}>
+            <Info className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+              summary.dataProvenance.status === "PARTIAL" ? "text-blue-500" : "text-yellow-500"
+            }`} />
             <div className="text-sm">
-              <span className="font-semibold text-yellow-500">{summary.dataProvenance.label}</span>
+              <span className={`font-semibold ${
+                summary.dataProvenance.status === "PARTIAL" ? "text-blue-500" : "text-yellow-500"
+              }`}>{summary.dataProvenance.label}</span>
               <span className="text-muted-foreground ml-1">
                 {summary.dataProvenance.detail}
               </span>
+              {summary.sourceCoverage && summary.sourceCoverage.connectedSources.length > 0 && (
+                <span className="text-muted-foreground block mt-1">
+                  {summary.sourceCoverage.connectedSources.length} source(s) connected | Avg confidence: {summary.sourceCoverage.avgConfidence}%
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -124,7 +137,7 @@ export default function AuthorityDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {[
                 { label: "Projects Analyzed", value: summary.dataMoat.projectsAnalyzed.toLocaleString(), icon: Layers },
-                { label: "Lab Samples", value: summary.dataMoat.labSamples.toLocaleString(), icon: Zap },
+                { label: "Ingestion Runs", value: summary.dataMoat.ingestionRuns.toLocaleString(), icon: Zap },
                 { label: "Monitoring Points", value: summary.dataMoat.monitoringPoints.toLocaleString(), icon: Activity },
                 { label: "Countries Covered", value: summary.dataMoat.countriesCovered.toString(), icon: Globe },
                 { label: "Data Points", value: summary.dataMoat.dataPoints.toLocaleString(), icon: Database },

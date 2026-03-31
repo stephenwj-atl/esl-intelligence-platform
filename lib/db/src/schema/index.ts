@@ -17,3 +17,6 @@ export * from "./pipelines";
 export * from "./outcomes";
 export * from "./blended-structures";
 export * from "./data-layers";
+export * from "./raw-data-cache";
+export * from "./data-source-freshness";
+export * from "./ingestion-runs";

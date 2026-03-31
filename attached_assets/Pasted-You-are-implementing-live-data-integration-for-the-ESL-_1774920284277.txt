@@ -1,0 +1,224 @@
+You are implementing live data integration for the ESL Intelligence Platform.
+
+Goal:
+Replace simulated regional risk data with real-source ingestion, scoring, provenance tracking, and auditability. Do NOT redesign the product. Work inside the existing architecture and replace only the simulated inputs and derived outputs.
+
+Repo context:
+- Simulated data currently exists in:
+  - scripts/src/seed.ts
+  - artifacts/api-server/src/routes/regional.ts
+- Existing target tables:
+  - regional_indices (country, risk_score, infrastructure_score, water_stress_score, confidence, year)
+  - regional_data (country, region, dataset_type, value, unit, timestamp)
+  - sector_benchmarks (sector, metric, avg_risk, avg_confidence, sample_size, year)
+- Provenance status must remain derived dynamically, not hardcoded.
+
+Critical rules:
+1. Keep the existing data_layers metadata unchanged.
+2. Do not hardcode LIVE status.
+3. Build source adapters with retries, caching, and graceful degradation.
+4. Every ingestion must be idempotent.
+5. Every source run must leave an audit trail.
+6. When a source is unavailable, preserve last good data and record source freshness failure.
+7. Do not use random drift or synthetic baselines anywhere in the new pipeline.
+8. Prefer file-based or API-based deterministic imports over scraping.
+9. Build for Jamaica first, then regional expansion.
+10. Make the system production-safe, not demo-safe.
+
+Implementation target:
+Create:
+artifacts/api-server/src/services/data-ingestion/
+  index.ts
+  aqueduct.ts
+  ibtracs.ts
+  arcgis-jamaica.ts
+  opendata-jamaica.ts
+  scoring.ts
+  scheduler.ts
+  types.ts
+  utils/
+    fetchWithRetry.ts
+    geo.ts
+    normalize.ts
+    logger.ts
+
+Create any required DB migrations for:
+- raw_data_cache
+- data_source_freshness
+- ingestion_runs
+
+Suggested schemas:
+
+raw_data_cache
+- id
+- source_key
+- source_url
+- request_params_json
+- response_hash
+- payload_json
+- fetched_at
+- expires_at
+- status_code
+- notes
+
+data_source_freshness
+- id
+- source_key
+- pipeline_name
+- last_success_at
+- last_attempt_at
+- status
+- confidence
+- records_loaded
+- error_message
+- metadata_json
+
+ingestion_runs
+- id
+- pipeline_name
+- started_at
+- completed_at
+- status
+- records_read
+- records_written
+- countries_affected
+- summary_json
+- error_json
+
+Source priority and implementation order:
+
+PHASE 1A
+A) aqueduct.ts
+- Build an adapter-based client.
+- Do NOT hardcode a single undocumented widget URL as the only path.
+- Put endpoint configuration in env vars.
+- Normalize water stress indicators to 0–100.
+- Populate regional_indices.water_stress_score.
+- Populate regional_data with raw component indicators where useful.
+- Confidence model:
+  - 80 for high-resolution basin/sub-basin
+  - 65 for country-level fallback
+  - lower only when source payload is incomplete
+
+B) ibtracs.ts
+- Download North Atlantic CSV from NOAA IBTrACS v04r01.
+- Cache source file metadata and content hash.
+- Compute country hurricane exposure using maintained country polygons or bounding boxes for first pass.
+- Use past 30 years for primary score.
+- Components:
+  - frequency_score 40%
+  - intensity_score 35%
+  - recency_score 25%
+- Write storm-risk outputs into regional_data and scoring inputs.
+- Keep scoring deterministic and documented.
+
+C) opendata-jamaica.ts
+- Ingest hospitals and public health facilities CSV datasets.
+- Parse coordinates safely.
+- Support point proximity calculations for future site-level scoring.
+- For now, derive Jamaica receptor-density metrics and store in regional_data.
+
+PHASE 1B
+D) arcgis-jamaica.ts
+- Build a generic ArcGIS FeatureServer client with:
+  - count endpoint
+  - paged query
+  - retry and exponential backoff
+  - geometry optional toggle
+  - stale-cache fallback
+- Start with these Jamaica services when reachable:
+  - Flood-related
+  - PRTR / contamination
+  - Mortality
+  - Protected areas
+  - Planning boundaries if stable
+- If a service is down:
+  - do not fail the whole run
+  - mark source freshness as failed
+  - retain prior accepted data
+- Store raw feature collections or page hashes in raw_data_cache.
+- Build Jamaica scoring only from sources actually loaded successfully.
+
+PHASE 2
+E) scoring.ts
+- Remove all simulated/random scoring dependencies.
+- Implement:
+  - environmental hazard score
+  - infrastructure score
+  - community risk score
+  - regulatory risk score
+  - overall risk_score
+  - confidence score
+- Scores must be explainable and decomposable by source.
+- Confidence must reflect actual connected layers and quality.
+- Missing layers should reduce confidence, not invent values.
+- Allow partial scoring with transparent source coverage.
+
+F) index.ts
+- Orchestrate pipeline execution in sequence.
+- Support per-pipeline execution and full refresh.
+- Make safe to rerun.
+- Make safe to resume after partial failure.
+
+G) scheduler.ts
+- Add cron-style scheduling hooks.
+- Frequency:
+  - Aqueduct: monthly or manual refresh
+  - IBTrACS: weekly
+  - Jamaica open-data CSVs: monthly
+  - ArcGIS Jamaica: weekly
+- Never overwrite fresher accepted data with empty/broken loads unless explicitly approved.
+
+Regional.ts changes:
+- Replace hardcoded dataMoat values with database-derived counts.
+- Keep provenance derived from data_source_freshness.
+- LIVE only when:
+  - at least 3 automated source pipelines have successful recent runs
+  - latest successful run is within 30 days
+  - average connected-source confidence > 50
+- Otherwise return SIMULATED or PARTIAL as appropriate.
+- Add a sourceCoverage block to the API response showing:
+  - connected_sources
+  - stale_sources
+  - failed_sources
+  - last_refresh_at
+  - avg_confidence
+
+Engineering expectations:
+- TypeScript strict mode
+- Clear interfaces for each source adapter
+- Unit tests for:
+  - score normalization
+  - confidence aggregation
+  - freshness status derivation
+  - ArcGIS pagination
+  - IBTrACS storm filtering
+- No hidden magic numbers without named constants
+- Add README for ingestion ops and failure modes
+
+Deliverables:
+1. DB migrations
+2. Source adapter services
+3. Scoring engine replacing simulation
+4. API route updates
+5. Tests
+6. Short implementation notes documenting:
+   - assumptions
+   - unstable sources
+   - fallback logic
+   - which layers are live vs pending
+
+Execution sequence:
+- First inspect the current repo structure and existing DB models.
+- Then implement migrations.
+- Then implement Aqueduct.
+- Then IBTrACS.
+- Then Jamaica open-data CSVs.
+- Then ArcGIS Jamaica.
+- Then scoring and route changes.
+- Then tests.
+- Then provide a concise status report listing:
+  - completed
+  - blocked
+  - needs credentials
+  - needs human agency request

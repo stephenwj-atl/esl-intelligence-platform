@@ -14,7 +14,8 @@ export interface AuthoritySummary {
   totalProjects: number;
   dataMoat: {
     projectsAnalyzed: number;
-    labSamples: number;
+    ingestionRuns: number;
+    cachedResponses: number;
     monitoringPoints: number;
     countriesCovered: number;
     dataPoints: number;
@@ -30,11 +31,16 @@ export interface AuthoritySummary {
     confidence: number;
   }>;
   dataProvenance?: {
-    status: "SIMULATED" | "LIVE";
+    status: "SIMULATED" | "PARTIAL" | "LIVE";
     label: string;
     detail: string;
-    realSources: string[];
-    simulatedSources: string[];
+  };
+  sourceCoverage?: {
+    connectedSources: Array<{ key: string; pipeline: string; confidence: number; lastSuccess: string; records: number }>;
+    staleSources: Array<{ key: string; pipeline: string; lastSuccess: string }>;
+    failedSources: Array<{ key: string; pipeline: string; error: string; lastAttempt: string }>;
+    lastRefreshAt: string | null;
+    avgConfidence: number;
   };
 }
 
