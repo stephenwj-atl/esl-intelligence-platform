@@ -10,6 +10,11 @@ import { usgsEarthquakeAdapter } from "./usgs-earthquake";
 import { worldBankAdapter } from "./world-bank";
 import { whoGhoAdapter } from "./who-gho";
 import { unescoWhcAdapter } from "./unesco-whc";
+import { osmInfrastructureAdapter } from "./osm-infrastructure";
+import { jrcFloodAdapter } from "./jrc-flood";
+import { noaaSlrAdapter } from "./noaa-slr";
+import { hydroshedsAdapter } from "./hydrosheds";
+import { openBuildingsAdapter } from "./open-buildings";
 import { computeCountryScores, writeScoresToDB } from "./scoring";
 import { ingestionLogger as log } from "./utils/logger";
 import type { SourceAdapter, IngestionResult } from "./types";
@@ -29,6 +34,11 @@ const adapters: Record<string, SourceAdapter> = {
   "world-bank": worldBankAdapter,
   "who-gho": whoGhoAdapter,
   "unesco-whc": unescoWhcAdapter,
+  "osm-infrastructure": osmInfrastructureAdapter,
+  "jrc-flood": jrcFloodAdapter,
+  "noaa-slr": noaaSlrAdapter,
+  hydrosheds: hydroshedsAdapter,
+  "open-buildings": openBuildingsAdapter,
 };
 
 export async function runPipeline(name: string): Promise<IngestionResult> {

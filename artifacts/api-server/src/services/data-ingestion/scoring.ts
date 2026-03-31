@@ -21,6 +21,11 @@ interface DatasetScores {
   healthVulnerability: number | null;
   developmentVulnerability: number | null;
   heritageRisk: number | null;
+  infrastructureVulnerability: number | null;
+  compositeFloodRisk: number | null;
+  seaLevelRiseRisk: number | null;
+  watershedFloodRisk: number | null;
+  housingVulnerability: number | null;
 }
 
 async function getDatasetScores(country: string): Promise<DatasetScores> {
@@ -49,24 +54,32 @@ async function getDatasetScores(country: string): Promise<DatasetScores> {
     healthVulnerability: latest("Health Vulnerability Score"),
     developmentVulnerability: latest("Development Vulnerability Score"),
     heritageRisk: latest("Heritage Risk Score"),
+    infrastructureVulnerability: latest("Infrastructure Vulnerability Score"),
+    compositeFloodRisk: latest("Composite Flood Risk Score"),
+    seaLevelRiseRisk: latest("Sea Level Rise Risk Score"),
+    watershedFloodRisk: latest("Watershed Flood Risk Score"),
+    housingVulnerability: latest("Housing Vulnerability Score"),
   };
 }
 
 function computeEnvironmentalScore(scores: DatasetScores): number | null {
   return weightedAverage([
-    { value: scores.hurricaneExposure, weight: 0.30 },
-    { value: scores.floodRisk, weight: 0.20 },
-    { value: scores.contaminationRisk, weight: 0.15 },
-    { value: scores.seismicRisk, weight: 0.15 },
-    { value: scores.coralReefRisk, weight: 0.10 },
-    { value: scores.soilRisk, weight: 0.10 },
+    { value: scores.hurricaneExposure, weight: 0.22 },
+    { value: scores.compositeFloodRisk ?? scores.floodRisk, weight: 0.18 },
+    { value: scores.seaLevelRiseRisk, weight: 0.12 },
+    { value: scores.watershedFloodRisk, weight: 0.10 },
+    { value: scores.contaminationRisk, weight: 0.12 },
+    { value: scores.seismicRisk, weight: 0.12 },
+    { value: scores.coralReefRisk, weight: 0.07 },
+    { value: scores.soilRisk, weight: 0.07 },
   ]);
 }
 
 function computeInfrastructureScore(scores: DatasetScores): number | null {
   return weightedAverage([
-    { value: scores.waterStress, weight: 0.50 },
-    { value: scores.developmentVulnerability, weight: 0.50 },
+    { value: scores.waterStress, weight: 0.35 },
+    { value: scores.infrastructureVulnerability, weight: 0.35 },
+    { value: scores.developmentVulnerability, weight: 0.30 },
   ]);
 }
 
@@ -75,9 +88,10 @@ function computeCommunityScore(scores: DatasetScores): number | null {
     ? clamp(100 - scores.healthFacilityDensity, 0, 100)
     : null;
   return weightedAverage([
-    { value: densityInverse, weight: 0.25 },
-    { value: scores.populationExposure, weight: 0.25 },
-    { value: scores.healthVulnerability, weight: 0.50 },
+    { value: densityInverse, weight: 0.15 },
+    { value: scores.populationExposure, weight: 0.20 },
+    { value: scores.healthVulnerability, weight: 0.40 },
+    { value: scores.housingVulnerability, weight: 0.25 },
   ]);
 }
 
@@ -89,11 +103,12 @@ function computeRegulatoryScore(scores: DatasetScores): number | null {
 }
 
 function computeConfidence(scores: DatasetScores, freshnessSources: Array<{ confidence: number }>): number {
+  const floodSignal = scores.compositeFloodRisk ?? scores.floodRisk;
   const availableComponents = [
     scores.waterStress,
     scores.hurricaneExposure,
     scores.healthFacilityDensity,
-    scores.floodRisk,
+    floodSignal,
     scores.contaminationRisk,
     scores.protectedAreaConflict,
     scores.seismicRisk,
@@ -103,6 +118,10 @@ function computeConfidence(scores: DatasetScores, freshnessSources: Array<{ conf
     scores.healthVulnerability,
     scores.developmentVulnerability,
     scores.heritageRisk,
+    scores.infrastructureVulnerability,
+    scores.seaLevelRiseRisk,
+    scores.watershedFloodRisk,
+    scores.housingVulnerability,
   ];
 
   const totalPossible = availableComponents.length;
@@ -155,6 +174,11 @@ export async function computeCountryScores(): Promise<CountryRiskComponents[]> {
     if (scores.healthVulnerability !== null) sources.push("who-gho");
     if (scores.developmentVulnerability !== null) sources.push("world-bank");
     if (scores.heritageRisk !== null) sources.push("unesco-whc");
+    if (scores.infrastructureVulnerability !== null) sources.push("osm-infrastructure");
+    if (scores.compositeFloodRisk !== null) sources.push("jrc-flood");
+    if (scores.seaLevelRiseRisk !== null) sources.push("noaa-slr");
+    if (scores.watershedFloodRisk !== null) sources.push("hydrosheds");
+    if (scores.housingVulnerability !== null) sources.push("open-buildings");
 
     results.push({
       country,

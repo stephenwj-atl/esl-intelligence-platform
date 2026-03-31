@@ -134,4 +134,9 @@ export const PIPELINE_SCHEDULES: Record<string, string> = {
   "world-bank": "quarterly",
   "who-gho": "quarterly",
   "unesco-whc": "monthly",
+  "osm-infrastructure": "monthly",
+  "jrc-flood": "quarterly",
+  "noaa-slr": "quarterly",
+  hydrosheds: "quarterly",
+  "open-buildings": "quarterly",
 };
