@@ -38,16 +38,25 @@ function fetchNEPAPage(url: string): Promise<string> {
 const PIPELINE_NAME = "nepa-eia";
 const SOURCE_KEY = "nepa-eia-jamaica";
 
-const NEPA_EIA_URL = "https://www.nepa.gov.jm/environmental-impact-assessments";
+const NEPA_BASE = "https://www.nepa.gov.jm";
+const NEPA_EIA_URL = `${NEPA_BASE}/environmental-impact-assessments`;
+const NEPA_DECISIONS_URL = `${NEPA_BASE}/index.php/authority-decisions`;
+const NEPA_ENFORCEMENTS_URL = `${NEPA_BASE}/index.php/enforcements`;
+const NEPA_CONSULTATIONS_URL = `${NEPA_BASE}/public-consultations`;
 const NEPA_ARCHIVE_URL = "https://websitearchive2020.nepa.gov.jm/new/services_products/applications/eias/index.php";
 
-interface NEPAProject {
+const MAX_DECISION_PAGES = 10;
+const DECISION_PAGE_DELAY_MS = 800;
+
+interface NEPADocument {
   title: string;
+  documentUrl: string;
+  dateFolder?: string;
+  year?: number;
   parish?: string;
   projectType?: string;
-  documentUrl?: string;
+  category: "eia" | "decision" | "enforcement" | "consultation";
   source: "current" | "archive";
-  year?: number;
 }
 
 const PARISH_PATTERNS = [
@@ -57,15 +66,15 @@ const PARISH_PATTERNS = [
 ];
 
 const PROJECT_TYPE_KEYWORDS: Record<string, string[]> = {
-  "housing": ["housing", "residential", "subdivision", "estate", "dwelling", "apartment"],
-  "hotel_tourism": ["hotel", "resort", "tourism", "beach", "cruise", "pier", "marina"],
+  "housing": ["housing", "residential", "subdivision", "estate", "dwelling", "apartment", "rozelle"],
+  "hotel_tourism": ["hotel", "resort", "tourism", "beach", "cruise", "pier", "marina", "sandal", "overwater", "paradise park"],
   "mining_quarry": ["quarry", "mining", "mine", "aggregate", "sand", "gravel", "bauxite", "limestone"],
   "infrastructure": ["road", "highway", "bridge", "water supply", "sewage", "sewerage", "drainage", "pipeline", "port"],
-  "energy": ["solar", "wind", "power", "energy", "lng", "fuel", "gas", "petroleum", "refinery"],
+  "energy": ["solar", "wind", "power", "energy", "lng", "fuel", "gas", "petroleum", "refinery", "sugar factory"],
   "industrial": ["factory", "industrial", "manufacturing", "warehouse", "processing", "plant"],
   "commercial": ["commercial", "plaza", "mall", "market", "office"],
   "agriculture": ["farm", "agriculture", "irrigation", "aquaculture", "fisheries"],
-  "waste": ["landfill", "waste", "recycling", "disposal", "transfer station", "incinerator"],
+  "waste": ["landfill", "waste", "recycling", "disposal", "transfer station", "incinerator", "hazardous waste"],
   "coastal": ["reclamation", "coastal", "groyne", "seawall", "beach nourishment", "dredging"],
 };
 
@@ -85,6 +94,11 @@ function classifyProject(title: string): string | undefined {
   return undefined;
 }
 
+function extractYearFromDateFolder(dateFolder: string): number | undefined {
+  const match = dateFolder.match(/^(20\d{2})/);
+  return match ? Number(match[1]) : undefined;
+}
+
 function extractYear(text: string): number | undefined {
   const matches = text.match(/\b(20\d{2}|19\d{2})\b/g);
   if (matches && matches.length > 0) {
@@ -94,151 +108,148 @@ function extractYear(text: string): number | undefined {
   return undefined;
 }
 
-function parseCurrentSiteHTML(html: string): NEPAProject[] {
-  const projects: NEPAProject[] = [];
+function isAnnexOrSupplementary(title: string): boolean {
+  const lower = title.toLowerCase();
+  return /^annex\s/i.test(lower) || /^appendix\s/i.test(lower) || lower.includes("verbatim notes");
+}
 
-  const linkPattern = /<a\s[^>]*href=["']([^"']*(?:\.pdf|\.doc|\.docx)[^"']*)["'][^>]*>([^<]*)<\/a>/gi;
+function extractPDFDocuments(html: string, category: NEPADocument["category"]): NEPADocument[] {
+  const docs: NEPADocument[] = [];
+  const linkPattern = /<a\s[^>]*href=["']([^"']*\.pdf[^"']*)["'][^>]*(?:title=["']([^"']*)["'])?[^>]*>([^<]*)<\/a>/gi;
   let match;
-  while ((match = linkPattern.exec(html)) !== null) {
-    const [, url, linkText] = match;
-    const text = linkText.trim();
-    if (text.length < 5) continue;
 
+  while ((match = linkPattern.exec(html)) !== null) {
+    const rawUrl = match[1];
+    const titleAttr = match[2]?.trim();
+    const linkText = match[3].trim();
+    if (linkText.length < 3) continue;
+
+    const url = rawUrl.startsWith("http") ? rawUrl : `${NEPA_BASE}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+    const decodedUrl = decodeURIComponent(url);
+    const dateMatch = decodedUrl.match(/files\/(20\d{2}-\d{2})\//);
+    const dateFolder = dateMatch ? dateMatch[1] : undefined;
+
+    const displayTitle = titleAttr || linkText;
     const contextStart = Math.max(0, match.index - 500);
     const contextEnd = Math.min(html.length, match.index + match[0].length + 500);
     const context = html.substring(contextStart, contextEnd);
 
-    projects.push({
-      title: text.replace(/\s+/g, " ").trim(),
-      parish: extractParish(context),
-      projectType: classifyProject(text) || classifyProject(context),
-      documentUrl: url.startsWith("http") ? url : `https://www.nepa.gov.jm${url.startsWith("/") ? "" : "/"}${url}`,
+    docs.push({
+      title: displayTitle.replace(/\s+/g, " ").trim(),
+      documentUrl: url,
+      dateFolder,
+      year: (dateFolder ? extractYearFromDateFolder(dateFolder) : undefined) || extractYear(displayTitle) || extractYear(decodedUrl),
+      parish: extractParish(displayTitle) || extractParish(decodedUrl) || extractParish(context),
+      projectType: classifyProject(displayTitle) || classifyProject(decodedUrl),
+      category,
       source: "current",
-      year: extractYear(context) || extractYear(text),
     });
   }
 
-  const headingPattern = /<(?:h[1-6]|strong|b|p|li|td|div)[^>]*>([^<]{10,200})<\/(?:h[1-6]|strong|b|p|li|td|div)>/gi;
-  while ((match = headingPattern.exec(html)) !== null) {
-    const text = match[1].replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-    const lowerText = text.toLowerCase();
-
-    if (lowerText.includes("eia") || lowerText.includes("environmental impact") || lowerText.includes("assessment")) {
-      if (text.length > 15 && !projects.some(p => p.title.includes(text.substring(0, 20)))) {
-        const contextStart = Math.max(0, match.index - 500);
-        const contextEnd = Math.min(html.length, match.index + match[0].length + 500);
-        const context = html.substring(contextStart, contextEnd);
-
-        projects.push({
-          title: text,
-          parish: extractParish(context),
-          projectType: classifyProject(text) || classifyProject(context),
-          source: "current",
-          year: extractYear(context) || extractYear(text),
-        });
-      }
-    }
-  }
-
-  return projects;
+  return docs;
 }
 
-function parseArchiveSiteHTML(html: string): NEPAProject[] {
-  const projects: NEPAProject[] = [];
-
-  const linkPattern = /<a\s[^>]*href=["']([^"']*(?:eia|EIA)[^"']*)["'][^>]*>([^<]*)<\/a>/gi;
+function parseArchiveSiteHTML(html: string): NEPADocument[] {
+  const docs: NEPADocument[] = [];
+  const linkPattern = /<a\s[^>]*href=["']([^"']*(?:eia|EIA|\.pdf)[^"']*)["'][^>]*>([^<]*)<\/a>/gi;
   let match;
+
   while ((match = linkPattern.exec(html)) !== null) {
-    const [, url, linkText] = match;
-    const text = linkText.trim();
-    if (text.length < 5) continue;
+    const rawUrl = match[1];
+    const linkText = match[2].trim();
+    if (linkText.length < 5) continue;
 
-    const contextStart = Math.max(0, match.index - 500);
-    const contextEnd = Math.min(html.length, match.index + match[0].length + 500);
-    const context = html.substring(contextStart, contextEnd);
+    const url = rawUrl.startsWith("http") ? rawUrl : `https://websitearchive2020.nepa.gov.jm${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+    const decodedUrl = decodeURIComponent(url);
 
-    const parish = extractParish(url) || extractParish(context);
-
-    projects.push({
-      title: text.replace(/\s+/g, " ").trim(),
-      parish,
-      projectType: classifyProject(text) || classifyProject(context),
-      documentUrl: url.startsWith("http") ? url : `https://websitearchive2020.nepa.gov.jm${url.startsWith("/") ? "" : "/"}${url}`,
+    docs.push({
+      title: linkText.replace(/\s+/g, " ").trim(),
+      documentUrl: url,
+      year: extractYear(decodedUrl) || extractYear(linkText),
+      parish: extractParish(decodedUrl) || extractParish(linkText),
+      projectType: classifyProject(linkText) || classifyProject(decodedUrl),
+      category: "eia",
       source: "archive",
-      year: extractYear(context) || extractYear(text) || extractYear(url),
     });
   }
 
-  const rowPattern = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  while ((match = rowPattern.exec(html)) !== null) {
-    const row = match[1];
-    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map(m =>
-      m[1].replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()
-    );
-    if (cells.length >= 2) {
-      const combined = cells.join(" ");
-      if (combined.length > 10 && !projects.some(p => p.title === cells[0])) {
-        projects.push({
-          title: cells[0] || combined.substring(0, 100),
-          parish: extractParish(combined),
-          projectType: classifyProject(combined),
-          source: "archive",
-          year: extractYear(combined),
-        });
-      }
-    }
-  }
-
-  return projects;
+  return docs;
 }
 
-function deduplicateProjects(projects: NEPAProject[]): NEPAProject[] {
-  const seen = new Map<string, NEPAProject>();
-  for (const p of projects) {
-    const key = p.title.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 40);
-    if (!seen.has(key) || p.source === "current") {
-      seen.set(key, p);
+function deduplicateDocs(docs: NEPADocument[]): NEPADocument[] {
+  const seen = new Map<string, NEPADocument>();
+  for (const d of docs) {
+    const key = d.title.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 50);
+    if (!seen.has(key) || d.source === "current") {
+      seen.set(key, d);
     }
   }
   return Array.from(seen.values());
 }
 
-function computeRegulatoryActivityScore(projects: NEPAProject[]): {
-  eiaCount: number;
-  projectTypeCounts: Record<string, number>;
-  parishCounts: Record<string, number>;
-  regulatoryDensityScore: number;
-  avgProjectsPerYear: number;
-} {
+function groupEIAProjects(docs: NEPADocument[]): NEPADocument[] {
+  const mainDocs = docs.filter(d => !isAnnexOrSupplementary(d.title));
+  const annexes = docs.filter(d => isAnnexOrSupplementary(d.title));
+  return [...mainDocs, ...annexes];
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function computeRegulatoryAnalysis(allDocs: NEPADocument[]) {
+  const eiaDocs = allDocs.filter(d => d.category === "eia" && !isAnnexOrSupplementary(d.title));
+  const decisionDocs = allDocs.filter(d => d.category === "decision");
+  const enforcementDocs = allDocs.filter(d => d.category === "enforcement");
+  const consultationDocs = allDocs.filter(d => d.category === "consultation");
+
   const projectTypeCounts: Record<string, number> = {};
   const parishCounts: Record<string, number> = {};
-  const yearSet = new Set<number>();
+  const yearCounts: Record<number, number> = {};
 
-  for (const p of projects) {
-    if (p.projectType) projectTypeCounts[p.projectType] = (projectTypeCounts[p.projectType] || 0) + 1;
-    if (p.parish) parishCounts[p.parish] = (parishCounts[p.parish] || 0) + 1;
-    if (p.year) yearSet.add(p.year);
+  for (const d of eiaDocs) {
+    if (d.projectType) projectTypeCounts[d.projectType] = (projectTypeCounts[d.projectType] || 0) + 1;
+    if (d.parish) parishCounts[d.parish] = (parishCounts[d.parish] || 0) + 1;
+    if (d.year) yearCounts[d.year] = (yearCounts[d.year] || 0) + 1;
   }
 
-  const yearSpan = yearSet.size > 1
-    ? Math.max(...yearSet) - Math.min(...yearSet) + 1
-    : 1;
-  const avgProjectsPerYear = roundTo(projects.length / yearSpan);
+  const years = Object.keys(yearCounts).map(Number).sort();
+  const yearSpan = years.length > 1 ? years[years.length - 1] - years[0] + 1 : 1;
+  const avgEIAPerYear = roundTo(eiaDocs.length / Math.max(yearSpan, 1));
 
-  let densityScore = Math.min(projects.length * 2, 50);
+  const decisionYears: Record<number, number> = {};
+  for (const d of decisionDocs) {
+    if (d.year) decisionYears[d.year] = (decisionYears[d.year] || 0) + 1;
+  }
+  const decisionYearKeys = Object.keys(decisionYears).map(Number).sort();
+  const decisionYearSpan = decisionYearKeys.length > 1 ? decisionYearKeys[decisionYearKeys.length - 1] - decisionYearKeys[0] + 1 : 1;
+  const avgDecisionsPerYear = roundTo(decisionDocs.length / Math.max(decisionYearSpan, 1));
+
+  let densityScore = 0;
+  densityScore += Math.min(eiaDocs.length * 3, 30);
+  densityScore += Math.min(decisionDocs.length * 0.3, 30);
   const uniqueTypes = Object.keys(projectTypeCounts).length;
-  densityScore += Math.min(uniqueTypes * 5, 25);
-  if (projectTypeCounts["mining_quarry"]) densityScore += 10;
-  if (projectTypeCounts["industrial"]) densityScore += 8;
-  if (projectTypeCounts["waste"]) densityScore += 8;
-  if (projectTypeCounts["energy"]) densityScore += 5;
+  densityScore += Math.min(uniqueTypes * 3, 15);
+  if (projectTypeCounts["mining_quarry"]) densityScore += 5;
+  if (projectTypeCounts["industrial"]) densityScore += 5;
+  if (projectTypeCounts["waste"]) densityScore += 5;
+  if (projectTypeCounts["energy"]) densityScore += 3;
+  if (enforcementDocs.length > 0) densityScore += 7;
 
   return {
-    eiaCount: projects.length,
+    eiaCount: eiaDocs.length,
+    eiaWithAnnexes: allDocs.filter(d => d.category === "eia").length,
+    decisionCount: decisionDocs.length,
+    enforcementCount: enforcementDocs.length,
+    consultationCount: consultationDocs.length,
+    totalDocuments: allDocs.length,
     projectTypeCounts,
     parishCounts,
+    yearCounts,
+    avgEIAPerYear,
+    avgDecisionsPerYear,
+    decisionYearRange: decisionYearKeys.length > 0 ? `${decisionYearKeys[0]}-${decisionYearKeys[decisionYearKeys.length - 1]}` : "unknown",
     regulatoryDensityScore: roundTo(clamp(densityScore, 0, 100)),
-    avgProjectsPerYear,
   };
 }
 
@@ -246,63 +257,106 @@ export const nepaEiaAdapter: SourceAdapter = {
   name: PIPELINE_NAME,
   sourceKey: SOURCE_KEY,
   async run(): Promise<IngestionResult> {
-    log.info(PIPELINE_NAME, "Starting NEPA EIA ingestion for Jamaica");
+    log.info(PIPELINE_NAME, "Starting NEPA regulatory intelligence ingestion for Jamaica");
     const startedAt = new Date();
     let recordsRead = 0;
     let recordsWritten = 0;
     const countriesAffected: string[] = [];
-    let fetchedCurrent = false;
-    let fetchedArchive = false;
+    const sourceStatus = { eia: false, decisions: false, enforcements: false, consultations: false, archive: false };
 
     try {
-      let allProjects: NEPAProject[] = [];
+      let allDocs: NEPADocument[] = [];
 
       try {
-        log.info(PIPELINE_NAME, "Fetching current NEPA EIA page...");
-        const currentHTML = await fetchNEPAPage(NEPA_EIA_URL);
-        log.info(PIPELINE_NAME, `Fetched ${currentHTML.length} bytes from current NEPA site`);
-        const currentProjects = parseCurrentSiteHTML(currentHTML);
-        allProjects.push(...currentProjects);
-        fetchedCurrent = true;
-        log.info(PIPELINE_NAME, `Parsed ${currentProjects.length} projects from current site`);
-
-        await db.insert(rawDataCacheTable).values({
-          sourceKey: SOURCE_KEY,
-          sourceUrl: NEPA_EIA_URL,
-          payloadJson: JSON.stringify({ html_length: currentHTML.length, parsed_count: currentProjects.length, fetched_at: new Date().toISOString() }),
-          statusCode: 200,
-          notes: "nepa-eia-current-html",
-        });
+        log.info(PIPELINE_NAME, "Fetching NEPA EIA page...");
+        const html = await fetchNEPAPage(NEPA_EIA_URL);
+        const docs = extractPDFDocuments(html, "eia");
+        const grouped = groupEIAProjects(docs);
+        allDocs.push(...grouped);
+        sourceStatus.eia = true;
+        log.info(PIPELINE_NAME, `EIA page: ${docs.length} documents (${docs.filter(d => !isAnnexOrSupplementary(d.title)).length} main projects, ${docs.filter(d => isAnnexOrSupplementary(d.title)).length} annexes)`);
       } catch (err) {
-        log.warn(PIPELINE_NAME, `Failed to fetch current NEPA site: ${err instanceof Error ? err.message : String(err)}`, err);
+        log.warn(PIPELINE_NAME, `Failed to fetch EIA page: ${err instanceof Error ? err.message : String(err)}`);
       }
 
       try {
-        log.info(PIPELINE_NAME, "Fetching NEPA archive EIA page...");
-        const archiveHTML = await fetchNEPAPage(NEPA_ARCHIVE_URL);
-        log.info(PIPELINE_NAME, `Fetched ${archiveHTML.length} bytes from archive NEPA site`);
-        const archiveProjects = parseArchiveSiteHTML(archiveHTML);
-        allProjects.push(...archiveProjects);
-        fetchedArchive = true;
-        log.info(PIPELINE_NAME, `Parsed ${archiveProjects.length} projects from archive site`);
+        log.info(PIPELINE_NAME, `Fetching Authority Decisions (up to ${MAX_DECISION_PAGES} pages)...`);
+        let totalDecisions = 0;
+        for (let page = 0; page < MAX_DECISION_PAGES; page++) {
+          try {
+            const url = page === 0 ? NEPA_DECISIONS_URL : `${NEPA_DECISIONS_URL}?page=${page}`;
+            const html = await fetchNEPAPage(url);
+            const docs = extractPDFDocuments(html, "decision");
+            if (docs.length === 0) break;
+            allDocs.push(...docs);
+            totalDecisions += docs.length;
+            if (page < MAX_DECISION_PAGES - 1) await delay(DECISION_PAGE_DELAY_MS);
+          } catch {
+            log.warn(PIPELINE_NAME, `Failed to fetch decisions page ${page}`);
+            break;
+          }
+        }
+        sourceStatus.decisions = totalDecisions > 0;
+        log.info(PIPELINE_NAME, `Authority Decisions: ${totalDecisions} board decision documents`);
       } catch (err) {
-        log.warn(PIPELINE_NAME, `Failed to fetch NEPA archive site: ${err instanceof Error ? err.message : String(err)}`, err);
+        log.warn(PIPELINE_NAME, `Failed to fetch Authority Decisions: ${err instanceof Error ? err.message : String(err)}`);
       }
 
-      allProjects = deduplicateProjects(allProjects);
-      recordsRead = allProjects.length;
-      log.info(PIPELINE_NAME, `Total unique EIA projects found: ${allProjects.length}`);
-
-      if (allProjects.length === 0 && !fetchedCurrent && !fetchedArchive) {
-        throw new Error("Failed to fetch any NEPA data from either current or archive site");
+      try {
+        log.info(PIPELINE_NAME, "Fetching Enforcements page...");
+        const html = await fetchNEPAPage(NEPA_ENFORCEMENTS_URL);
+        const docs = extractPDFDocuments(html, "enforcement");
+        allDocs.push(...docs);
+        sourceStatus.enforcements = true;
+        log.info(PIPELINE_NAME, `Enforcements: ${docs.length} documents`);
+      } catch (err) {
+        log.warn(PIPELINE_NAME, `Failed to fetch Enforcements: ${err instanceof Error ? err.message : String(err)}`);
       }
 
-      const analysis = computeRegulatoryActivityScore(allProjects);
+      try {
+        log.info(PIPELINE_NAME, "Fetching Public Consultations page...");
+        const html = await fetchNEPAPage(NEPA_CONSULTATIONS_URL);
+        const docs = extractPDFDocuments(html, "consultation");
+        allDocs.push(...docs);
+        sourceStatus.consultations = true;
+        log.info(PIPELINE_NAME, `Public Consultations: ${docs.length} documents`);
+      } catch (err) {
+        log.warn(PIPELINE_NAME, `Failed to fetch Public Consultations: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
+      try {
+        log.info(PIPELINE_NAME, "Fetching NEPA archive site...");
+        const html = await fetchNEPAPage(NEPA_ARCHIVE_URL);
+        const docs = parseArchiveSiteHTML(html);
+        allDocs.push(...docs);
+        sourceStatus.archive = true;
+        log.info(PIPELINE_NAME, `Archive: ${docs.length} documents`);
+      } catch (err) {
+        log.warn(PIPELINE_NAME, `Failed to fetch archive: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
+      allDocs = deduplicateDocs(allDocs);
+      recordsRead = allDocs.length;
+
+      const anySource = Object.values(sourceStatus).some(v => v);
+      if (!anySource) {
+        throw new Error("Failed to fetch any NEPA data from any source");
+      }
+
+      log.info(PIPELINE_NAME, `Total unique documents: ${allDocs.length} from ${Object.entries(sourceStatus).filter(([,v]) => v).map(([k]) => k).join(", ")}`);
+
+      const analysis = computeRegulatoryAnalysis(allDocs);
 
       const dataRecords = [
         { country: "Jamaica", region: "Caribbean", datasetType: "NEPA EIA Project Count", value: analysis.eiaCount, unit: "count", timestamp: new Date() },
+        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA EIA Total Documents", value: analysis.eiaWithAnnexes, unit: "count", timestamp: new Date() },
+        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Board Decision Count", value: analysis.decisionCount, unit: "count", timestamp: new Date() },
+        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Enforcement Count", value: analysis.enforcementCount, unit: "count", timestamp: new Date() },
+        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Public Consultation Count", value: analysis.consultationCount, unit: "count", timestamp: new Date() },
+        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Total Regulatory Documents", value: analysis.totalDocuments, unit: "count", timestamp: new Date() },
         { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Regulatory Density Score", value: analysis.regulatoryDensityScore, unit: "score", timestamp: new Date() },
-        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Avg EIA Projects Per Year", value: analysis.avgProjectsPerYear, unit: "per_year", timestamp: new Date() },
+        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Avg EIA Projects Per Year", value: analysis.avgEIAPerYear, unit: "per_year", timestamp: new Date() },
+        { country: "Jamaica", region: "Caribbean", datasetType: "NEPA Avg Board Decisions Per Year", value: analysis.avgDecisionsPerYear, unit: "per_year", timestamp: new Date() },
       ];
 
       for (const [type, count] of Object.entries(analysis.projectTypeCounts)) {
@@ -331,29 +385,29 @@ export const nepaEiaAdapter: SourceAdapter = {
         sourceKey: SOURCE_KEY,
         sourceUrl: NEPA_EIA_URL,
         payloadJson: JSON.stringify({
-          projects: allProjects.map(p => ({
-            title: p.title,
-            parish: p.parish,
-            projectType: p.projectType,
-            source: p.source,
-            year: p.year,
-            hasDocument: !!p.documentUrl,
+          documents: allDocs.map(d => ({
+            title: d.title,
+            category: d.category,
+            parish: d.parish,
+            projectType: d.projectType,
+            year: d.year,
+            dateFolder: d.dateFolder,
+            source: d.source,
           })),
           analysis,
+          sourceStatus,
           fetchedAt: new Date().toISOString(),
         }),
         statusCode: 200,
-        notes: "nepa-eia-all-projects",
+        notes: "nepa-regulatory-intelligence-full",
       });
 
-      const confidence = (fetchedCurrent || fetchedArchive)
-        ? CONFIDENCE_THRESHOLDS.HIGH_RESOLUTION
-        : CONFIDENCE_THRESHOLDS.COUNTRY_LEVEL;
+      const confidence = CONFIDENCE_THRESHOLDS.HIGH_RESOLUTION;
 
       await upsertFreshness({
         sourceKey: SOURCE_KEY,
         pipelineName: PIPELINE_NAME,
-        status: fetchedCurrent || fetchedArchive ? "success" : "partial",
+        status: "success",
         confidence,
         recordsLoaded: recordsRead,
       });
@@ -367,11 +421,15 @@ export const nepaEiaAdapter: SourceAdapter = {
         recordsWritten,
       });
 
-      log.success(PIPELINE_NAME, `Completed: ${allProjects.length} EIA projects, ${recordsWritten} data points`, {
-        fetchedCurrent,
-        fetchedArchive,
+      log.success(PIPELINE_NAME, `Completed: ${analysis.totalDocuments} documents, ${recordsWritten} data points`, {
+        eiaProjects: analysis.eiaCount,
+        decisions: analysis.decisionCount,
+        enforcements: analysis.enforcementCount,
+        consultations: analysis.consultationCount,
+        decisionYearRange: analysis.decisionYearRange,
         projectTypes: Object.keys(analysis.projectTypeCounts).length,
         parishes: Object.keys(analysis.parishCounts).length,
+        regulatoryDensityScore: analysis.regulatoryDensityScore,
       });
 
       return {
@@ -382,13 +440,19 @@ export const nepaEiaAdapter: SourceAdapter = {
         countriesAffected,
         confidence,
         summary: {
-          eiaProjects: allProjects.length,
-          fetchedCurrent,
-          fetchedArchive,
+          eiaProjects: analysis.eiaCount,
+          eiaWithAnnexes: analysis.eiaWithAnnexes,
+          boardDecisions: analysis.decisionCount,
+          enforcements: analysis.enforcementCount,
+          consultations: analysis.consultationCount,
+          totalDocuments: analysis.totalDocuments,
           projectTypes: analysis.projectTypeCounts,
           parishes: analysis.parishCounts,
+          decisionYearRange: analysis.decisionYearRange,
+          avgEIAPerYear: analysis.avgEIAPerYear,
+          avgDecisionsPerYear: analysis.avgDecisionsPerYear,
           regulatoryDensityScore: analysis.regulatoryDensityScore,
-          avgProjectsPerYear: analysis.avgProjectsPerYear,
+          sourceStatus,
         },
       };
     } catch (err) {
