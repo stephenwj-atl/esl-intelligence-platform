@@ -42,3 +42,9 @@ id = "OB_oDhVZ60P_oDSsHoyUM"
 uri = "file://attached_assets/ESL_Researcher_Manual_Data_Acquisition_Brief.md"
 type = "text"
 title = "Researcher Manual Data Acquisition Brief"
+
+[[outputs]]
+id = "b2oJG04nVssS0eZPhKgZ-"
+uri = "file://attached_assets/ESL_Data_Intelligence_Capability_Brief.md"
+type = "text"
+title = "ESL Data Intelligence Capability Brief"
