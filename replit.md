@@ -52,7 +52,7 @@ All features must align with a mandatory 7-stage flow: Intake Screening, Baselin
 
 11. **Data Provenance System**: Dynamic provenance derived from `data_source_freshness` table. Status is `SIMULATED` (no pipelines), `PARTIAL` (<3 pipelines connected), or `LIVE` (≥3 pipelines, avg confidence ≥50%). Authority dashboard shows yellow (simulated) or blue (partial) banner. Provenance threshold checks distinct pipeline names (aqueduct, ibtracs, opendata-jamaica, arcgis-jamaica), not raw source rows.
 
-12. **Live Data Ingestion System**: Located at `artifacts/api-server/src/services/data-ingestion/`. Seventeen source adapters across 17 Caribbean countries and 85+ dataset types producing 4,800+ data records:
+12. **Live Data Ingestion System**: Located at `artifacts/api-server/src/services/data-ingestion/`. Eighteen source adapters across 17 Caribbean countries and 101+ dataset types producing 4,844+ data records:
     - **Aqueduct** (WRI water stress, 17 countries — uses hardcoded reference data until WRI API credentials obtained)
     - **IBTrACS** (NOAA hurricane tracks CSV from `/access/csv/` path, ~55MB download, 9880+ Caribbean storm points)
     - **Open-Data Jamaica** (health facility CSVs from data.gov.jm, 345 facilities)
@@ -70,7 +70,8 @@ All features must align with a mandatory 7-stage flow: Intake Screening, Baselin
     - **NOAA SLR** (Sea level rise — current rate mm/yr, RCP4.5/8.5 projections at 2050/2100, low-elevation coastal zone %, coastline length)
     - **HydroSHEDS** (WWF watershed/drainage data — major/sub-basins, stream length, drainage density, floodplain %, watershed flood risk)
     - **Open Buildings** (Google Open Buildings estimates — building counts/density, informal settlement %, coastal building %, housing vulnerability)
-    Shared utility: `utils/freshness.ts` provides `upsertFreshness()` for conflict-safe freshness writes. Orchestrator runs pipelines sequentially, then triggers scoring engine. Scoring engine computes weighted risk across 4 pillars (Environmental 30%, Infrastructure 25%, Community 25%, Regulatory 20%) using 18 dataset types. Admin-only ingestion API routes at `/api/ingestion/run`, `/api/ingestion/run-all`, `/api/ingestion/status`. Standalone runner: `pnpm --filter @workspace/api-server run ingestion:run-all` (supports single/multi-pipeline filter: `pnpm run ingestion:run-all jrc-flood,noaa-slr`).
+    - **NEPA EIA** (NEPA Jamaica web scraping — EIA project listings from current site + archive, 31 projects, 6 project types, 7 parishes; regulatory density scoring; uses Node.js `https` with `rejectUnauthorized: false` due to NEPA's incomplete SSL cert chain)
+    Shared utility: `utils/freshness.ts` provides `upsertFreshness()` for conflict-safe freshness writes. Orchestrator runs pipelines sequentially, then triggers scoring engine. Scoring engine computes weighted risk across 4 pillars (Environmental 30%, Infrastructure 25%, Community 25%, Regulatory 20%) using 19 dataset types. Admin-only ingestion API routes at `/api/ingestion/run`, `/api/ingestion/run-all`, `/api/ingestion/status`. Standalone runner: `pnpm --filter @workspace/api-server run ingestion:run-all` (supports single/multi-pipeline filter: `pnpm run ingestion:run-all jrc-flood,noaa-slr`).
 
 **Database Schema Highlights:** Key tables include `projects`, `portfolios`, `risk_history`, `covenants`, `esap_items`, `monitoring_events`, `audit_logs`, `pipelines`, `financial_impacts`, `outcomes`, `blended_structures`, `data_layers`, `project_data_layers`, `raw_data_cache`, `data_source_freshness`, and `ingestion_runs`.
 

@@ -26,6 +26,7 @@ interface DatasetScores {
   seaLevelRiseRisk: number | null;
   watershedFloodRisk: number | null;
   housingVulnerability: number | null;
+  nepaRegulatoryDensity: number | null;
 }
 
 async function getDatasetScores(country: string): Promise<DatasetScores> {
@@ -59,6 +60,7 @@ async function getDatasetScores(country: string): Promise<DatasetScores> {
     seaLevelRiseRisk: latest("Sea Level Rise Risk Score"),
     watershedFloodRisk: latest("Watershed Flood Risk Score"),
     housingVulnerability: latest("Housing Vulnerability Score"),
+    nepaRegulatoryDensity: latest("NEPA Regulatory Density Score"),
   };
 }
 
@@ -97,8 +99,9 @@ function computeCommunityScore(scores: DatasetScores): number | null {
 
 function computeRegulatoryScore(scores: DatasetScores): number | null {
   return weightedAverage([
-    { value: scores.protectedAreaConflict, weight: 0.60 },
-    { value: scores.heritageRisk, weight: 0.40 },
+    { value: scores.protectedAreaConflict, weight: 0.45 },
+    { value: scores.heritageRisk, weight: 0.30 },
+    { value: scores.nepaRegulatoryDensity, weight: 0.25 },
   ]);
 }
 
@@ -122,6 +125,7 @@ function computeConfidence(scores: DatasetScores, freshnessSources: Array<{ conf
     scores.seaLevelRiseRisk,
     scores.watershedFloodRisk,
     scores.housingVulnerability,
+    scores.nepaRegulatoryDensity,
   ];
 
   const totalPossible = availableComponents.length;

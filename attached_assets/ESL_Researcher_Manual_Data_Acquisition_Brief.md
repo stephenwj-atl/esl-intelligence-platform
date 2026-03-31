@@ -8,7 +8,7 @@
 
 ## 1. Context
 
-The ESL Environmental Intelligence Platform has **17 automated data ingestion pipelines** that pull live data from free/open APIs for all **17 Caribbean countries**. These pipelines cover the following layers automatically — **you do not need to acquire data for these:**
+The ESL Environmental Intelligence Platform has **18 automated data ingestion pipelines** that pull live data from free/open APIs for all **17 Caribbean countries**. These pipelines cover the following layers automatically — **you do not need to acquire data for these:**
 
 | Layer ID | Layer Name | Automated Source | Status |
 |----------|-----------|-----------------|--------|
@@ -28,9 +28,10 @@ The ESL Environmental Intelligence Platform has **17 automated data ingestion pi
 | 4.5 | Cultural Heritage & Indigenous Sites | UNESCO World Heritage API | AUTOMATED |
 | — | Coral Reef & Sea Surface Temperature | NOAA Coral Reef Watch API | AUTOMATED |
 | — | Seismic Risk | USGS Earthquake Hazards API | AUTOMATED |
+| 4.2 | NEPA EIA Regulatory Intelligence | NEPA Jamaica (nepa.gov.jm) web scraping | AUTOMATED (Jamaica) |
 | — | ArcGIS Jamaica (planning, mortality, protected areas) | GOJ MSET ArcGIS FeatureServer | LIVE (Jamaica) |
 
-**What the platform now covers automatically:** 17 pipelines producing 4,800+ data records across 85 dataset types for all 17 countries.
+**What the platform now covers automatically:** 18 pipelines producing 4,844+ data records across 101 dataset types for all 17 countries.
 
 **Your assignment now covers a reduced set of layers** — several previously manual layers are now partially automated. You are needed for **high-resolution national data upgrades** and the layers that cannot be automated at all.
 

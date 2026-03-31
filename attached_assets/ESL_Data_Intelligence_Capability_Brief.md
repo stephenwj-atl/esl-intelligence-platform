@@ -43,13 +43,9 @@ The platform continuously ingests environmental, infrastructure, social, and reg
 | 16 | **Health Facilities (Jamaica)** | Jamaica Open Data Portal | 345 geo-located health facilities — enables precise receptor mapping for Jamaican projects. | Jamaica (345 facilities) |
 | 17 | **Planning & Land Use (Jamaica)** | Government of Jamaica ArcGIS | Planning proposals (131K records), protected areas, mortality data, planning area boundaries — high-resolution Jamaica intelligence. | Jamaica (4 active services) |
 
-**Total: 4,800+ data records across 85 dataset types, 17 Caribbean countries.**
+| 18 | **NEPA EIA Regulatory Intelligence** | NEPA Jamaica (nepa.gov.jm) — automated web scraping | 31 EIA projects scraped from NEPA's current site and archive. Classified by project type (infrastructure 10, mining 7, hotel/tourism 5, industrial 4, housing 1, waste 1) and by parish (7 parishes identified). Produces regulatory density scoring for Jamaica's environmental permitting landscape. | Jamaica (31 projects, 6 types, 7 parishes) |
 
-**Coming soon — Regulatory Intelligence Pipeline:**
-
-| # | Data Layer | Source | What It Tells You | Coverage |
-|---|-----------|--------|-------------------|----------|
-| 18 | **EIA Decisions & Permit Outcomes** | NEPA Jamaica (National Environment and Planning Agency) | Which projects received Environmental Permits, which were refused, what conditions were imposed, screening determinations, and prescribed activity classifications. This is the public record of every environmental regulatory decision in Jamaica. | Jamaica |
+**Total: 4,844+ data records across 101 dataset types, 17 Caribbean countries, 18 automated pipelines.**
 
 NEPA's regulatory data — including their Prescribed Activities List, EIA screening determinations, Environmental Permit conditions, and enforcement actions — represents the most complete public record of environmental regulatory outcomes in the Caribbean. Combined with ESL's proprietary project data, this gives the platform both the official regulatory record and the practitioner's experience of navigating it. We plan to extend this to equivalent agencies across the region (EMA Trinidad, EPD Barbados, DEHS Bahamas) as data access permits.
 

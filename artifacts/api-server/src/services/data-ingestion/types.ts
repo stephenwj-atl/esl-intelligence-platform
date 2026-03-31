@@ -139,4 +139,5 @@ export const PIPELINE_SCHEDULES: Record<string, string> = {
   "noaa-slr": "quarterly",
   hydrosheds: "quarterly",
   "open-buildings": "quarterly",
+  "nepa-eia": "weekly",
 };
