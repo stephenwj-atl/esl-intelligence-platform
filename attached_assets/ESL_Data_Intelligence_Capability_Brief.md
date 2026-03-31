@@ -45,6 +45,14 @@ The platform continuously ingests environmental, infrastructure, social, and reg
 
 **Total: 4,800+ data records across 85 dataset types, 17 Caribbean countries.**
 
+**Coming soon — Regulatory Intelligence Pipeline:**
+
+| # | Data Layer | Source | What It Tells You | Coverage |
+|---|-----------|--------|-------------------|----------|
+| 18 | **EIA Decisions & Permit Outcomes** | NEPA Jamaica (National Environment and Planning Agency) | Which projects received Environmental Permits, which were refused, what conditions were imposed, screening determinations, and prescribed activity classifications. This is the public record of every environmental regulatory decision in Jamaica. | Jamaica |
+
+NEPA's regulatory data — including their Prescribed Activities List, EIA screening determinations, Environmental Permit conditions, and enforcement actions — represents the most complete public record of environmental regulatory outcomes in the Caribbean. Combined with ESL's proprietary project data, this gives the platform both the official regulatory record and the practitioner's experience of navigating it. We plan to extend this to equivalent agencies across the region (EMA Trinidad, EPD Barbados, DEHS Bahamas) as data access permits.
+
 ---
 
 ### Layer 2: ESL Proprietary Field Intelligence (35 Years of Project Data)
@@ -57,7 +65,7 @@ This is the decisive competitive advantage. No other environmental data platform
 |--------------|-----------------|----------------------------------------|
 | **Laboratory Results** | De-identified soil, water, and air quality test results from thousands of project sites across the Caribbean — contaminant types, concentrations, exceedance levels, sampling conditions | The platform doesn't just tell you "this area has contamination risk" — it can tell you what contaminants were actually found at similar sites, at what concentrations, and how they compared to regulatory standards. No public dataset has this. |
 | **Baseline Environmental Studies** | Pre-development environmental conditions documented across hundreds of sites — soil profiles, water quality, ecological assessments, noise levels, air quality | Provides empirical baseline benchmarks by region, soil type, land use, and proximity to industry. When the platform says a site's water quality is concerning, it can reference actual measurements from comparable locations. |
-| **EIA Outcomes & Conditions** | Which project types, in which locations, triggered what level of environmental assessment — and what conditions regulators actually imposed | Replaces theoretical regulatory research with real outcome data. Instead of guessing "will this project need a full EIA?", the platform can say "of 47 similar projects in this parish, 38 required full EIA and the average processing time was 14 months." |
+| **EIA Outcomes & Conditions** | Which project types, in which locations, triggered what level of environmental assessment — and what conditions regulators actually imposed. Complements NEPA's public decision record with the practitioner's side: what the process actually required, what ESL recommended, what conditions were imposed, and what it cost the client. | NEPA's public record tells you what decision was made. ESL's proprietary data tells you what it took to get there — the scope of work, the timeline from screening to permit, the conditions imposed, and the compliance monitoring that followed. Together, they give IDB both the regulatory fact and the operational reality. |
 | **Contamination Assessments** | Site investigation results including contamination extent, source identification, risk classification, and remediation requirements | Fills the single largest data gap in the platform. Public contamination registries barely exist in the Caribbean. ESL's 35 years of contamination work provides the only comprehensive dataset of its kind in the region. |
 | **Remediation Records** | What remediation approaches were used, how long they took, what they cost, and whether they achieved cleanup targets | Enables the platform to estimate remediation costs and timelines based on actual project outcomes — not consultant estimates or generic industry benchmarks. Critical for conditioning capital deployment. |
 | **Permit & Compliance Timelines** | Real processing times from submission to approval, conditions imposed, compliance monitoring outcomes | Calibrates the platform's permit timeline predictions with ground-truth data from actual regulatory interactions, not theoretical estimates from legislation review. |
@@ -82,10 +90,10 @@ Our research team is currently acquiring higher-resolution spatial data to enabl
 | Contamination Registries | **Covered by ESL proprietary data** | National registry data as supplement |
 | Zoning & Land Use | Not automated | Official zoning maps from national planning authorities |
 | Power Grid Reliability | Not automated | SAIFI/SAIDI from national utility companies |
-| EIA Triggers | **Covered by ESL proprietary data** | Regulatory legislation review as supplement |
-| Permit Timelines | **Covered by ESL proprietary data** | Government annual report data as supplement |
+| EIA Triggers | **Covered by NEPA public data + ESL proprietary data** | Researcher supplements with other Caribbean country legislation |
+| Permit Timelines | **Covered by NEPA public data + ESL proprietary data** | Researcher supplements with other Caribbean country data |
 
-**Note:** With ESL's proprietary data uploaded, three previously "fully manual" layers — contamination, EIA triggers, and permit timelines — are now substantially covered by real project data. The researcher's role for these layers shifts from primary data acquisition to supplementary validation.
+**Note:** With NEPA's public regulatory record and ESL's proprietary project data uploaded, four previously "fully manual" layers — contamination, EIA triggers, permit timelines, and regulatory outcomes — are now substantially covered for Jamaica. The researcher's role for Jamaica shifts from primary data acquisition to validation and gap-filling. For other Caribbean countries, the researcher still needs to source equivalent data from EMA (Trinidad), EPD (Barbados), DEHS (Bahamas), and other national agencies.
 
 ---
 
@@ -138,7 +146,7 @@ A risk score of 55 in Jamaica is directly comparable to a risk score of 55 in Gu
 
 - A project near a protected area triggers **Biodiversity Impact Assessment** — and the platform can reference how long similar assessments took and what they cost based on ESL's project history
 - High contamination risk triggers **Phase II Environmental Site Assessment** — and the platform can estimate scope based on actual contamination profiles found at comparable sites
-- Regulatory conflict triggers **EIA Preparation** — and the platform knows the likely processing time based on real permit data, not theoretical legislation review
+- Regulatory conflict triggers **EIA Preparation** — and the platform knows the likely processing time because it has NEPA's actual decision record *and* ESL's experience of navigating the process
 
 **This is the critical differentiator:** Other platforms can flag risk. Only ESL's platform can tell you what to do about it, how long it will take, what it will cost, and what the likely outcome will be — because we've already done it hundreds of times.
 
@@ -147,7 +155,7 @@ A risk score of 55 in Jamaica is directly comparable to a risk score of 55 in Gu
 **How we solve it — and no one else can:** The proprietary data layer enables something no public data platform offers:
 
 - **"What did we actually find at the last 15 hotel sites in coastal Jamaica?"** — real lab results showing contaminant profiles, soil conditions, water quality
-- **"How long did the EIA actually take for industrial projects in Trinidad?"** — real permit processing data, not regulatory estimates
+- **"How long did the EIA actually take for industrial projects in Trinidad?"** — real permit processing data from ESL's records, cross-referenced with NEPA's public decision timeline for comparable Jamaica projects
 - **"What remediation was required when we found petroleum contamination in karst limestone?"** — real remediation records with costs and outcomes
 - **"What did the monitoring programme show 3 years after construction?"** — real post-development environmental trends
 
@@ -182,7 +190,8 @@ This transforms the platform from a risk screening tool into a **decision intell
 | Caribbean-specific calibration | No — global models, not region-specific | Yes — weighted for Caribbean hazard profiles |
 | Proprietary field data | No | **Yes — 35 years of lab results, EIA outcomes, remediation records** |
 | Contamination intelligence | No — public registries only (barely exist in Caribbean) | **Yes — thousands of actual soil/water lab results** |
-| Predictive EIA outcomes | No | **Yes — based on actual regulatory outcomes from real projects** |
+| National regulatory decision data | No | **Yes — NEPA EIA decisions, permit conditions, screening determinations (Jamaica; expanding regionally)** |
+| Predictive EIA outcomes | No | **Yes — based on actual regulatory outcomes from real projects + NEPA public record** |
 | Remediation cost estimation | No — generic industry benchmarks | **Yes — based on actual remediation projects in the region** |
 | Integrated service delivery | No — data only, you find your own consultant | **Yes — ESL identifies the need AND delivers the service** |
 | Capital deployment workflow | No | **Yes — mandatory 7-stage flow with environmental gating** |
