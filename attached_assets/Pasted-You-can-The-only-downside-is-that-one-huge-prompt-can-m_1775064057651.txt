@@ -1,0 +1,1232 @@
+You can. The only downside is that one huge prompt can make Replit diffuse effort across too many moving parts and implement more shallowly.
+
+But in your case, the architecture gaps are tightly connected:
+
+* sector families
+* instrument logic
+* weighting defense
+* calibration
+* outcomes / theory of change
+* disbursement readiness
+* transition logic
+* funder logic
+* portfolio metrics
+
+So yes — better to give it **one integrated master prompt** with a clear build order and non-negotiable acceptance criteria.
+
+Below is the **single merged Replit prompt** that includes:
+
+* the VNEXT architecture
+* family-specific weighting defaults
+* instrument decision matrices
+* calibration guardrails
+* methodology defense
+* memo generation
+* outcomes / theory of change scoring
+* disbursement / transition logic
+* override governance
+* funder-specific logic
+* multi-instrument portfolio metrics
+
+Copy and paste this as one prompt.
+
+---
+
+# REPLIT PROMPT — ESL PLATFORM MASTER VNEXT
+
+## Instrument-Agnostic Architecture + Sector Family Layering + DFI-Grade Weighting Defense + Calibration + Outcomes + Transition Logic
+
+You are a senior full-stack engineer, platform architect, and risk-methodology implementation lead working inside the existing ESL Intelligence Platform codebase.
+
+Do not return a plan. Do not summarize. Build.
+
+If something is unclear, make the most defensible assumption, document it in `/docs/BUILD_ASSUMPTIONS.md`, and continue.
+
+You are not building a demo dashboard. You are upgrading the platform into a **defensible decision-intelligence system for loans, grants, blended finance, technical assistance, and programmatic development-finance use cases across the Caribbean**.
+
+Preserve the current working platform and extend it.
+
+The existing platform already has, in some form:
+
+* CERI
+* PERS
+* project-level assessments
+* capital mode recommendation
+* monitoring intensity
+* portfolio metrics
+* data pipelines
+* methodology page
+* project detail pages
+* source health
+* recalculation scripts
+* explainability/provenance
+
+Do not rip it up. Refactor and extend it cleanly.
+
+---
+
+# 1. MISSION
+
+Implement the next major upgrade so the platform properly supports:
+
+1. **Instrument-agnostic decisioning**
+
+   * loan
+   * grant
+   * blended
+   * guarantee
+   * technical assistance
+   * programmatic
+   * emergency / recovery
+
+2. **Sector family layering**
+
+   * different weighting logic by project family
+   * different relevance of hazards, governance, biodiversity, outcomes, and implementation risk by family
+
+3. **True layered risk architecture**
+
+   * country context
+   * project/site exposure
+   * sector / receptor sensitivity
+   * intervention / delivery-model risk
+   * instrument / structure logic
+   * outcome delivery logic
+   * confidence logic
+   * disbursement readiness
+   * transition readiness
+
+4. **DFI-grade weighting defense**
+
+   * methodology rationale
+   * weighting profiles
+   * evidence notes
+   * assumptions
+   * limitations
+   * profile comparison
+   * calibration status
+
+5. **Calibration memo generation inside the platform**
+
+   * evidence-based internal memos using actual platform data
+   * comparison of methodology profiles
+   * recommendation logic bounded by guardrails
+
+6. **Real grant/blended logic**
+
+   * not just debt pricing with different labels
+
+7. **Outcome delivery framework**
+
+   * theory of change
+   * outputs
+   * outcomes
+   * beneficiaries
+   * milestones
+   * delivery risk
+   * implementation capacity
+   * disbursement readiness
+
+8. **Transition logic**
+
+   * grant to blended
+   * grant to loan
+   * blended to loan
+   * TA to finance
+   * emergency to rehabilitation financing
+
+9. **Funder-specific logic**
+
+   * especially climate funds, grant windows, and development banks
+
+10. **Multi-instrument portfolio intelligence**
+
+* loans, grants, and blended finance each need different portfolio metrics
+
+---
+
+# 2. CRITICAL DESIGN CORRECTION
+
+The platform must stop behaving like a loan tool with grant labels.
+
+You must implement a **layered and inspectable decision model**.
+
+## 2.1 Required stored layer outputs
+
+Every project assessment must calculate and store at minimum:
+
+* `country_context_score`
+* `project_exposure_score`
+* `sector_receptor_sensitivity_score`
+* `intervention_delivery_risk_score`
+* `instrument_structure_risk_score`
+* `outcome_delivery_risk_score`
+* `confidence_score`
+* `implementation_capacity_score`
+* `disbursement_readiness_score`
+* `transition_readiness_score`
+* `pers_base_score`
+* `pers_final_score`
+* `decision_signal`
+* `capital_mode_recommendation`
+* `monitoring_intensity`
+* `recommended_controls`
+* `recommended_conditions`
+* `explainability_payload`
+
+PERS may remain the headline score, but the internal architecture must be layered and inspectable.
+
+Do not collapse everything into one opaque value.
+
+---
+
+# 3. IMPLEMENT SECTOR FAMILY ARCHITECTURE
+
+The platform must no longer rely on one generic model.
+
+## 3.1 Required sector families
+
+At minimum support:
+
+* `hard_infrastructure`
+* `soft_social_infrastructure`
+* `agriculture_food_systems`
+* `ecosystems_natural_capital`
+* `governance_institutional`
+* `disaster_response_recovery`
+* `programmatic_multi_sector`
+* `private_sector_productive_investment`
+
+## 3.2 Each family must have structured relevance profiles for:
+
+* flood relevance
+* coastal relevance
+* sea-level relevance
+* seismic relevance
+* water stress relevance
+* biodiversity relevance
+* protected area relevance
+* land tenure relevance
+* governance relevance
+* corruption relevance
+* disaster history relevance
+* community vulnerability relevance
+* service continuity relevance
+* implementation complexity relevance
+* outcome complexity relevance
+* monitoring intensity relevance
+* transition relevance
+
+Use normalized 0–1 values for these subfactors and store them in structured tables or config, not only in code comments.
+
+## 3.3 Required project types/subtypes expansion
+
+Support and normalize at minimum:
+
+### Hard infrastructure
+
+* roads
+* bridges
+* ports
+* airports
+* industrial parks
+* logistics hubs
+* energy generation
+* transmission
+* substations
+* water treatment
+* wastewater
+* drainage
+* flood defense
+* solid waste
+* housing estates
+* urban infrastructure
+
+### Soft / social infrastructure
+
+* hospitals
+* clinics
+* health networks
+* schools
+* training centers
+* shelters
+* community centers
+* service delivery platforms
+
+### Agriculture / food systems
+
+* irrigation
+* agro-processing
+* input distribution
+* value chains
+* storage / cold chain
+* rural market systems
+* food security programs
+* fisheries / aquaculture
+
+### Ecosystems / natural capital
+
+* mangrove restoration
+* reef restoration
+* watershed management
+* forestry
+* reforestation
+* coastal resilience
+* ecosystem rehabilitation
+* biodiversity protection
+* land restoration
+* nature-based solutions
+
+### Governance / institutional
+
+* public financial management
+* environmental governance
+* regulatory systems
+* land administration
+* cadastre
+* permitting modernization
+* monitoring systems
+* digital public infrastructure
+* policy reform
+* institutional strengthening
+* technical assistance
+
+### Disaster response / recovery
+
+* emergency shelter
+* post-hurricane reconstruction
+* resilience retrofits
+* debris / emergency clearance
+* rapid recovery systems
+* continuity infrastructure
+
+### Programmatic / multi-sector
+
+* resilience programs
+* urban upgrading programs
+* community adaptation programs
+* livelihoods programs
+* social protection-linked climate interventions
+* integrated watershed/community programs
+
+### Private sector productive investment
+
+* tourism resorts
+* manufacturing
+* agro-industrial facilities
+* logistics facilities
+* commercial renewable energy
+* export-oriented productive assets
+
+Store family/type/subtype structure in schema or authoritative config.
+
+---
+
+# 4. IMPLEMENT TRUE INSTRUMENT-AGNOSTIC LOGIC
+
+## 4.1 Supported instruments
+
+Support at minimum:
+
+* `LOAN`
+* `GRANT`
+* `BLENDED`
+* `GUARANTEE`
+* `TECHNICAL_ASSISTANCE`
+* `PROGRAMMATIC`
+* `EMERGENCY`
+
+## 4.2 Instrument-specific decision logic
+
+### LOAN
+
+Emphasize:
+
+* downside protection
+* predictability
+* asset resilience
+* insurability relevance
+* covenant logic
+* pricing logic
+* borrower implementation strength
+* readiness for capital deployment
+
+### GRANT
+
+Emphasize:
+
+* outcome delivery probability
+* beneficiary reach
+* implementation capacity
+* milestone readiness
+* monitoring burden
+* theory of change credibility
+* environmental and social permissibility
+* funder conditions
+* whether risk is acceptable relative to impact rationale
+
+Do not default high-risk grants to decline automatically.
+
+Support grant-oriented decisions such as:
+
+* `PROCEED`
+* `PROCEED_WITH_CONTROLS`
+* `RESEQUENCE`
+* `NARROW_SCOPE`
+* `DEFER_PENDING_BASELINE`
+* `DO_NOT_FUND`
+
+### BLENDED
+
+Emphasize:
+
+* what risk grant should absorb
+* what milestone unlocks debt
+* what concessionality is justified
+* whether project is:
+
+  * `GRANT_FIRST`
+  * `BLENDED_NOW`
+  * `LOAN_READY_AFTER_VALIDATION`
+  * `STRUCTURE_NOT_YET_BANKABLE`
+* what first-loss / guarantee / TA structure is needed
+* transition pathway credibility
+
+### GUARANTEE
+
+Emphasize:
+
+* credit enhancement logic
+* downside transfer logic
+* trigger conditions
+* residual risk after guarantee
+
+### TECHNICAL_ASSISTANCE / PROGRAMMATIC / EMERGENCY
+
+Use appropriate logic for:
+
+* no precise site
+* multi-site
+* national/regional intervention
+* urgent deployment
+* lower initial confidence tolerance
+* stronger staged controls
+* stronger monitoring requirements
+
+---
+
+# 5. IMPLEMENT OUTCOME DELIVERY FRAMEWORK
+
+## 5.1 For every project, support:
+
+* theory of change summary
+* intended outputs
+* intended outcomes
+* beneficiaries
+* environmental outcomes
+* social outcomes
+* economic outcomes
+* implementation milestones
+* verification metrics
+* reporting cycle
+* responsible delivery parties
+
+## 5.2 Outcome metric schema
+
+Support multiple metrics per project, including examples like:
+
+* beneficiaries reached
+* hectares restored
+* emissions reduced/avoided
+* households protected
+* population served
+* jobs supported
+* water access improved
+* coastal area protected
+* institutions strengthened
+* time-to-service restoration
+* livelihood resilience metrics
+
+## 5.3 Compute and store:
+
+* `outcome_delivery_risk_score`
+* `outcome_confidence_score`
+* `implementation_capacity_score`
+* `disbursement_readiness_score`
+
+These must influence:
+
+* grant recommendations
+* blended structuring
+* monitoring intensity
+* transition readiness
+
+---
+
+# 6. IMPLEMENT DISBURSEMENT & TRANSITION LOGIC
+
+## 6.1 Milestone-based disbursement framework
+
+Support milestone types such as:
+
+* baseline validation
+* safeguard readiness
+* implementation readiness
+* procurement readiness
+* monitoring readiness
+* interim performance validation
+* transition readiness
+
+Store:
+
+* milestone name
+* required evidence
+* current status
+* gating effect
+* linked instrument
+* due date
+* reviewer
+* comments
+
+## 6.2 Transition pathway logic
+
+Support pathways such as:
+
+* `GRANT -> BLENDED`
+* `GRANT -> LOAN`
+* `BLENDED -> LOAN`
+* `TA -> BLENDED`
+* `EMERGENCY -> REHABILITATION_FINANCING`
+
+Add fields for:
+
+* transition trigger
+* validation criteria
+* time horizon
+* required conditions
+* confidence threshold
+* responsible reviewer
+* status
+
+Compute:
+
+* `transition_readiness_score`
+* recommended next capital stage
+* blockers to transition
+
+---
+
+# 7. IMPLEMENT FAMILY-SPECIFIC WEIGHTING PROFILES
+
+Do not rely on one universal PERS model.
+
+## 7.1 Support these methodology profiles at minimum
+
+* `PERS_DEFAULT_V1`
+* `PERS_INFRA_V1`
+* `PERS_SOCIAL_V1`
+* `PERS_AGRI_V1`
+* `PERS_ECOSYSTEMS_V1`
+* `PERS_GOVERNANCE_V1`
+* `PERS_DISASTER_V1`
+* `PERS_PROGRAMMATIC_V1`
+* `PERS_PRIVATE_SECTOR_V1`
+
+Store them in DB and seed them.
+
+## 7.2 Each profile must include
+
+* profile id
+* label
+* description
+* sector family
+* supported instruments
+* effective date
+* active/inactive
+* calibration status
+* rationale
+* known limitations
+* evidence note
+* review note
+
+## 7.3 Required base layer weights
+
+Store explicit weights for:
+
+* `country_context_weight`
+* `project_exposure_weight`
+* `sector_receptor_sensitivity_weight`
+* `intervention_delivery_risk_weight`
+
+Also store explicit modifier weights for:
+
+* `instrument_structure_modifier_weight`
+* `outcome_delivery_modifier_weight`
+* `confidence_modifier_weight`
+
+The first four govern the base PERS architecture. The modifiers govern bounded adjustments.
+
+## 7.4 Seed these default base weights
+
+### Default fallback
+
+```json
+{
+  "country_context_weight": 0.50,
+  "project_exposure_weight": 0.25,
+  "sector_receptor_sensitivity_weight": 0.15,
+  "intervention_delivery_risk_weight": 0.10,
+  "instrument_structure_modifier_weight": 0.10,
+  "outcome_delivery_modifier_weight": 0.10,
+  "confidence_modifier_weight": 0.15
+}
+```
+
+### Hard infrastructure
+
+```json
+{
+  "country_context_weight": 0.40,
+  "project_exposure_weight": 0.32,
+  "sector_receptor_sensitivity_weight": 0.18,
+  "intervention_delivery_risk_weight": 0.10
+}
+```
+
+### Soft/social infrastructure
+
+```json
+{
+  "country_context_weight": 0.35,
+  "project_exposure_weight": 0.18,
+  "sector_receptor_sensitivity_weight": 0.27,
+  "intervention_delivery_risk_weight": 0.20
+}
+```
+
+### Agriculture / food systems
+
+```json
+{
+  "country_context_weight": 0.30,
+  "project_exposure_weight": 0.22,
+  "sector_receptor_sensitivity_weight": 0.28,
+  "intervention_delivery_risk_weight": 0.20
+}
+```
+
+### Ecosystems / natural capital
+
+```json
+{
+  "country_context_weight": 0.25,
+  "project_exposure_weight": 0.15,
+  "sector_receptor_sensitivity_weight": 0.35,
+  "intervention_delivery_risk_weight": 0.25
+}
+```
+
+### Governance / institutional
+
+```json
+{
+  "country_context_weight": 0.30,
+  "project_exposure_weight": 0.05,
+  "sector_receptor_sensitivity_weight": 0.30,
+  "intervention_delivery_risk_weight": 0.35
+}
+```
+
+### Disaster response / recovery
+
+```json
+{
+  "country_context_weight": 0.30,
+  "project_exposure_weight": 0.20,
+  "sector_receptor_sensitivity_weight": 0.20,
+  "intervention_delivery_risk_weight": 0.30
+}
+```
+
+### Programmatic / multi-sector
+
+```json
+{
+  "country_context_weight": 0.28,
+  "project_exposure_weight": 0.10,
+  "sector_receptor_sensitivity_weight": 0.30,
+  "intervention_delivery_risk_weight": 0.32
+}
+```
+
+### Private-sector productive investment
+
+```json
+{
+  "country_context_weight": 0.33,
+  "project_exposure_weight": 0.27,
+  "sector_receptor_sensitivity_weight": 0.20,
+  "intervention_delivery_risk_weight": 0.20
+}
+```
+
+---
+
+# 8. IMPLEMENT INSTRUMENT-SPECIFIC MODIFIER RULES
+
+Do not let instruments arbitrarily overwrite profiles. Use bounded and auditable modifiers.
+
+## 8.1 Loan modifiers
+
+Loans should:
+
+* increase the effect of low confidence
+* increase penalty for low implementation readiness
+* increase penalty for low insurability or poor asset resilience where relevant
+* support stricter decline logic
+
+Use bounded equivalent adjustments such as:
+
+* low confidence: +3 to +10
+* low readiness: +2 to +8
+
+## 8.2 Grant modifiers
+
+Grants should:
+
+* reduce automatic decline pressure from pure physical hazard where impact rationale is strong
+* increase importance of outcome delivery risk
+* increase importance of implementation capacity
+* increase importance of milestone readiness
+
+Use bounded adjustments such as:
+
+* weak theory of change: +4 to +10
+* weak implementation readiness: +4 to +10
+* strong impact rationale with strong controls: partial offset allowed
+
+## 8.3 Blended modifiers
+
+Blended should:
+
+* increase transition readiness importance
+* increase milestone importance
+* increase instrument structure quality importance
+* support outputs like `GRANT_FIRST`, `BLENDED_NOW`, `LOAN_READY_AFTER_VALIDATION`
+
+Bounded adjustments such as:
+
+* missing transition pathway: +4 to +10
+* weak concessional logic: +2 to +6
+* strong milestone structure: -2 to -6
+* strong validation plan: -2 to -5
+
+## 8.4 TA / Programmatic / Emergency modifiers
+
+Support lower exact-site dependency, but not weak monitoring logic.
+Higher focus on:
+
+* governance
+* readiness
+* implementation
+* monitoring
+* staged controls
+
+Store modifiers as auditable rule sets.
+
+---
+
+# 9. IMPLEMENT DECISION MATRICES BY INSTRUMENT
+
+Do not let one generic threshold control all instruments.
+
+## 9.1 Loan decision matrix
+
+Use logic like:
+
+* low final score + adequate confidence + acceptable readiness => `PROCEED`
+* moderate score or moderate confidence => `CONDITION`
+* high score or very weak readiness/confidence => `DECLINE`
+
+## 9.2 Grant decision matrix
+
+Use logic like:
+
+* low/moderate score + adequate delivery structure => `PROCEED`
+* high score but high strategic rationale + adequate controls => `PROCEED_WITH_CONTROLS`
+* weak baseline / weak design => `DEFER_PENDING_BASELINE`
+* weak design but fixable => `RESEQUENCE`
+* excessive risk without credible delivery path => `DO_NOT_FUND`
+
+## 9.3 Blended decision matrix
+
+Use logic like:
+
+* ready for debt with grant support => `BLENDED_NOW`
+* not debt-ready but de-riskable => `GRANT_FIRST`
+* needs more validation => `CONDITION`
+* no credible path to transition => `DO_NOT_PROCEED`
+
+Store decision matrix metadata structurally.
+
+---
+
+# 10. IMPLEMENT CALIBRATION GUARDRAILS
+
+Calibration must be constrained.
+
+## 10.1 Top-level weight guardrails
+
+* no top-level weight shifts more than ±0.10 from seeded family default without methodology review
+* no top-level layer below 0.05 or above 0.50 without explicit review
+* base layer weights must normalize to 1.00
+
+## 10.2 Subfactor guardrails
+
+* subfactor relevance stays between 0.00 and 1.00
+* changes >0.20 from default require a calibration note
+* if more than 5 subfactors materially change, status becomes `UNDER_REVIEW`
+
+## 10.3 Confidence guardrails
+
+* confidence adjustment may not exceed bounded equivalent, e.g. ±15 risk points without explicit approval
+* formula must be documented and inspectable
+
+---
+
+# 11. IMPLEMENT METHODOLOGY DEFENSE SYSTEM
+
+Create internal methodology defense capability.
+
+## 11.1 Build storage + UI for:
+
+* methodology defense records
+* weighting rationale records
+* assumptions
+* limitations
+* evidence notes
+* calibration notes
+* review history
+
+## 11.2 For each profile, show:
+
+* why this family needs distinct treatment
+* why the chosen weights are reasonable
+* what other families would be mis-specified by this profile
+* what evidence/expert logic supports current weights
+* what remains provisional
+* what validation cases are most relevant
+* what future data would improve calibration
+
+This is internal/committee-grade, not marketing language.
+
+---
+
+# 12. IMPLEMENT PROFILE COMPARISON ENGINE
+
+For any project or portfolio, support side-by-side comparison of:
+
+* default profile
+* active family-specific profile
+* selected alternative profile
+
+Show:
+
+* layer scores
+* final score
+* decision difference
+* capital mode difference
+* monitoring difference
+* top driver changes
+
+This is critical for methodology defense and memo generation.
+
+---
+
+# 13. IMPLEMENT CALIBRATION MEMO GENERATION INSIDE THE PLATFORM
+
+Build memo generation from actual system data.
+
+## 13.1 Required memo types
+
+* `Weighting Defense Memo`
+* `Calibration Review Memo`
+* `Portfolio Risk Methodology Memo`
+* `Sector Family Scoring Memo`
+* `Instrument Logic Memo`
+* `Grant/Blended Readiness Memo`
+
+## 13.2 Memo sections must include
+
+* purpose
+* scope
+* current methodology version
+* profiles reviewed
+* current weights
+* rationale
+* observed behavior from sample/demo/real projects
+* inconsistencies detected
+* sensitivity to assumptions
+* recommended adjustments
+* confidence in current model
+* next validation needs
+* approval/review notes
+
+## 13.3 Memo inputs
+
+Allow selection by:
+
+* methodology profile
+* project family
+* country/region
+* funder
+* portfolio
+* time period
+* validation cases
+
+## 13.4 Output
+
+Generate:
+
+* in-app memo view
+* markdown export
+* json export
+* DOCX-ready structured payload if practical
+
+Use rule-based grounded generation if needed. Do not use vague prose.
+
+---
+
+# 14. IMPLEMENT VALIDATION & CALIBRATION WORKBENCH
+
+## 14.1 Add tables/support for:
+
+* `validation_cases`
+* `validation_observations`
+* `methodology_reviews`
+* `memo_runs`
+* `profile_performance_snapshots`
+* `override_decisions`
+* `outcome_realizations`
+
+## 14.2 Support comparisons such as:
+
+* predicted vs observed project risk
+* predicted vs observed outcome delivery
+* default vs family-specific profile
+* capital mode recommendation vs analyst override
+* monitoring recommendation vs actual field need
+
+## 14.3 Override governance
+
+If a user overrides:
+
+* decision
+* capital mode
+* monitoring level
+* transition recommendation
+
+Store:
+
+* reason
+* reviewer
+* timestamp
+* mitigation rationale
+* later correctness outcome if known
+
+---
+
+# 15. IMPLEMENT FUNDER / FRAMEWORK EXPANSION
+
+Expand beyond generic lender framing.
+
+Support meaningful funder logic for:
+
+* IDB
+* IDB Invest
+* CDB
+* World Bank
+* GCF
+* GEF
+* Adaptation Fund
+* EIB
+* Equator Principles
+
+Grant and climate-fund logic must support:
+
+* safeguards
+* reporting style
+* results framework concepts
+* readiness / baseline expectations
+* disbursement controls
+* environmental and social permissibility cues
+
+Do not just relabel lender compliance as grant compliance.
+
+---
+
+# 16. EXPAND ESL SERVICE CATEGORIES
+
+Support at minimum:
+
+* ESIA / EIA
+* SEA
+* environmental monitoring
+* laboratory testing and validation
+* climate risk and resilience
+* biodiversity / habitat assessment
+* watershed / hydrology
+* contamination and remediation
+* stakeholder engagement / social impact
+* resettlement / livelihood restoration support
+* governance / institutional systems
+* baseline and monitoring system design
+* audit / verification
+* emergency environmental response
+* transition validation / readiness assessment
+
+Automated service scope must reflect family and instrument context.
+
+---
+
+# 17. DATA / SOURCE MATURITY IMPROVEMENTS
+
+Source health must distinguish:
+
+* live
+* curated
+* hybrid
+* manual
+* degraded
+* pending
+
+Support architecture and visibility for:
+
+* ThinkHazard
+* ND-GAIN
+* WB Climate / CCKP
+
+Confidence must reflect:
+
+* source mode
+* spatial precision
+* recency
+* fallback usage
+* country coverage depth
+
+---
+
+# 18. PORTFOLIO VIEW MUST BECOME MULTI-INSTRUMENT
+
+Add distinct portfolio metrics for:
+
+## Loans
+
+* average PERS
+* pricing adjustment
+* capital at risk
+* monitoring burden
+* proceed/condition/decline counts
+
+## Grants
+
+* outcome delivery risk
+* implementation readiness
+* disbursement readiness
+* beneficiary concentration
+* monitoring load
+* impact exposure by country/family
+
+## Blended
+
+* concessionality distribution
+* transition readiness
+* grant absorption role
+* debt unlock conditions
+* structure mix
+* pathway pipeline
+
+Allow filters by:
+
+* instrument
+* sector family
+* country
+* funder
+* monitoring intensity
+* decision status
+* transition readiness
+
+---
+
+# 19. REQUIRED UI / API ADDITIONS
+
+## UI
+
+Add or upgrade:
+
+* Methodology Defense
+* Calibration Workbench
+* Memo Generator
+* Outcomes / Theory of Change
+* Disbursement & Transition
+* Funder Logic
+* Override Review / Governance
+* Methodology Profile Detail
+* Profile Comparison
+* Profile History / Version View
+
+## API
+
+Add or upgrade:
+
+* methodology profiles
+* methodology defense
+* memo generation
+* outcomes framework
+* disbursement milestones
+* transition pathways
+* override logging
+* family profile comparison
+* calibration review endpoints
+* profile performance snapshots
+
+Document routes in `/docs/API.md`.
+
+---
+
+# 20. REQUIRED DOCUMENTATION
+
+Generate or update:
+
+* `/docs/INSTRUMENT_AGNOSTIC_MODEL.md`
+* `/docs/SECTOR_FAMILY_ARCHITECTURE.md`
+* `/docs/PERS_LAYERED_MODEL.md`
+* `/docs/WEIGHTING_PROFILES.md`
+* `/docs/WEIGHTING_PROFILE_DEFAULTS.md`
+* `/docs/FAMILY_SUBFACTOR_RELEVANCE.md`
+* `/docs/INSTRUMENT_MODIFIER_RULES.md`
+* `/docs/DECISION_MATRICES.md`
+* `/docs/CALIBRATION_GUARDRAILS.md`
+* `/docs/METHODOLOGY_DEFENSE.md`
+* `/docs/CALIBRATION_MEMO_ENGINE.md`
+* `/docs/OUTCOME_DELIVERY_FRAMEWORK.md`
+* `/docs/DISBURSEMENT_TRANSITION_MODEL.md`
+* `/docs/FUNDER_ALIGNMENT_EXPANSION.md`
+* `/docs/PORTFOLIO_MULTI_INSTRUMENT_METRICS.md`
+* `/docs/PROFILE_COMPARISON_ENGINE.md`
+* `/docs/MEMO_RULES.md`
+
+These docs must clearly distinguish:
+
+* what is fully implemented
+* what is seeded
+* what is provisional
+* what remains to be validated
+
+---
+
+# 21. DEMO / SEED EXPECTATIONS
+
+Seed enough demo data to prove:
+
+* infrastructure loan
+* ecosystem grant
+* governance grant
+* disaster recovery grant
+* blended agriculture transition
+* blended resilience program
+* technical assistance governance project
+* private-sector productive investment
+
+Seed methodology profiles showing:
+
+* default universal profile
+* infrastructure profile
+* ecosystem profile
+* governance profile
+* programmatic profile
+
+Seed at minimum:
+
+* 10 cross-family demo projects
+* 5 memo runs
+* 5 override examples
+* 6 validation observations
+* milestone-driven examples
+* one grant that is high-risk but still recommended as `PROCEED_WITH_CONTROLS`
+* one blended project with clear `GRANT -> LOAN` transition logic
+* one case where default profile and family profile produce materially different decisions
+
+---
+
+# 22. ACCEPTANCE CRITERIA
+
+The work is only complete when:
+
+1. platform supports family-specific weighting profiles, not just one universal PERS logic
+2. subfactor relevance by family is implemented structurally
+3. loan, grant, and blended logic are materially distinct
+4. decision matrices differ by instrument
+5. projects can capture outcomes, beneficiaries, milestones, and theory of change
+6. disbursement readiness and transition readiness are computed and shown
+7. methodology defense records are stored and viewable
+8. calibration memos are generated from real system data
+9. profile comparison works at project and portfolio level
+10. override governance is auditable
+11. portfolio views are multi-instrument, not debt-only
+12. funder alignment extends meaningfully into grant/blended logic
+13. sector layering is truly implemented in schema, scoring, UI, and explainability
+14. documentation reflects actual implementation
+15. app runs end-to-end in Replit
+
+---
+
+# 23. EXECUTION ORDER
+
+Execute in this order without stopping:
+
+1. inspect existing schema and methodology code
+2. add schema for outcomes, profiles, memos, milestones, transitions, overrides, validation
+3. seed family default profiles and subfactor relevance
+4. refactor scoring engine into layered architecture
+5. implement instrument-specific modifiers and decision matrices
+6. implement outcomes framework
+7. implement disbursement/transition logic
+8. implement methodology defense storage and UI
+9. implement profile comparison engine
+10. implement memo generation engine
+11. implement calibration workbench
+12. upgrade funder logic
+13. upgrade portfolio metrics
+14. seed demo examples and memo runs
+15. update docs
+16. run and fix until usable
+
+---
+
+# 24. FINAL INSTRUCTION
+
+Build this now.
+
+Do not leave the platform as:
+
+* a loan tool with grant labels
+* a one-weighting-fits-all engine
+* a sample portfolio without real methodology defense
+* a memo generator without real profile data
+* a scoring engine without layered architecture
+* a grant/blended module without real outcome and transition logic
+
+At the end output:
+
+* what was completed
+* what was partially completed
+* files changed
+* commands added
+* seeded profiles and scenarios
+* remaining gaps
+* assumptions made
+
+---
+
+One caution: this master prompt is the right one for architecture, but after Replit runs it, you’ll still want a **review pass prompt** that forces it to find where it cut corners and where logic is still superficial.

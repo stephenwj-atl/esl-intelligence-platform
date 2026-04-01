@@ -72,3 +72,9 @@ id = "wO4GW4OOMvmpdTSQ9vbmI"
 uri = "file://docs/ESL-Intelligence-Platform-Complete.md"
 type = "text"
 title = "ESL Intelligence Platform - Complete Overview"
+
+[[outputs]]
+id = "BOwwI__DwRzUIFB3S1ata"
+uri = "file://docs/VNEXT-GAP-ANALYSIS.md"
+type = "text"
+title = "VNext Master Prompt — Gap Analysis"
