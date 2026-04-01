@@ -1,0 +1,399 @@
+This is a good update. Replit got the core jump done.
+
+My read:
+
+What is genuinely done
+
+They appear to have built the important structural pieces:
+	•	PERS exists and is being calculated
+	•	project classification is expanded
+	•	capital mode engine exists
+	•	monitoring intensity exists
+	•	SEA / ESIA logic is wired into scoring
+	•	methodology page and project UI were updated
+	•	new pipelines were added
+	•	demo portfolio is seeded
+
+That means the platform is no longer just a country-risk concept. It is now a usable project assessment system.
+
+What is still weak
+
+The biggest issue is Gap 1.
+
+If CPI and EM-DAT are in the database but not actually feeding project creation, then the system is still partly performing with placeholder sensitivity logic. That matters because it means:
+	•	country differentiation is muted
+	•	governance-sensitive projects are under-modeled
+	•	disaster-history-sensitive projects are under-modeled
+	•	the new pipelines help optics, but not yet decision quality
+
+That is the first thing to fix.
+
+The second most important issue is Gap 5.
+
+If PERS does not recalculate after data refresh, then you do not yet have a living intelligence platform. You have a scoring engine that runs once. For a real DFI-style system, updated source data must propagate into project risk.
+
+The third important issue is Gap 6.
+
+If the portfolio layer still aggregates the old score, leadership will see one logic in the project pages and another logic in the command center. That creates strategic confusion fast.
+
+Priority order
+
+This is the order I would push now:
+	1.	Wire CPI / EM-DAT / INFORM into live PERS inputs
+	2.	Add automatic PERS recalculation on data refresh
+	3.	Convert portfolio views to aggregate PERS, capital mode, and monitoring intensity
+	4.	Backfill legacy projects
+	5.	Fix schema drift
+	6.	Replace reference-data pipelines with live endpoints where possible
+
+One thing I would tighten conceptually
+
+The brief says:
+
+Project Overlay — Sector-specific complexity, adjusted by SEA and ESIA mitigation
+
+That wording is a bit muddy.
+
+Overlay should really mean location and project-context exposure.
+Sector-specific complexity belongs more naturally in Sensitivity or Intervention Risk.
+
+Not fatal, but later you may want to clean the definitions so each component is clearly distinct:
+	•	CERI = country baseline
+	•	Overlay = project/site/location modifiers
+	•	Sensitivity = sector / receptor / governance / disaster-history susceptibility
+	•	Intervention Risk = delivery-model risk
+
+That makes the model easier to defend.
+
+Bottom line
+
+The build is real.
+But it is not yet fully trustworthy for institutional use until Gap 1, 5, and 6 are fixed.
+
+Here is the next-step Replit prompt I would use now.
+
+⸻
+
+REPLIT PROMPT — PERS WIRING, RECALCULATION, PORTFOLIO FIXES
+
+You are working inside the existing ESL Intelligence Platform codebase. Do not redesign the system. Do not return a plan. Implement the highest-priority fixes immediately.
+
+The PERS upgrade is already deployed in development. Your task is to make the system operationally correct by fixing the known gaps below.
+
+Mission
+
+Implement the next hardening pass so that:
+	1.	PERS uses real country-specific CPI / EM-DAT / INFORM values from regional_data
+	2.	PERS automatically recalculates when underlying source data changes
+	3.	portfolio and dashboard metrics aggregate PERS rather than the legacy risk score
+	4.	legacy projects are backfilled into the PERS framework
+	5.	Drizzle schema is aligned to actual PostgreSQL types
+	6.	pipeline/source status clearly distinguishes reference-data vs live-fed pipelines
+
+Do not stop at partial scaffolding. Build the full end-to-end flow.
+
+⸻
+
+Gap 1 — Wire regional_data into live PERS calculation
+
+Current issue
+
+The PERS engine accepts governance quality and disaster loss history inputs, but project creation currently falls back to hardcoded defaults:
+	•	governance = 50
+	•	disaster history = 40
+
+The regional_data table is already populated by:
+	•	INFORM Risk Index
+	•	Transparency International CPI
+	•	EM-DAT
+
+But the /api/projects flow is not querying and passing the values into calculatePERS().
+
+Required fix
+
+Update the project creation and project reassessment flow so that, at assessment time, the backend:
+	1.	identifies the project country
+	2.	queries regional_data for the latest values relevant to that country
+	3.	extracts:
+	•	CPI / governance indicator
+	•	EM-DAT disaster loss / disaster history indicator
+	•	INFORM composite / coping-vulnerability indicator if available
+	4.	normalizes them if necessary
+	5.	passes them into calculatePERS() as real parameters rather than defaults
+
+Implementation requirements
+	•	no hardcoded fallback unless no country data exists
+	•	if fallback is used, log it and expose it in explainability
+	•	persist the source values used in the assessment record
+	•	store provenance for each sensitivity input:
+	•	source name
+	•	dataset key
+	•	timestamp
+	•	fallback status
+
+Acceptance
+
+A Barbados project and a Guyana project should no longer receive identical sensitivity sub-scores unless the underlying country values truly match.
+
+⸻
+
+Gap 2 — Backfill legacy projects into PERS
+
+Current issue
+
+Legacy projects predate the PERS upgrade and do not have:
+	•	PERS
+	•	capital mode
+	•	monitoring intensity
+	•	classification
+
+Required fix
+
+Build a backfill script that:
+	1.	finds projects without PERS assessments
+	2.	attempts to infer category/classification from existing project fields
+	3.	applies safe defaults where inference is weak
+	4.	runs the current PERS pipeline
+	5.	stores results in the same assessment structures used by new projects
+	6.	logs confidence of classification inference
+
+Requirements
+	•	create a dry-run mode
+	•	create a report file summarizing:
+	•	projects updated
+	•	projects skipped
+	•	projects requiring manual classification
+	•	do not overwrite valid existing PERS assessments unless explicitly requested
+
+Add command
+
+Create a runnable command like:
+pnpm --filter @workspace/api-server run pers:backfill
+
+⸻
+
+Gap 3 — Align Drizzle schema with actual PostgreSQL schema
+
+Current issue
+
+Drizzle types and actual DB types diverge. This risks bad typings and future destructive migrations.
+
+Examples noted:
+	•	investmentAmount text vs real
+	•	decisionConditions text vs jsonb
+
+Required fix
+	1.	inspect actual PostgreSQL schema
+	2.	update Drizzle schema definitions to match reality
+	3.	create a schema alignment report
+	4.	validate with a safe migration or dry-run push
+	5.	do not introduce destructive changes
+
+Deliverables
+	•	aligned schema files
+	•	/docs/SCHEMA_ALIGNMENT_REPORT.md
+
+⸻
+
+Gap 4 — Distinguish reference-data vs live pipelines
+
+Current issue
+
+INFORM / CPI / EM-DAT are implemented as reference-data pipelines, but this is not made sufficiently explicit in system status.
+
+Required fix
+
+Enhance source metadata and source-health views so each source clearly shows:
+	•	ingestion mode:
+	•	LIVE_API
+	•	REFERENCE_DATA
+	•	HYBRID
+	•	MANUAL_IMPORT
+	•	last refresh timestamp
+	•	freshness status
+	•	whether the source is actively used in scoring
+	•	whether the source is currently using seeded/reference values
+	•	notes on upgrade path to live ingestion
+
+Update source-health API and UI accordingly.
+
+Acceptance
+
+A user should be able to see immediately that CPI / INFORM / EM-DAT are:
+	•	present
+	•	feeding assessments
+	•	currently reference-backed or live-backed
+
+⸻
+
+Gap 5 — Automatic PERS recalculation when data refreshes
+
+Current issue
+
+When pipeline data changes, existing project PERS scores do not recalculate.
+
+Required fix
+
+Implement a recalculation mechanism.
+
+Required behavior
+
+When relevant source data updates, the system must:
+	1.	identify which countries were affected
+	2.	identify active projects in those countries
+	3.	recalculate PERS for those projects
+	4.	store both old and new values
+	5.	write change records into risk_history or equivalent
+	6.	avoid duplicate recalculations for the same ingestion batch
+
+Architecture
+
+Implement one of:
+	•	post-ingestion hook
+	•	job queue
+	•	scheduled reconciliation worker
+
+Prefer a robust pattern that supports future scaling.
+
+Persist change tracking
+
+For each recalculation store:
+	•	prior PERS
+	•	new PERS
+	•	delta
+	•	changed inputs
+	•	triggering source(s)
+	•	recalculation timestamp
+
+Acceptance
+
+If CPI or EM-DAT changes for a country, affected projects should receive updated assessments without manual project recreation.
+
+⸻
+
+Gap 6 — Portfolio and dashboard metrics must use PERS
+
+Current issue
+
+The command center still aggregates the old risk score.
+
+Required fix
+
+Update dashboard and portfolio APIs/UI so summaries use PERS-aware logic.
+
+Required portfolio metrics
+
+Add or update:
+	•	average PERS
+	•	median PERS
+	•	capital mode distribution
+	•	monitoring intensity distribution
+	•	proceed / condition / decline counts
+	•	country risk distribution based on active project PERS
+	•	top high-risk projects
+	•	top low-confidence projects
+
+UI requirements
+
+Update portfolio views to show:
+	•	PERS-based allocation
+	•	legacy score deprecation or removal
+	•	filters by:
+	•	capital mode
+	•	monitoring intensity
+	•	category
+	•	country
+	•	lender framework
+
+Acceptance
+
+The portfolio view must match the logic visible in project detail pages.
+
+⸻
+
+Explainability hardening
+
+For all new or recalculated assessments, ensure explainability includes:
+	•	exact country inputs used from regional_data
+	•	whether sensitivity used live/reference/fallback values
+	•	why capital mode was selected
+	•	why monitoring intensity was selected
+	•	which change in underlying data caused reassessment, when relevant
+
+⸻
+
+Files / areas likely involved
+
+You will likely need to update or extend files in areas such as:
+	•	artifacts/api-server/src/routes/projects.ts
+	•	artifacts/api-server/src/lib/pers-engine.ts
+	•	artifacts/api-server/src/services/data-ingestion/*
+	•	portfolio/dashboard API routes and services
+	•	project assessment persistence logic
+	•	source health APIs
+	•	lib/db/src/schema/*
+	•	scripts for reassessment/backfill
+
+Do not assume these exact paths are the only ones; inspect the actual codebase first.
+
+⸻
+
+New commands to add
+
+Add commands for:
+
+pnpm --filter @workspace/api-server run pers:backfill
+pnpm --filter @workspace/api-server run pers:recalculate-active
+pnpm --filter @workspace/api-server run schema:check-alignment
+
+If naming must vary slightly, keep it clean and documented.
+
+⸻
+
+Documentation to create/update
+
+Create or update:
+	•	/docs/PERS_WIRING_FIXES.md
+	•	/docs/SCHEMA_ALIGNMENT_REPORT.md
+	•	/docs/RECALCULATION_FLOW.md
+	•	/docs/PORTFOLIO_PERS_METRICS.md
+	•	/docs/SOURCE_MODES.md
+
+Document:
+	•	what was fixed
+	•	what now feeds live scoring
+	•	what remains reference-backed
+	•	how recalculation works
+	•	how legacy projects were handled
+
+⸻
+
+Acceptance criteria
+
+The work is only complete when all of the following are true:
+	1.	project creation uses actual country-specific CPI / EM-DAT / INFORM values where available
+	2.	explainability shows those values and their provenance
+	3.	legacy projects can be backfilled through a command
+	4.	schema definitions match the database
+	5.	source health clearly distinguishes live vs reference-backed pipelines
+	6.	pipeline refreshes can trigger PERS recalculation for active projects
+	7.	portfolio metrics aggregate PERS, capital mode, and monitoring intensity rather than the legacy score
+	8.	documentation reflects the implementation
+	9.	all changes run successfully in the Replit development environment
+
+⸻
+
+Final instruction
+
+Implement the fixes now. Do not stop at analysis. Do not leave the platform in a mixed old-score / new-score state.
+
+At the end, output:
+	•	completed fixes
+	•	files changed
+	•	commands added
+	•	remaining gaps
+	•	any assumptions made
+
+⸻
+
+If you want, I can do the next prompt after this one for the thing that matters most commercially: DFI-grade weighting defense and calibration memo generation inside the platform.
