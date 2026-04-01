@@ -17,6 +17,7 @@ import {
   type InterventionType,
   type LenderFramework,
 } from "../lib/pers-engine";
+import { lookupCountryPERSInputs } from "../lib/country-data-lookup";
 
 const router: IRouter = Router();
 
@@ -108,12 +109,18 @@ router.post("/projects", requireRole("Investment Officer", "Admin"), async (req,
   const category = (input.projectCategory as ProjectCategory) ?? inferCategory(input.projectType);
   const intervention = (input.interventionType as InterventionType) ?? inferInterventionType(category);
 
+  const country = input.country ?? "Jamaica";
+  const countryInputs = await lookupCountryPERSInputs(country);
+
   const persBreakdown = calculatePERS(
     analysis.riskScores,
     intervention,
     input.projectType,
     hasSEA,
     hasESIA,
+    countryInputs.governanceScore,
+    countryInputs.disasterLossHistory,
+    countryInputs.provenance,
   );
 
   const interventionProfile = buildInterventionRiskProfile(intervention, analysis.riskScores);
@@ -200,7 +207,8 @@ router.get("/projects/:id/pers-assessment", async (req, res) => {
     overallRisk: p.overallRisk,
   };
 
-  const persBreakdown = calculatePERS(riskScores, intervention, p.projectType, p.hasSEA, p.hasESIA);
+  const countryInputs = await lookupCountryPERSInputs(p.country);
+  const persBreakdown = calculatePERS(riskScores, intervention, p.projectType, p.hasSEA, p.hasESIA, countryInputs.governanceScore, countryInputs.disasterLossHistory, countryInputs.provenance);
   const interventionProfile = buildInterventionRiskProfile(intervention, riskScores);
   const capitalMode = p.capitalMode ?? recommendCapitalMode(persBreakdown.persScore, p.dataConfidence, intervention);
   const monitoring = determineMonitoringIntensity(persBreakdown.persScore, p.dataConfidence, intervention, capitalMode);

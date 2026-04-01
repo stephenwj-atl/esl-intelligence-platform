@@ -266,6 +266,57 @@ export default function Dashboard() {
               </div>
             </AnimatedContainer>
 
+            {summary?.pers && summary.pers.persScored > 0 && (
+              <AnimatedContainer delay={0.115}>
+                <Card className="p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">PERS Portfolio Intelligence</h3>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium mb-1">Avg PERS Score</div>
+                      <div className={`text-2xl font-mono font-bold ${summary.pers.avgPersScore < 40 ? "text-green-400" : summary.pers.avgPersScore <= 70 ? "text-amber-400" : "text-red-400"}`}>
+                        {summary.pers.avgPersScore.toFixed(1)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium mb-1">PERS Coverage</div>
+                      <div className="text-2xl font-mono font-bold text-foreground">{summary.pers.persScored}/{summary.pers.persScored + summary.pers.persUnscored}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium mb-1">PERS Decision Split</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-mono"><span className="text-green-400">{summary.pers.persRiskBuckets.proceed}</span> P</span>
+                        <span className="text-xs font-mono"><span className="text-amber-400">{summary.pers.persRiskBuckets.condition}</span> C</span>
+                        <span className="text-xs font-mono"><span className="text-red-400">{summary.pers.persRiskBuckets.decline}</span> D</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium mb-1">Capital Mode Mix</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        {Object.entries(summary.pers.capitalModeDistribution as Record<string, number>).filter(([k]) => k !== "Unknown").map(([mode, count]) => (
+                          <span key={mode} className="text-xs font-mono text-muted-foreground">
+                            <span className="text-foreground">{count as number}</span> {mode}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground font-medium mb-1">Monitoring</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        {Object.entries(summary.pers.monitoringDistribution as Record<string, number>).filter(([k]) => k !== "Unknown").map(([level, count]) => (
+                          <span key={level} className="text-xs font-mono text-muted-foreground">
+                            <span className="text-foreground">{count as number}</span> {level.charAt(0)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </AnimatedContainer>
+            )}
+
             {projects && projects.length > 0 && (
               <AnimatedContainer delay={0.12}>
                 <Card className="p-5">

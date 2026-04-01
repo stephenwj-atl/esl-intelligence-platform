@@ -225,9 +225,8 @@ export const ndGainAdapter: SourceAdapter = {
     await upsertFreshness({
       pipelineName: PIPELINE_NAME,
       sourceKey: SOURCE_KEY,
-      sourceUrl: "https://gain.nd.edu",
-      lastSuccessAt: status !== "failed" ? new Date() : undefined,
-      recordCount: recordsWritten,
+      status,
+      recordsLoaded: recordsWritten,
       confidence,
     });
 

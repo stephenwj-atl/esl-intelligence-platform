@@ -129,9 +129,8 @@ export const thinkhazardAdapter: SourceAdapter = {
     await upsertFreshness({
       pipelineName: PIPELINE_NAME,
       sourceKey: SOURCE_KEY,
-      sourceUrl: "https://thinkhazard.org",
-      lastSuccessAt: status !== "failed" ? new Date() : undefined,
-      recordCount: recordsWritten,
+      status,
+      recordsLoaded: recordsWritten,
       confidence,
     });
 

@@ -19,6 +19,8 @@ async function buildAll() {
       path.resolve(artifactDir, "src/index.ts"),
       path.resolve(artifactDir, "src/scripts/run-ingestion.ts"),
       path.resolve(artifactDir, "src/scripts/seed-demo-projects.ts"),
+      path.resolve(artifactDir, "src/scripts/pers-recalculate.ts"),
+      path.resolve(artifactDir, "src/scripts/pers-backfill.ts"),
     ],
     platform: "node",
     bundle: true,

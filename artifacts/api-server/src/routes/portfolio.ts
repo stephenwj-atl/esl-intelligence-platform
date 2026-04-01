@@ -20,6 +20,7 @@ router.get("/portfolio/summary", async (_req, res) => {
       riskDistribution: [],
       capitalByRiskLevel: { low: 0, medium: 0, high: 0 },
       alerts: [],
+      pers: { avgPersScore: 0, persScored: 0, persUnscored: 0, capitalModeDistribution: {}, monitoringDistribution: {}, persRiskBuckets: { proceed: 0, condition: 0, decline: 0 } },
     });
     return;
   }
@@ -80,6 +81,27 @@ router.get("/portfolio/summary", async (_req, res) => {
     };
   });
 
+  const persScored = projects.filter(p => p.persScore != null);
+  const persUnscored = projects.length - persScored.length;
+  const avgPersScore = persScored.length > 0
+    ? Math.round((persScored.reduce((s, p) => s + (p.persScore ?? 0), 0) / persScored.length) * 10) / 10
+    : 0;
+
+  const capitalModeDistribution: Record<string, number> = {};
+  const monitoringDistribution: Record<string, number> = {};
+  for (const p of projects) {
+    const cm = p.capitalMode ?? "Unknown";
+    capitalModeDistribution[cm] = (capitalModeDistribution[cm] ?? 0) + 1;
+    const mi = p.monitoringIntensity ?? "Unknown";
+    monitoringDistribution[mi] = (monitoringDistribution[mi] ?? 0) + 1;
+  }
+
+  const persRiskBuckets = {
+    proceed: persScored.filter(p => (p.persScore ?? 0) < 40).length,
+    condition: persScored.filter(p => (p.persScore ?? 0) >= 40 && (p.persScore ?? 0) <= 70).length,
+    decline: persScored.filter(p => (p.persScore ?? 0) > 70).length,
+  };
+
   res.json({
     totalCapital: Math.round(totalCapital * 10) / 10,
     avgRisk,
@@ -92,6 +114,14 @@ router.get("/portfolio/summary", async (_req, res) => {
     riskDistribution,
     capitalByRiskLevel,
     alerts,
+    pers: {
+      avgPersScore,
+      persScored: persScored.length,
+      persUnscored,
+      capitalModeDistribution,
+      monitoringDistribution,
+      persRiskBuckets,
+    },
   });
 });
 

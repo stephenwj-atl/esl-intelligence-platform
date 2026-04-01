@@ -7,9 +7,11 @@ export async function upsertFreshness(params: {
   confidence: number;
   recordsLoaded: number;
   errorMessage?: string;
+  ingestionMode?: "live" | "curated" | "hybrid";
 }) {
   const now = new Date();
   const isSuccess = params.status !== "failed";
+  const mode = params.ingestionMode ?? "curated";
 
   await db.insert(dataSourceFreshnessTable).values({
     sourceKey: params.sourceKey,
@@ -20,6 +22,7 @@ export async function upsertFreshness(params: {
     confidence: params.confidence,
     recordsLoaded: params.recordsLoaded,
     errorMessage: params.errorMessage,
+    ingestionMode: mode,
   }).onConflictDoUpdate({
     target: dataSourceFreshnessTable.sourceKey,
     set: {
@@ -29,6 +32,7 @@ export async function upsertFreshness(params: {
       confidence: params.confidence,
       recordsLoaded: params.recordsLoaded,
       errorMessage: params.errorMessage ?? null,
+      ingestionMode: mode,
     },
   });
 }

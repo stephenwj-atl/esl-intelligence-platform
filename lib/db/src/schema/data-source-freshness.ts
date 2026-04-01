@@ -11,4 +11,5 @@ export const dataSourceFreshnessTable = pgTable("data_source_freshness", {
   recordsLoaded: integer("records_loaded").notNull().default(0),
   errorMessage: text("error_message"),
   metadataJson: text("metadata_json"),
+  ingestionMode: text("ingestion_mode").notNull().default("curated"),
 });

@@ -17,7 +17,6 @@ for (const [country, info] of Object.entries(CARIBBEAN_COUNTRIES)) {
 }
 
 interface DisasterRecord {
-  country: string;
   totalEvents: number;
   totalDeaths: number;
   totalAffected: number;
@@ -219,10 +218,10 @@ export const emDatAdapter: SourceAdapter = {
     await upsertFreshness({
       pipelineName: PIPELINE_NAME,
       sourceKey: SOURCE_KEY,
-      sourceUrl: "https://www.emdat.be",
-      lastSuccessAt: status !== "failed" ? new Date() : undefined,
-      recordCount: recordsWritten,
+      status,
+      recordsLoaded: recordsWritten,
       confidence,
+      ingestionMode: "curated",
     });
 
     await db.update(ingestionRunsTable)

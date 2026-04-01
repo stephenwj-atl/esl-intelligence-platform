@@ -124,6 +124,12 @@ function clamp(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val));
 }
 
+export interface SensitivityProvenance {
+  governance: { source: string; datasetKey: string; value: number | null; fallback: boolean; timestamp: string };
+  disasterHistory: { source: string; datasetKey: string; value: number | null; fallback: boolean; timestamp: string };
+  informRisk: { source: string; datasetKey: string; value: number | null; fallback: boolean; timestamp: string };
+}
+
 export interface PERSBreakdown {
   ceriScore: number;
   projectOverlay: number;
@@ -132,6 +138,12 @@ export interface PERSBreakdown {
   persScore: number;
   weights: { ceri: number; project: number; sensitivity: number; intervention: number };
   explainability: string[];
+  sensitivityInputs?: {
+    governanceScore: number;
+    disasterLossHistory: number;
+    usedFallback: boolean;
+    provenance?: SensitivityProvenance;
+  };
 }
 
 export interface InterventionRiskProfile {
@@ -159,6 +171,7 @@ export function calculatePERS(
   hasESIA: boolean,
   governanceScore?: number,
   disasterLossHistory?: number,
+  provenance?: SensitivityProvenance,
 ): PERSBreakdown {
   const ceriScore = riskScores.overallRisk;
 
@@ -180,7 +193,11 @@ export function calculatePERS(
     0, 100
   );
 
-  const explainability = buildExplainability(ceriScore, projectOverlay, sensitivityScore, interventionRiskScore, hasSEA, hasESIA);
+  const govUsed = governanceScore ?? 50;
+  const disasterUsed = disasterLossHistory ?? 40;
+  const usedFallback = governanceScore === undefined || disasterLossHistory === undefined;
+
+  const explainability = buildExplainability(ceriScore, projectOverlay, sensitivityScore, interventionRiskScore, hasSEA, hasESIA, govUsed, disasterUsed, usedFallback, provenance);
 
   return {
     ceriScore: Math.round(ceriScore * 10) / 10,
@@ -190,6 +207,12 @@ export function calculatePERS(
     persScore: Math.round(persScore * 10) / 10,
     weights: { ceri: 0.50, project: 0.25, sensitivity: 0.15, intervention: 0.10 },
     explainability,
+    sensitivityInputs: {
+      governanceScore: govUsed,
+      disasterLossHistory: disasterUsed,
+      usedFallback,
+      provenance,
+    },
   };
 }
 
@@ -434,6 +457,10 @@ function buildExplainability(
   interventionRisk: number,
   hasSEA: boolean,
   hasESIA: boolean,
+  govUsed: number,
+  disasterUsed: number,
+  usedFallback: boolean,
+  provenance?: SensitivityProvenance,
 ): string[] {
   const parts: string[] = [];
 
@@ -448,7 +475,13 @@ function buildExplainability(
     parts.push("ESIA completion applies 0.90× mitigation factor to project overlay, confirming environmental baseline assessment.");
   }
 
-  parts.push(`Sensitivity contributes ${(sensitivity * 0.15).toFixed(1)} points (15% weight) — human exposure, governance quality, and disaster history.`);
+  const govSource = provenance?.governance.fallback ? "fallback default" : `live data (${provenance?.governance.source})`;
+  const disasterSource = provenance?.disasterHistory.fallback ? "fallback default" : `live data (${provenance?.disasterHistory.source})`;
+  parts.push(`Sensitivity contributes ${(sensitivity * 0.15).toFixed(1)} points (15% weight) — governance quality ${govUsed}/100 [${govSource}], disaster history ${disasterUsed}/100 [${disasterSource}].`);
+
+  if (usedFallback && !provenance) {
+    parts.push("WARNING: Sensitivity used hardcoded fallback values. Country-specific data not available.");
+  }
 
   parts.push(`Intervention Risk contributes ${(interventionRisk * 0.10).toFixed(1)} points (10% weight) — delivery risk specific to intervention modality.`);
 

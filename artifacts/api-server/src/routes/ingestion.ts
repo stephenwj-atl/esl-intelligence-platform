@@ -45,8 +45,13 @@ router.get("/ingestion/status", async (_req, res) => {
   const recentRuns = await db.select().from(ingestionRunsTable).orderBy(desc(ingestionRunsTable.startedAt)).limit(20);
   const schedule = await getScheduleStatus();
 
+  const sourcesWithMode = freshness.map(s => ({
+    ...s,
+    ingestionMode: s.ingestionMode ?? "curated",
+  }));
+
   res.json({
-    sources: freshness,
+    sources: sourcesWithMode,
     recentRuns,
     schedule,
     availablePipelines: Object.keys(adapters),

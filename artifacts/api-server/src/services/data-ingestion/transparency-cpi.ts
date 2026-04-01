@@ -81,6 +81,7 @@ export const transparencyCpiAdapter: SourceAdapter = {
     let recordsWritten = 0;
     const countriesAffected = new Set<string>();
     const errors: string[] = [];
+    let liveCount = 0;
 
     try {
       const liveData = await tryFetchLiveCPI();
@@ -90,6 +91,7 @@ export const transparencyCpiAdapter: SourceAdapter = {
         const live = liveData.get(iso3);
         if (live && live.score > 0) {
           useData.set(iso3, { ...live, year: new Date().getFullYear() });
+          liveCount++;
         } else {
           useData.set(iso3, fallback);
         }
@@ -125,13 +127,16 @@ export const transparencyCpiAdapter: SourceAdapter = {
       ? roundTo((affectedArr.length / totalCountries) * CONFIDENCE_THRESHOLDS.HIGH_RESOLUTION, 1)
       : 0;
 
+    const ingestionMode = liveCount === 0 ? "curated" as const :
+      liveCount >= Object.keys(CPI_SCORES).length ? "live" as const : "hybrid" as const;
+
     await upsertFreshness({
       pipelineName: PIPELINE_NAME,
       sourceKey: SOURCE_KEY,
-      sourceUrl: "https://www.transparency.org/cpi",
-      lastSuccessAt: status !== "failed" ? new Date() : undefined,
-      recordCount: recordsWritten,
+      status,
+      recordsLoaded: recordsWritten,
       confidence,
+      ingestionMode,
     });
 
     await db.update(ingestionRunsTable)

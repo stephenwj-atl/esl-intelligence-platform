@@ -9,7 +9,9 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "ingestion:run-all": "pnpm run build && node --enable-source-maps ./dist/scripts/run-ingestion.mjs",
-    "seed:demo": "pnpm run build && node --enable-source-maps ./dist/scripts/seed-demo-projects.mjs"
+    "seed:demo": "pnpm run build && node --enable-source-maps ./dist/scripts/seed-demo-projects.mjs",
+    "pers:recalculate": "pnpm run build && node --enable-source-maps ./dist/scripts/pers-recalculate.mjs",
+    "pers:backfill": "pnpm run build && node --enable-source-maps ./dist/scripts/pers-backfill.mjs"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",

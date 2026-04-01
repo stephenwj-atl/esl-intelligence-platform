@@ -127,12 +127,14 @@ export const informRiskAdapter: SourceAdapter = {
     let recordsWritten = 0;
     const countriesAffected = new Set<string>();
     const errors: string[] = [];
+    let ingestionMode: "live" | "curated" | "hybrid" = "live";
 
     try {
       let scores = await fetchInformScores();
       if (scores.length === 0) {
         log.warn(PIPELINE_NAME, "API returned no data, using curated fallback scores");
         scores = await fetchInformFallback();
+        ingestionMode = "curated";
       }
 
       recordsRead = scores.length;
@@ -169,10 +171,10 @@ export const informRiskAdapter: SourceAdapter = {
     await upsertFreshness({
       pipelineName: PIPELINE_NAME,
       sourceKey: SOURCE_KEY,
-      sourceUrl: "https://drmkc.jrc.ec.europa.eu/inform-index",
-      lastSuccessAt: status !== "failed" ? new Date() : undefined,
-      recordCount: recordsWritten,
+      status,
+      recordsLoaded: recordsWritten,
       confidence,
+      ingestionMode,
     });
 
     await db.update(ingestionRunsTable)
