@@ -48,3 +48,9 @@ id = "b2oJG04nVssS0eZPhKgZ-"
 uri = "file://attached_assets/ESL_Data_Intelligence_Capability_Brief.md"
 type = "text"
 title = "ESL Data Intelligence Capability Brief (Updated with NEPA Regulatory Data)"
+
+[[outputs]]
+id = "jS4hV5RfjFmwpPcSgJgR8"
+uri = "file://ESL_Platform_Overview.md"
+type = "text"
+title = "ESL Platform Overview — Technical & Strategic Brief"
