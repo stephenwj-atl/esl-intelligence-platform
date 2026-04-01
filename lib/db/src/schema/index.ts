@@ -20,3 +20,6 @@ export * from "./data-layers";
 export * from "./raw-data-cache";
 export * from "./data-source-freshness";
 export * from "./ingestion-runs";
+export * from "./sector-families";
+export * from "./project-outcomes";
+export * from "./methodology-defense";

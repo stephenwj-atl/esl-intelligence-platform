@@ -18,6 +18,9 @@ import {
   type LenderFramework,
 } from "../lib/pers-engine";
 import { lookupCountryPERSInputs } from "../lib/country-data-lookup";
+import { calculateLayeredPERS } from "../lib/layered-pers-engine";
+import { lookupSectorFamily } from "../lib/sector-families";
+import type { InstrumentType } from "../lib/instrument-logic";
 
 const router: IRouter = Router();
 
@@ -35,6 +38,10 @@ function formatProject(rawProject: typeof projectsTable.$inferSelect) {
     latitude: p.latitude,
     longitude: p.longitude,
     investmentAmount: p.investmentAmount,
+    sectorFamily: p.sectorFamily,
+    projectSubtype: p.projectSubtype,
+    instrumentType: p.instrumentType,
+    methodologyProfile: p.methodologyProfile,
     inputs: {
       floodRisk: p.floodRisk,
       coastalExposure: p.coastalExposure,
@@ -63,6 +70,17 @@ function formatProject(rawProject: typeof projectsTable.$inferSelect) {
       breakdown: p.persBreakdown,
       interventionRiskProfile: p.interventionRiskProfile,
     },
+    layeredScores: {
+      countryContextScore: p.countryContextScore,
+      projectExposureScore: p.projectExposureScore,
+      sectorSensitivityScore: p.sectorSensitivityScore,
+      interventionDeliveryScore: p.interventionDeliveryScore,
+      instrumentStructureScore: p.instrumentStructureScore,
+      outcomeDeliveryScore: p.outcomeDeliveryScore,
+    },
+    disbursementReadiness: p.disbursementReadiness,
+    transitionReadiness: p.transitionReadiness,
+    layeredBreakdown: p.layeredBreakdown,
     financialRisk: {
       delayRiskPercent: p.delayRiskPercent,
       costOverrunPercent: p.costOverrunPercent,
@@ -112,20 +130,26 @@ router.post("/projects", requireRole("Investment Officer", "Admin"), async (req,
   const country = input.country ?? "Jamaica";
   const countryInputs = await lookupCountryPERSInputs(country);
 
-  const persBreakdown = calculatePERS(
+  const sectorFamily = lookupSectorFamily(input.projectType);
+  const instrumentType = ((input as Record<string, unknown>).instrumentType as InstrumentType) ?? "LOAN";
+
+  const layeredResult = calculateLayeredPERS(
     analysis.riskScores,
-    intervention,
     input.projectType,
     hasSEA,
     hasESIA,
+    instrumentType,
     countryInputs.governanceScore,
     countryInputs.disasterLossHistory,
+    countryInputs.informRiskScore,
     countryInputs.provenance,
   );
 
-  const interventionProfile = buildInterventionRiskProfile(intervention, analysis.riskScores);
-  const capitalMode = recommendCapitalMode(persBreakdown.persScore, analysis.riskScores.dataConfidence, intervention);
-  const monitoring = determineMonitoringIntensity(persBreakdown.persScore, analysis.riskScores.dataConfidence, intervention, capitalMode);
+  const persBreakdown = layeredResult.persBreakdown;
+  const interventionProfile = layeredResult.interventionRiskProfile;
+  const capitalMode = layeredResult.capitalMode;
+  const monitoring = layeredResult.monitoringIntensity;
+  const lb = layeredResult.layeredBreakdown;
 
   const [project] = await db.insert(projectsTable).values({
     name: input.name,
@@ -154,11 +178,23 @@ router.post("/projects", requireRole("Investment Officer", "Admin"), async (req,
     regulatoryRisk: analysis.riskScores.regulatoryRisk,
     dataConfidence: analysis.riskScores.dataConfidence,
     overallRisk: analysis.riskScores.overallRisk,
-    persScore: persBreakdown.persScore,
+    persScore: lb.layeredScores.persFinalScore,
     interventionRiskScore: interventionProfile.adjustedRisk,
     monitoringIntensity: monitoring.level,
     persBreakdown,
     interventionRiskProfile: interventionProfile,
+    sectorFamily,
+    instrumentType,
+    methodologyProfile: lb.profileUsed,
+    countryContextScore: lb.layeredScores.countryContextScore,
+    projectExposureScore: lb.layeredScores.projectExposureScore,
+    sectorSensitivityScore: lb.layeredScores.sectorSensitivityScore,
+    interventionDeliveryScore: lb.layeredScores.interventionDeliveryScore,
+    instrumentStructureScore: lb.layeredScores.instrumentStructureScore,
+    outcomeDeliveryScore: lb.layeredScores.outcomeDeliveryScore,
+    disbursementReadiness: lb.disbursementReadiness,
+    transitionReadiness: lb.transitionReadiness,
+    layeredBreakdown: lb,
     ...encryptProjectSensitiveFields(analysis, input.investmentAmount),
   }).returning();
 
@@ -208,10 +244,19 @@ router.get("/projects/:id/pers-assessment", async (req, res) => {
   };
 
   const countryInputs = await lookupCountryPERSInputs(p.country);
-  const persBreakdown = calculatePERS(riskScores, intervention, p.projectType, p.hasSEA, p.hasESIA, countryInputs.governanceScore, countryInputs.disasterLossHistory, countryInputs.provenance);
-  const interventionProfile = buildInterventionRiskProfile(intervention, riskScores);
-  const capitalMode = p.capitalMode ?? recommendCapitalMode(persBreakdown.persScore, p.dataConfidence, intervention);
-  const monitoring = determineMonitoringIntensity(persBreakdown.persScore, p.dataConfidence, intervention, capitalMode);
+  const instType = (p.instrumentType as InstrumentType) ?? "LOAN";
+
+  const layeredResult = calculateLayeredPERS(
+    riskScores,
+    p.projectType,
+    p.hasSEA,
+    p.hasESIA,
+    instType,
+    countryInputs.governanceScore,
+    countryInputs.disasterLossHistory,
+    countryInputs.informRiskScore,
+    countryInputs.provenance,
+  );
 
   const lenderGuidance = p.lenderFramework
     ? getLenderFrameworkGuidance(p.lenderFramework as LenderFramework)
@@ -224,16 +269,20 @@ router.get("/projects/:id/pers-assessment", async (req, res) => {
     projectType: p.projectType,
     projectCategory: category,
     interventionType: intervention,
-    persBreakdown,
-    interventionRiskProfile: interventionProfile,
-    capitalMode,
-    monitoringIntensity: monitoring,
+    sectorFamily: layeredResult.layeredBreakdown.sectorFamily,
+    instrumentType: instType,
+    persBreakdown: layeredResult.persBreakdown,
+    interventionRiskProfile: layeredResult.interventionRiskProfile,
+    capitalMode: layeredResult.capitalMode,
+    monitoringIntensity: layeredResult.monitoringIntensity,
     lenderFramework: lenderGuidance,
+    layeredBreakdown: layeredResult.layeredBreakdown,
     decision: {
-      outcome: p.decisionOutcome,
-      persScore: persBreakdown.persScore,
-      capitalRecommendation: capitalMode,
-      monitoringLevel: monitoring.level,
+      outcome: layeredResult.decisionOutcome,
+      signal: layeredResult.decisionSignal,
+      persScore: layeredResult.layeredBreakdown.layeredScores.persFinalScore,
+      capitalRecommendation: layeredResult.capitalMode,
+      monitoringLevel: layeredResult.monitoringIntensity.level,
     },
   });
 });

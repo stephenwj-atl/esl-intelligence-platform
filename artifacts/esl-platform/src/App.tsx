@@ -18,6 +18,11 @@ import PipelineNew from "@/pages/pipeline-new";
 import PipelineDetail from "@/pages/pipeline-detail";
 import CompliancePage from "@/pages/compliance";
 import MethodologyPage from "@/pages/methodology";
+import CalibrationPage from "@/pages/calibration";
+import OutcomesPage from "@/pages/outcomes";
+import DisbursementPage from "@/pages/disbursement";
+import OverridesPage from "@/pages/overrides";
+import FunderLogicPage from "@/pages/funder-logic";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -56,6 +61,11 @@ function ProtectedRoutes() {
       <Route path="/pipelines/:id" component={PipelineDetail} />
       <Route path="/compliance" component={CompliancePage} />
       <Route path="/methodology" component={MethodologyPage} />
+      <Route path="/calibration" component={CalibrationPage} />
+      <Route path="/outcomes" component={OutcomesPage} />
+      <Route path="/disbursement" component={DisbursementPage} />
+      <Route path="/overrides" component={OverridesPage} />
+      <Route path="/funder-logic" component={FunderLogicPage} />
       <Route component={NotFound} />
     </Switch>
   );

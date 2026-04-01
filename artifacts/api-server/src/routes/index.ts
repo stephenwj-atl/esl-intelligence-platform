@@ -11,6 +11,8 @@ import eslServicesRouter from "./esl-services";
 import dataLayersRouter from "./data-layers";
 import complianceRouter from "./compliance";
 import ingestionRouter from "./ingestion";
+import methodologyRouter from "./methodology";
+import outcomesRouter from "./outcomes";
 
 const router: IRouter = Router();
 
@@ -26,5 +28,7 @@ router.use(eslServicesRouter);
 router.use(dataLayersRouter);
 router.use(complianceRouter);
 router.use(ingestionRouter);
+router.use(methodologyRouter);
+router.use(outcomesRouter);
 
 export default router;

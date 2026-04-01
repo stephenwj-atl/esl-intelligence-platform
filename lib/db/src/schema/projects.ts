@@ -43,6 +43,24 @@ export const projectsTable = pgTable("projects", {
   decisionInsight: text("decision_insight").notNull(),
   persBreakdown: jsonb("pers_breakdown"),
   interventionRiskProfile: jsonb("intervention_risk_profile"),
+
+  sectorFamily: text("sector_family"),
+  projectSubtype: text("project_subtype"),
+  instrumentType: text("instrument_type"),
+  methodologyProfile: text("methodology_profile"),
+
+  countryContextScore: real("country_context_score"),
+  projectExposureScore: real("project_exposure_score"),
+  sectorSensitivityScore: real("sector_sensitivity_score"),
+  interventionDeliveryScore: real("intervention_delivery_score"),
+  instrumentStructureScore: real("instrument_structure_score"),
+  outcomeDeliveryScore: real("outcome_delivery_score"),
+
+  disbursementReadiness: text("disbursement_readiness"),
+  transitionReadiness: text("transition_readiness"),
+
+  layeredBreakdown: jsonb("layered_breakdown"),
+
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -32,21 +32,37 @@ All features must align with a mandatory 7-stage flow: Intake Screening, Baselin
 
 2.  **Project Intelligence View**: A 13-tab interface for detailed project analysis including "Decision," "PERS," "Baseline," "Structure," "Financial," "ESL Services," "Impact," "Drivers," "Evidence," "Scenario," "Monitoring," "Report," and "Audit." PERS tab shows full PERS breakdown, intervention risk profile, monitoring intensity, and project classification. Tabs are dynamically visible based on capital mode.
 
-3.  **Risk Scoring Engine + PERS**: Calculates Environmental, Infrastructure, Human Exposure, and Regulatory risk subscores (0-100) and defines investment decision thresholds (PROCEED < 40, CONDITION 40-70, DECLINE > 70). Incorporates Data Confidence calculation and financial risk translation. **PERS (Project Environmental Risk Score)** adds project-level scoring: PERS = (CERI×0.50) + (ProjectOverlay×0.25) + (Sensitivity×0.15) + (InterventionRisk×0.10). SEA mitigation: 0.85× on projectOverlay; ESIA mitigation: 0.90× on projectOverlay. 5 intervention risk profiles (Physical Infrastructure base 35, Social/Programmatic 25, Environmental 30, Governance 40, Disaster 45). 3 monitoring intensity levels: STANDARD (PERS<40), ENHANCED (PERS 40-65), INTENSIVE (PERS>65). Capital mode recommendation: Loan (PERS<45), Blended (PERS 45-70), Grant (PERS>70). 6 lender framework alignments: IDB ESPF, CDB ESRP, World Bank ESF, GCF, EIB, Equator Principles. Files: `pers-engine.ts`, `risk-engine.ts`.
+3.  **Risk Scoring Engine + Layered PERS v2.0**: 6-layer scoring: Country Context, Project Exposure, Sector Sensitivity, Intervention Delivery, Instrument Structure, Outcome Delivery. Weights determined by sector family methodology profiles (8 profiles: PERS_DEFAULT_V1 through PERS_PROGRAMMATIC_V1). SEA/ESIA mitigation factors applied. Decision thresholds: PROCEED < 40, CONDITION 40-70, DECLINE > 70. Confidence adjustment penalizes low-data assessments. Files: `layered-pers-engine.ts`, `methodology-profiles.ts`, `pers-engine.ts`, `risk-engine.ts`.
 
-4.  **Capital Deployment Interface**: Manages capital allocation modes (Loan/Grant/Blended) via a global context, determines Deployment Readiness (READY, CONDITIONALLY READY, NOT READY), and integrates capital tags into monitoring events. Dynamic blended split calculation is based on risk and confidence.
+4.  **Instrument-Specific Decision Logic**: 7 instrument types (LOAN, GRANT, BLENDED, GUARANTEE, TA, PROGRAMMATIC, EMERGENCY) with distinct decision signals. Grants use 6 nuanced signals (PROCEED, PROCEED_WITH_CONTROLS, RESEQUENCE, NARROW_SCOPE, DEFER_PENDING_BASELINE, DO_NOT_FUND) — high PERS does NOT automatically decline grants. File: `instrument-logic.ts`.
 
-5.  **Assessment Pipeline System**: Enables creating and managing assessment pipelines with configurable frameworks, thresholds, and capital modes. Supports batch upload, automatic scoring, and portfolio assignment, providing screening results and capital allocation summaries.
+5.  **8 Sector Families**: Hard Infrastructure, Soft/Social Infrastructure, Agriculture & Food Systems, Ecosystems & Natural Capital, Governance & Institutional, Disaster Response & Recovery, Programmatic/Multi-Sector, Private Sector/Productive Investment. Each family has a dedicated methodology profile with custom weights, relevance factors, capital suitability. File: `sector-families.ts`.
 
-6.  **Financial Calculation Logic**: Defines rules for base interest rates, risk-based penalties, confidence penalties, insurance calculations, covenant classifications, and capital constraints for high-risk allocations.
+6.  **Outcomes Framework**: Theory of change, outcome metrics (5 categories: climate_resilience, economic, social, environmental, governance), milestone-based disbursement gates, transition pathways between instruments. Disbursement readiness (READY/CONDITIONALLY_READY/NOT_READY) and transition readiness (LOAN_READY/BLENDED_ELIGIBLE/GRANT_PHASE/PRE_READINESS). File: `outcomes.ts` (routes).
 
-7.  **Stage Flow Layer**: Implements and visualizes the mandatory 7-stage project flow across the platform, including a persistent progress bar, status panel, and stage impact analysis for scenarios.
+7.  **Calibration Memo Engine**: Generates 6 memo types (weighting defense, calibration review, portfolio methodology, sector family scoring, instrument logic, grant/blended readiness). Validation cases track predicted vs. observed outcomes. Override governance tracks analyst overrides with post-facto assessment. Files: `memo-generator.ts`, `methodology.ts` (routes).
 
-8.  **Unified Translation Engine**: Core translation layer (`capital-translator.ts`) routing environmental data to mode-specific outputs (Loan, Grant, Blended) for financial metrics, impact analysis, and portfolio aggregation. It also recommends capital modes based on project risk and confidence.
+8.  **ESL Service Catalog (Expanded)**: 16 service categories with smart recommendation engine based on sector family, instrument type, PERS score, and risk factors. Priority levels: CRITICAL, RECOMMENDED, OPTIONAL. File: `esl-services-expanded.ts`.
 
-9.  **ESL Service Scope Generator**: Converts risk flags and compliance gaps into concrete ESL service proposals with defined scope, deliverables, timelines, estimated fees, and risk reduction/confidence gain points. Assessment hierarchy: SEA/ESIA are the primary strategic services recommended for investment guidance; EIA is only recommended when a country's law requires it for permitting. ESIA (IDB/DFI standard) is recommended for projects needing multilateral lender due diligence; SEA is recommended for IFC-aligned projects needing strategic environmental intelligence. Service catalog includes: SEA, ESIA, EIA (permitting only), Lab Validation, Monitoring Program, IFC Compliance, Climate Risk, Regulatory Advisory, Contamination Assessment, Water Resource Assessment.
+9.  **Capital Deployment Interface**: Manages capital allocation modes via a global context, determines Deployment Readiness, and integrates capital tags into monitoring events.
 
-9a. **Compliance Dashboard**: Dedicated `/compliance` page with framework selector (SOC 2 Type II, ISO 27001, ISO 27701, IFC Performance Standards). Real-time control status evaluation engine. Accordion-expandable controls with status badges (Implemented/Partial/Planned/Gap), evidence links, platform feature mapping. Overall compliance score gauges per framework and aggregate posture. Compliance summary widget on dashboard Overview tab. Export capability (JSON). API: `GET /api/compliance/frameworks`, `/frameworks/:id`, `/summary`, `/export`. Files: `compliance.ts` (API), `compliance-api.ts` (client), `compliance.tsx` (page).
+10. **Assessment Pipeline System**: Configurable frameworks, thresholds, batch upload, automatic scoring, portfolio assignment.
+
+11. **Financial Calculation Logic**: Base interest rates, risk-based penalties, confidence penalties, insurance, covenant classifications.
+
+12. **Stage Flow Layer**: Mandatory 7-stage project flow with persistent progress bar and stage impact analysis.
+
+13. **Unified Translation Engine**: Core translation layer (`capital-translator.ts`) routing environmental data to mode-specific outputs.
+
+14. **Compliance Dashboard**: Dedicated `/compliance` page with framework selector (SOC 2 Type II, ISO 27001, ISO 27701, IFC Performance Standards).
+
+**UI Pages (VNext):**
+- `/methodology` — Layered scoring, sector families, instrument logic, methodology profiles
+- `/calibration` — Calibration Workbench: memo generation, validation cases, override decisions
+- `/outcomes` — Outcomes Framework: theory of change, metrics, delivery risk
+- `/disbursement` — Disbursement milestones and transition pathways
+- `/overrides` — Override Review and validation case tracking
+- `/funder-logic` — Instrument decision signal matrix, sector family capital suitability, ESL service catalog
 
 10. **Country Data Layer System**: Manages country-level environmental data (21 layers for Jamaica example) and project-specific overrides. Data layers are categorized (Environmental Hazards, Infrastructure, Social, Regulatory) and contribute to a Data Readiness Score.
 
