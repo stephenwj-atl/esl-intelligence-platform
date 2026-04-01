@@ -242,13 +242,25 @@ async function scrapeTrinidadEMA(): Promise<CountryScrapeResult> {
   const docs: RegDocument[] = [];
 
   try {
-    const html = await fetchPage(sourceUrl);
-    const newsLinks = [...html.matchAll(/href="(https:\/\/www\.ema\.co\.tt\/\d{4}\/\d{2}\/\d{2}\/[^"]*cec[^"]*)"/gi)];
-    const cecLinks = [...html.matchAll(/href="(https:\/\/www\.ema\.co\.tt\/\d{4}\/\d{2}\/\d{2}\/[^"]*(?:clearance|eia|assessment|environment)[^"]*)"/gi)];
+    const allLinks = new Set<string>();
 
-    const allLinks = [...new Set([...newsLinks, ...cecLinks].map(m => m[1]))];
+    for (let page = 1; page <= 8; page++) {
+      const pageUrl = page === 1 ? "https://www.ema.co.tt/latest-news/" : `https://www.ema.co.tt/latest-news/page/${page}/`;
+      try {
+        const pageHtml = await fetchPage(pageUrl);
+        const releaseLinks = [...pageHtml.matchAll(/href="(https:\/\/www\.ema\.co\.tt\/\d{4}\/\d{2}\/\d{2}\/[^"]*(?:cec|clearance|eia|assessment|environment|oil|gas|mining|quarr|development|construct|infra)[^"]*)"/gi)];
+        for (const m of releaseLinks) allLinks.add(m[1]);
+        await delay(PAGE_DELAY_MS);
+      } catch {
+        break;
+      }
+    }
 
-    for (const url of allLinks.slice(0, 20)) {
+    const homeHtml = await fetchPage(sourceUrl);
+    const homeLinks = [...homeHtml.matchAll(/href="(https:\/\/www\.ema\.co\.tt\/\d{4}\/\d{2}\/\d{2}\/[^"]*(?:cec|clearance|eia|assessment|environment)[^"]*)"/gi)];
+    for (const m of homeLinks) allLinks.add(m[1]);
+
+    for (const url of [...allLinks].slice(0, 40)) {
       try {
         const pageHtml = await fetchPage(url);
         const titleMatch = pageHtml.match(/<title>([^<]*)</);
