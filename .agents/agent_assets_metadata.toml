@@ -54,3 +54,9 @@ id = "jS4hV5RfjFmwpPcSgJgR8"
 uri = "file://ESL_Platform_Overview.md"
 type = "text"
 title = "ESL Platform Overview — Technical & Strategic Brief"
+
+[[outputs]]
+id = "OL2hvx6uvBZd6Ck_JBDgT"
+uri = "file://docs/PERS-upgrade-internal-brief.md"
+type = "text"
+title = "PERS Upgrade — Internal Team Brief"
