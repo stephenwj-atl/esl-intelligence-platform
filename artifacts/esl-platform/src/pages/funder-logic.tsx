@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { Card, AnimatedContainer } from "@/components/ui";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Boxes, ChevronDown, ChevronRight, DollarSign, Shield, Zap, AlertTriangle, Target } from "lucide-react";
+import { Building2, Boxes, ChevronDown, ChevronRight, DollarSign, Shield, Zap, AlertTriangle, Target, Landmark } from "lucide-react";
 
 const BASE = "/api";
 
@@ -16,10 +16,17 @@ const INSTRUMENT_COLORS: Record<string, string> = {
   EMERGENCY: "text-red-400 bg-red-500/10 border-red-500/20",
 };
 
+const EMPHASIS_COLORS: Record<string, string> = {
+  high: "text-red-400 bg-red-500/10",
+  medium: "text-amber-400 bg-amber-500/10",
+  low: "text-emerald-400 bg-emerald-500/10",
+};
+
 export default function FunderLogicPage() {
   const [expandedInstrument, setExpandedInstrument] = useState<string | null>(null);
   const [expandedFamily, setExpandedFamily] = useState<string | null>(null);
-  const [tab, setTab] = useState<"instruments" | "families" | "services">("instruments");
+  const [expandedFramework, setExpandedFramework] = useState<string | null>(null);
+  const [tab, setTab] = useState<"instruments" | "families" | "services" | "frameworks">("instruments");
 
   const { data: instrumentsData } = useQuery({
     queryKey: ["instruments"],
@@ -48,6 +55,15 @@ export default function FunderLogicPage() {
     },
   });
 
+  const { data: frameworks = [] } = useQuery({
+    queryKey: ["funder-frameworks"],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/funders`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+
   const instruments = instrumentsData?.instruments || [];
 
   return (
@@ -65,6 +81,9 @@ export default function FunderLogicPage() {
               </button>
               <button onClick={() => setTab("families")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${tab === "families" ? "bg-primary/20 text-primary border border-primary/30" : "text-muted-foreground hover:text-foreground"}`}>
                 <Boxes className="h-4 w-4 inline mr-1.5" />Families
+              </button>
+              <button onClick={() => setTab("frameworks")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${tab === "frameworks" ? "bg-primary/20 text-primary border border-primary/30" : "text-muted-foreground hover:text-foreground"}`}>
+                <Landmark className="h-4 w-4 inline mr-1.5" />Funders
               </button>
               <button onClick={() => setTab("services")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${tab === "services" ? "bg-primary/20 text-primary border border-primary/30" : "text-muted-foreground hover:text-foreground"}`}>
                 <Building2 className="h-4 w-4 inline mr-1.5" />ESL Services
@@ -152,6 +171,113 @@ export default function FunderLogicPage() {
                 ))}
               </div>
             </Card>
+          </AnimatedContainer>
+        )}
+
+        {tab === "frameworks" && (
+          <AnimatedContainer delay={0.1}>
+            <div className="grid grid-cols-1 gap-4">
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Landmark className="h-5 w-5 text-cyan-400" />
+                  <h2 className="text-lg font-semibold text-foreground">Funder Frameworks</h2>
+                  <span className="text-xs text-muted-foreground ml-auto">{frameworks.length} frameworks configured</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">ESL models funder-specific safeguard postures, reporting requirements, and recommendation modifiers. Select a framework to view detail.</p>
+              </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {frameworks.map((fw: any) => (
+                  <Card key={fw.key} className={`p-4 cursor-pointer hover:bg-white/[0.03] transition-colors ${expandedFramework === fw.key ? "border-primary/30" : ""}`}
+                    onClick={() => setExpandedFramework(expandedFramework === fw.key ? null : fw.key)}>
+                    <div className="text-sm font-medium text-foreground mb-1">{fw.displayName}</div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(fw.instrumentRelevance || []).slice(0, 4).map((ir: string) => (
+                        <span key={ir} className={`px-1.5 py-0.5 rounded text-[10px] border ${INSTRUMENT_COLORS[ir] || "text-muted-foreground"}`}>{ir}</span>
+                      ))}
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-[10px] text-muted-foreground mb-1">Safeguard Emphasis</div>
+                      <div className="flex flex-wrap gap-1">
+                        {fw.safeguardEmphasis && Object.entries(fw.safeguardEmphasis).map(([k, v]: [string, any]) => (
+                          <span key={k} className={`px-1.5 py-0.5 rounded text-[10px] ${EMPHASIS_COLORS[v] || ""}`}>{k}: {v}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {expandedFramework && (() => {
+                const fw = frameworks.find((f: any) => f.key === expandedFramework);
+                if (!fw) return null;
+                return (
+                  <Card className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Landmark className="h-5 w-5 text-cyan-400" />
+                      <h3 className="text-lg font-semibold text-foreground">{fw.displayName}</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Baseline Expectations</h4>
+                          <p className="text-xs text-foreground/80">{fw.baselineExpectations}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Reporting Style</h4>
+                          <p className="text-xs text-foreground/80">{fw.reportingStyle}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Disbursement Controls</h4>
+                          <p className="text-xs text-foreground/80">{fw.disbursementControls}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Results Framework</h4>
+                          <p className="text-xs text-foreground/80">{fw.resultsFrameworkEmphasis}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Category Mapping</h4>
+                          <p className="text-xs text-foreground/80">{fw.categoryMapping}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Typical Conditions</h4>
+                          <div className="space-y-1">
+                            {(fw.typicalConditions || []).map((c: string, i: number) => (
+                              <div key={i} className="flex items-start gap-2 text-xs text-foreground/80">
+                                <span className="text-cyan-400 mt-0.5">&#x2022;</span>
+                                <span>{c}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Permissibility Cues</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {(fw.permissibilityCues || []).map((c: string, i: number) => (
+                              <span key={i} className="px-2 py-0.5 text-[10px] bg-white/5 border border-white/10 rounded text-foreground/70">{c}</span>
+                            ))}
+                          </div>
+                        </div>
+                        {fw.notes && (
+                          <div>
+                            <h4 className="text-xs font-semibold text-muted-foreground mb-2">Notes</h4>
+                            <p className="text-xs text-foreground/60">{fw.notes}</p>
+                          </div>
+                        )}
+                        {fw.limitations && (
+                          <div>
+                            <h4 className="text-xs font-semibold text-amber-400/80 mb-2">Limitations</h4>
+                            <p className="text-xs text-foreground/60">{fw.limitations}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()}
+            </div>
           </AnimatedContainer>
         )}
 

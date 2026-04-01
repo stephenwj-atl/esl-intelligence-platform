@@ -12,16 +12,19 @@ import {
   validationCasesTable,
   validationObservationsTable,
   overrideDecisionsTable,
+  funderFrameworksTable,
 } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { SECTOR_FAMILIES } from "./sector-families";
 import { METHODOLOGY_PROFILES } from "./methodology-profiles";
+import { FUNDER_FRAMEWORKS } from "./funder-frameworks";
 
 export async function seedVNextData() {
   console.log("[seed-vnext] Starting VNext seed data...");
 
   for (const fam of SECTOR_FAMILIES) {
     const existing = await db.select().from(sectorFamiliesTable).where(
-      (await import("drizzle-orm")).eq(sectorFamiliesTable.familyKey, fam.key)
+      eq(sectorFamiliesTable.familyKey, fam.key)
     );
     if (existing.length === 0) {
       await db.insert(sectorFamiliesTable).values({
@@ -36,7 +39,7 @@ export async function seedVNextData() {
 
   for (const prof of METHODOLOGY_PROFILES) {
     const existing = await db.select().from(methodologyProfilesTable).where(
-      (await import("drizzle-orm")).eq(methodologyProfilesTable.profileKey, prof.profileKey)
+      eq(methodologyProfilesTable.profileKey, prof.profileKey)
     );
     if (existing.length === 0) {
       await db.insert(methodologyProfilesTable).values({
@@ -77,7 +80,7 @@ export async function seedVNextData() {
 
   for (const ev of evidenceEntries) {
     const existing = await db.select().from(methodologyEvidenceTable).where(
-      (await import("drizzle-orm")).eq(methodologyEvidenceTable.title, ev.title)
+      eq(methodologyEvidenceTable.title, ev.title)
     );
     if (existing.length === 0) {
       await db.insert(methodologyEvidenceTable).values(ev);
@@ -89,7 +92,7 @@ export async function seedVNextData() {
   if (projects.length > 0) {
     const p = projects[0];
     const existingOutcome = await db.select().from(projectOutcomesTable).where(
-      (await import("drizzle-orm")).eq(projectOutcomesTable.projectId, p.id)
+      eq(projectOutcomesTable.projectId, p.id)
     );
     if (existingOutcome.length === 0) {
       await db.insert(projectOutcomesTable).values({
@@ -123,7 +126,7 @@ export async function seedVNextData() {
     if (projects.length >= 2) {
       const p2 = projects[1];
       const existingTransition = await db.select().from(transitionPathwaysTable).where(
-        (await import("drizzle-orm")).eq(transitionPathwaysTable.projectId, p2.id)
+        eq(transitionPathwaysTable.projectId, p2.id)
       );
       if (existingTransition.length === 0) {
         await db.insert(transitionPathwaysTable).values({
@@ -165,6 +168,217 @@ export async function seedVNextData() {
     });
     console.log("[seed-vnext] Validation case seeded");
   }
+
+  for (const fw of FUNDER_FRAMEWORKS) {
+    const existing = await db.select().from(funderFrameworksTable).where(
+      eq(funderFrameworksTable.frameworkKey, fw.key)
+    );
+    if (existing.length === 0) {
+      await db.insert(funderFrameworksTable).values({
+        frameworkKey: fw.key,
+        displayName: fw.displayName,
+        instrumentRelevance: fw.instrumentRelevance,
+        safeguardEmphasis: fw.safeguardEmphasis,
+        reportingStyle: fw.reportingStyle,
+        baselineExpectations: fw.baselineExpectations,
+        disbursementControls: fw.disbursementControls,
+        resultsFrameworkEmphasis: fw.resultsFrameworkEmphasis,
+        permissibilityCues: fw.permissibilityCues,
+        typicalConditions: fw.typicalConditions,
+        categoryMapping: fw.categoryMapping,
+        notes: fw.notes,
+        limitations: fw.limitations,
+      });
+    }
+  }
+  console.log("[seed-vnext] Funder frameworks seeded");
+
+  const instrumentDefaults: Record<string, { type: string; profile: string }> = {
+    "Kingston Solar Farm": { type: "LOAN", profile: "PERS_INFRA_V1" },
+    "Montego Bay Port Expansion": { type: "LOAN", profile: "PERS_INFRA_V1" },
+    "Ocho Rios Resort Development": { type: "BLENDED", profile: "PERS_PRIVATE_SECTOR_V1" },
+    "Coastal Solar Phase II": { type: "LOAN", profile: "PERS_INFRA_V1" },
+    "Spanish Town Industrial Park": { type: "LOAN", profile: "PERS_PRIVATE_SECTOR_V1" },
+    "Negril Agricultural Hub": { type: "GRANT", profile: "PERS_DEFAULT_V1" },
+    "Port Antonio Marina": { type: "BLENDED", profile: "PERS_INFRA_V1" },
+    "Kingston Harbour Water Treatment Upgrade": { type: "LOAN", profile: "PERS_INFRA_V1" },
+    "Barbados Solar Farm & Grid Modernization": { type: "BLENDED", profile: "PERS_INFRA_V1" },
+    "Dominica Post-Hurricane Housing Reconstruction": { type: "GRANT", profile: "PERS_DISASTER_V1" },
+    "Trinidad Agricultural Supply Chain Platform": { type: "BLENDED", profile: "PERS_PRIVATE_SECTOR_V1" },
+    "Guyana Public Financial Management Reform": { type: "TECHNICAL_ASSISTANCE", profile: "PERS_GOVERNANCE_V1" },
+    "St. Lucia Community Health Network Expansion": { type: "LOAN", profile: "PERS_HEALTH_V1" },
+    "Bahamas Coastal Resilience & Mangrove Restoration": { type: "GRANT", profile: "PERS_ECOSYSTEMS_V1" },
+  };
+
+  for (const [name, config] of Object.entries(instrumentDefaults)) {
+    await db.update(projectsTable)
+      .set({ instrumentType: config.type, methodologyProfile: config.profile })
+      .where(eq(projectsTable.name, name));
+  }
+  console.log("[seed-vnext] Instrument types and profiles assigned");
+
+  const newDemoProjects = [
+    {
+      name: "Barbados Private Sector Wind Energy",
+      country: "Barbados",
+      projectType: "Wind",
+      region: "Caribbean",
+      latitude: 13.1939,
+      longitude: -59.5432,
+      investmentAmount: 42000000,
+      instrumentType: "LOAN",
+      methodologyProfile: "PERS_PRIVATE_SECTOR_V1",
+      sectorFamily: "energy",
+      environmentalRisk: 35,
+      infrastructureRisk: 40,
+      humanExposureRisk: 20,
+      regulatoryRisk: 30,
+      overallRisk: 33,
+      dataConfidence: 72,
+      floodRisk: 2,
+      coastalExposure: 5,
+      contaminationRisk: 1,
+      regulatoryComplexity: 4,
+      communitySensitivity: 3,
+      waterStress: 2,
+      hasMonitoringData: true,
+      hasLabData: true,
+      hasSEA: false,
+      hasESIA: true,
+      isIFCAligned: true,
+      capitalMode: "Concessional",
+      monitoringIntensity: "Standard",
+      decisionOutcome: "PROCEED",
+      decisionInsight: "Strong private-sector developer with established track record. IFC-aligned with full ESIA. Low coastal and environmental risk.",
+      delayRiskPercent: 12,
+      costOverrunPercent: 8,
+      covenantBreachPercent: 5,
+      reputationalRisk: "low",
+      persScore: 36,
+    },
+    {
+      name: "Grenada Agriculture Blended Finance Facility",
+      country: "Grenada",
+      projectType: "Agriculture",
+      region: "Caribbean",
+      latitude: 12.1165,
+      longitude: -61.6790,
+      investmentAmount: 15000000,
+      instrumentType: "BLENDED",
+      methodologyProfile: "PERS_DEFAULT_V1",
+      sectorFamily: "agriculture_fisheries",
+      environmentalRisk: 45,
+      infrastructureRisk: 30,
+      humanExposureRisk: 55,
+      regulatoryRisk: 40,
+      overallRisk: 44,
+      dataConfidence: 55,
+      floodRisk: 5,
+      coastalExposure: 4,
+      contaminationRisk: 3,
+      regulatoryComplexity: 5,
+      communitySensitivity: 6,
+      waterStress: 5,
+      hasMonitoringData: false,
+      hasLabData: false,
+      hasSEA: true,
+      hasESIA: false,
+      isIFCAligned: false,
+      capitalMode: "Grant-First",
+      monitoringIntensity: "Enhanced",
+      decisionOutcome: "CONDITION",
+      decisionInsight: "Agriculture blended facility — grant-first tranche recommended until ESIA completion and soil contamination baseline established.",
+      delayRiskPercent: 25,
+      costOverrunPercent: 18,
+      covenantBreachPercent: 15,
+      reputationalRisk: "medium",
+      persScore: 48,
+    },
+    {
+      name: "Antigua Multi-Hazard Resilience Program",
+      country: "Antigua and Barbuda",
+      projectType: "Emergency Shelter",
+      region: "Caribbean",
+      latitude: 17.0608,
+      longitude: -61.7964,
+      investmentAmount: 55000000,
+      instrumentType: "GRANT",
+      methodologyProfile: "PERS_DISASTER_V1",
+      sectorFamily: "disaster_climate",
+      environmentalRisk: 50,
+      infrastructureRisk: 55,
+      humanExposureRisk: 70,
+      regulatoryRisk: 35,
+      overallRisk: 52,
+      dataConfidence: 48,
+      floodRisk: 7,
+      coastalExposure: 8,
+      contaminationRisk: 2,
+      regulatoryComplexity: 4,
+      communitySensitivity: 8,
+      waterStress: 4,
+      hasMonitoringData: true,
+      hasLabData: false,
+      hasSEA: true,
+      hasESIA: true,
+      isIFCAligned: false,
+      capitalMode: "Grant",
+      monitoringIntensity: "Intensive",
+      decisionOutcome: "CONDITION",
+      decisionInsight: "Post-disaster resilience program with high human exposure. Grant instrument appropriate. Low confidence due to post-event data gaps.",
+      delayRiskPercent: 30,
+      costOverrunPercent: 22,
+      covenantBreachPercent: 10,
+      reputationalRisk: "medium",
+      persScore: 56,
+    },
+    {
+      name: "Jamaica Blue Economy Aquaculture Park",
+      country: "Jamaica",
+      projectType: "Aquaculture",
+      region: "Caribbean",
+      latitude: 18.1096,
+      longitude: -77.2975,
+      investmentAmount: 22000000,
+      instrumentType: "BLENDED",
+      methodologyProfile: "PERS_ECOSYSTEMS_V1",
+      sectorFamily: "agriculture_fisheries",
+      environmentalRisk: 55,
+      infrastructureRisk: 35,
+      humanExposureRisk: 40,
+      regulatoryRisk: 50,
+      overallRisk: 46,
+      dataConfidence: 58,
+      floodRisk: 3,
+      coastalExposure: 6,
+      contaminationRisk: 4,
+      regulatoryComplexity: 6,
+      communitySensitivity: 5,
+      waterStress: 6,
+      hasMonitoringData: true,
+      hasLabData: true,
+      hasSEA: true,
+      hasESIA: true,
+      isIFCAligned: true,
+      capitalMode: "Blended",
+      monitoringIntensity: "Enhanced",
+      decisionOutcome: "PROCEED",
+      decisionInsight: "Blue economy aquaculture with strong environmental safeguards. Blended structure supported by IFC alignment and dual assessment coverage.",
+      delayRiskPercent: 18,
+      costOverrunPercent: 14,
+      covenantBreachPercent: 8,
+      reputationalRisk: "low",
+      persScore: 42,
+    },
+  ];
+
+  for (const proj of newDemoProjects) {
+    const existing = await db.select().from(projectsTable).where(eq(projectsTable.name, proj.name));
+    if (existing.length === 0) {
+      await db.insert(projectsTable).values(proj);
+    }
+  }
+  console.log("[seed-vnext] New demo projects seeded (total should be 18+)");
 
   console.log("[seed-vnext] VNext seed data complete.");
 }

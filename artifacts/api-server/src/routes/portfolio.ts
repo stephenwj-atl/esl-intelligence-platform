@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, projectsTable } from "@workspace/db";
+import { db, projectsTable, projectOutcomesTable, disbursementMilestonesTable, transitionPathwaysTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { decryptProjectFields } from "../lib/project-encryption";
 
 const router: IRouter = Router();
@@ -446,5 +447,146 @@ router.get("/portfolio/decision", async (_req, res) => {
     insight: insightParts.join(" "),
   });
 });
+
+router.get("/portfolio/instrument-metrics", async (req, res) => {
+  const projects = (await db.select().from(projectsTable)).map(decryptProjectFields);
+
+  if (projects.length === 0) {
+    res.json({ instruments: {}, summary: { totalProjects: 0, totalCapital: 0 } });
+    return;
+  }
+
+  const instrumentFilter = req.query.instrument as string | undefined;
+
+  const instrumentTypes = ["LOAN", "GRANT", "BLENDED", "GUARANTEE", "TECHNICAL_ASSISTANCE", "PROGRAMMATIC"];
+
+  const instruments: Record<string, any> = {};
+
+  for (const instType of instrumentTypes) {
+    const filtered = projects.filter(p => (p.instrumentType ?? "LOAN") === instType);
+    if (filtered.length === 0) continue;
+
+    if (instrumentFilter && instrumentFilter !== instType) continue;
+
+    const totalCapital = filtered.reduce((s, p) => s + p.investmentAmount, 0);
+    const avgRisk = Math.round((filtered.reduce((s, p) => s + p.overallRisk, 0) / filtered.length) * 10) / 10;
+    const avgConfidence = Math.round((filtered.reduce((s, p) => s + p.dataConfidence, 0) / filtered.length) * 10) / 10;
+    const avgPers = filtered.filter(p => p.persScore != null).length > 0
+      ? Math.round((filtered.filter(p => p.persScore != null).reduce((s, p) => s + (p.persScore ?? 0), 0) / filtered.filter(p => p.persScore != null).length) * 10) / 10
+      : null;
+
+    const decisionDistribution: Record<string, number> = {};
+    const capitalModeDistribution: Record<string, number> = {};
+    const monitoringDistribution: Record<string, number> = {};
+    const countryDistribution: Record<string, { count: number; capital: number }> = {};
+    const sectorDistribution: Record<string, { count: number; capital: number }> = {};
+
+    for (const p of filtered) {
+      const decision = p.decisionOutcome ?? "Unknown";
+      decisionDistribution[decision] = (decisionDistribution[decision] ?? 0) + 1;
+
+      const cm = p.capitalMode ?? "Unknown";
+      capitalModeDistribution[cm] = (capitalModeDistribution[cm] ?? 0) + 1;
+
+      const mi = p.monitoringIntensity ?? "Unknown";
+      monitoringDistribution[mi] = (monitoringDistribution[mi] ?? 0) + 1;
+
+      if (!countryDistribution[p.country]) countryDistribution[p.country] = { count: 0, capital: 0 };
+      countryDistribution[p.country].count++;
+      countryDistribution[p.country].capital += p.investmentAmount;
+
+      if (!sectorDistribution[p.projectType]) sectorDistribution[p.projectType] = { count: 0, capital: 0 };
+      sectorDistribution[p.projectType].count++;
+      sectorDistribution[p.projectType].capital += p.investmentAmount;
+    }
+
+    const riskBuckets = {
+      low: filtered.filter(p => p.overallRisk <= 40).length,
+      medium: filtered.filter(p => p.overallRisk > 40 && p.overallRisk <= 70).length,
+      high: filtered.filter(p => p.overallRisk > 70).length,
+    };
+
+    const capitalAtRisk = Math.round(filtered.filter(p => p.overallRisk > 50).reduce((s, p) => s + p.investmentAmount, 0) * 10) / 10;
+
+    const instrumentMetrics: any = {
+      instrumentType: instType,
+      projectCount: filtered.length,
+      totalCapital: Math.round(totalCapital * 10) / 10,
+      avgRisk,
+      avgConfidence,
+      avgPersScore: avgPers,
+      capitalAtRisk,
+      riskBuckets,
+      decisionDistribution,
+      capitalModeDistribution,
+      monitoringDistribution,
+      countryDistribution,
+      sectorDistribution,
+      projects: filtered.map(p => ({
+        id: p.id,
+        name: p.name,
+        country: p.country,
+        projectType: p.projectType,
+        investmentAmount: p.investmentAmount,
+        overallRisk: p.overallRisk,
+        dataConfidence: p.dataConfidence,
+        persScore: p.persScore,
+        decisionOutcome: p.decisionOutcome,
+        capitalMode: p.capitalMode,
+      })),
+    };
+
+    if (instType === "LOAN" || instType === "GUARANTEE") {
+      instrumentMetrics.loanSpecific = {
+        highRiskExposure: Math.round(filtered.filter(p => p.overallRisk > 60).reduce((s, p) => s + p.investmentAmount, 0) * 10) / 10,
+        covenantComplianceProjects: filtered.filter(p => p.isIFCAligned).length,
+        avgCovenantBreachPercent: getAvg(filtered, "covenantBreachPercent"),
+        avgDelayRiskPercent: getAvg(filtered, "delayRiskPercent"),
+      };
+    }
+
+    if (instType === "GRANT" || instType === "TECHNICAL_ASSISTANCE") {
+      instrumentMetrics.grantSpecific = {
+        projectsWithESIA: filtered.filter(p => p.hasESIA).length,
+        projectsWithSEA: filtered.filter(p => p.hasSEA).length,
+        lowConfidenceCount: filtered.filter(p => p.dataConfidence < 50).length,
+        avgDataConfidence: avgConfidence,
+      };
+    }
+
+    if (instType === "BLENDED") {
+      const capitalModes: Record<string, number> = {};
+      for (const p of filtered) {
+        const mode = p.capitalMode ?? "Unknown";
+        capitalModes[mode] = (capitalModes[mode] ?? 0) + 1;
+      }
+      instrumentMetrics.blendedSpecific = {
+        capitalModeBreakdown: capitalModes,
+        grantFirstCount: filtered.filter(p => p.capitalMode === "Grant-First" || p.capitalMode === "Grant").length,
+        blendedCount: filtered.filter(p => p.capitalMode === "Blended").length,
+        avgCostOverrunPercent: getAvg(filtered, "costOverrunPercent"),
+      };
+    }
+
+    instruments[instType] = instrumentMetrics;
+  }
+
+  const totalCapital = projects.reduce((s, p) => s + p.investmentAmount, 0);
+  res.json({
+    instruments,
+    summary: {
+      totalProjects: projects.length,
+      totalCapital: Math.round(totalCapital * 10) / 10,
+      instrumentTypeCount: Object.keys(instruments).length,
+      dominantInstrument: Object.entries(instruments).sort((a, b) => (b[1] as any).totalCapital - (a[1] as any).totalCapital)[0]?.[0] ?? null,
+    },
+  });
+});
+
+function getAvg(projects: any[], field: string): number | null {
+  const vals = projects.filter(p => p[field] != null).map(p => p[field] as number);
+  if (vals.length === 0) return null;
+  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
+}
 
 export default router;

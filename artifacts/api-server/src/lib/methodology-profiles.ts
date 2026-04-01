@@ -226,6 +226,30 @@ export const METHODOLOGY_PROFILES: MethodologyProfileDef[] = [
     assumptions: "Program theory of change is coherent and has been validated by implementing entity. Multiple sub-project sites average out site-specific variability.",
     knownLimitations: "Does not model inter-sector coordination risk. Assumes implementing entity has adequate management capacity. Results chain complexity is proxied by outcome complexity index, not measured directly.",
   },
+  {
+    profileKey: "PERS_PRIVATE_SECTOR_V1",
+    name: "Private Sector / Productive Investment Profile",
+    sectorFamily: "private_sector_productive",
+    version: "V1",
+    weights: {
+      countryContext: 0.33,
+      projectOverlay: 0.27,
+      sensitivity: 0.20,
+      interventionRisk: 0.20,
+      outcomeRiskModifier: 0.0,
+      instrumentStructureModifier: 0.0,
+      confidenceInfluence: 0.15,
+    },
+    relevance: {
+      hazard: 0.6, biodiversity: 0.3, governance: 0.6,
+      disasterHistory: 0.4, communityVulnerability: 0.3,
+      outcomeComplexity: 0.4, monitoringNeeds: 0.5,
+    },
+    capitalSuitability: ["LOAN", "BLENDED", "GUARANTEE"],
+    rationale: "Balanced exposure-governance profile for revenue-generating commercial assets. Higher overlay weight captures asset-specific site exposure and construction risk typical of productive investments. Elevated governance relevance reflects permitting, regulatory compliance, and operating license risks. Intervention risk captures implementation feasibility for private-sector delivery modalities. Country context weight is reduced because commercial ventures are partially insulated from macro-level institutional weaknesses through private governance structures.",
+    assumptions: "Assumes commercial viability and revenue generation capacity are assessed independently of environmental risk. Asset valuation and market risk are not modeled — PERS captures environmental and social risk only. Permitting timelines are proxied by regulatory complexity scores.",
+    knownLimitations: "Does not model commodity price risk, demand risk, or competitive dynamics. Revenue sustainability is assumed but not validated. Private governance quality is proxied by national governance scores, which may underestimate well-managed private entities.",
+  },
 ];
 
 export function getProfileForFamily(family: SectorFamilyKey): MethodologyProfileDef {

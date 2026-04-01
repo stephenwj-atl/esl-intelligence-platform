@@ -23,3 +23,4 @@ export * from "./ingestion-runs";
 export * from "./sector-families";
 export * from "./project-outcomes";
 export * from "./methodology-defense";
+export * from "./assessment-snapshots";

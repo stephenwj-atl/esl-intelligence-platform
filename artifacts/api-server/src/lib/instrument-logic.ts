@@ -17,6 +17,12 @@ export type GrantDecisionSignal =
 
 export type LoanDecisionSignal = "PROCEED" | "CONDITION" | "DECLINE";
 
+export type BlendedLabel =
+  | "GRANT_FIRST"
+  | "BLENDED_NOW"
+  | "LOAN_READY_AFTER_VALIDATION"
+  | "STRUCTURE_NOT_YET_BANKABLE";
+
 export type DecisionSignal = LoanDecisionSignal | GrantDecisionSignal;
 
 export interface InstrumentAssessment {
@@ -25,6 +31,7 @@ export interface InstrumentAssessment {
   structureRiskScore: number;
   reasoning: string[];
   conditions: string[];
+  blendedLabel?: BlendedLabel;
 }
 
 interface ScoreInputs {
@@ -131,22 +138,32 @@ function assessBlended(inputs: ScoreInputs): InstrumentAssessment {
   const conditions: string[] = [];
 
   let signal: DecisionSignal;
+  let blendedLabel: BlendedLabel;
 
   if (persScore > 80 && implementationCapacity < 30) {
     signal = "DO_NOT_FUND";
+    blendedLabel = "STRUCTURE_NOT_YET_BANKABLE";
     reasoning.push("Risk too high for even blended structuring. Grant component would absorb all risk without transition pathway.");
   } else if (persScore > 65) {
     signal = "PROCEED_WITH_CONTROLS";
+    blendedLabel = "GRANT_FIRST";
     reasoning.push("High risk but blended structure can absorb it: grant component provides first-loss protection, debt enters after risk reduction milestones.");
     conditions.push("Grant-first sequencing: concessional capital deploys before commercial tranche.");
     conditions.push("Transition trigger: PERS must reduce below 50 before debt activation.");
   } else if (persScore > 40) {
     signal = "CONDITION";
+    blendedLabel = "BLENDED_NOW";
     reasoning.push("Moderate risk — blended structure appropriate. Define clear grant/debt split and transition conditions.");
     conditions.push("Define milestone-based transition from concessional to commercial terms.");
   } else {
     signal = "PROCEED";
+    blendedLabel = "LOAN_READY_AFTER_VALIDATION";
     reasoning.push("Low risk — blended structure may not be necessary. Consider whether pure loan or grant is more efficient.");
+  }
+
+  if (disbursementReadiness < 35 && blendedLabel !== "STRUCTURE_NOT_YET_BANKABLE") {
+    blendedLabel = "STRUCTURE_NOT_YET_BANKABLE";
+    reasoning.push("Disbursement readiness too low for deployment — structure is not yet bankable.");
   }
 
   const structureRisk = clamp(
@@ -159,7 +176,7 @@ function assessBlended(inputs: ScoreInputs): InstrumentAssessment {
     reasoning.push(`Recommended grant component: ${Math.round(grantShare)}% to absorb initial risk.`);
   }
 
-  return { instrumentType: "BLENDED", decisionSignal: signal, structureRiskScore: round(structureRisk), reasoning, conditions };
+  return { instrumentType: "BLENDED", decisionSignal: signal, structureRiskScore: round(structureRisk), reasoning, conditions, blendedLabel };
 }
 
 function assessGuarantee(inputs: ScoreInputs): InstrumentAssessment {

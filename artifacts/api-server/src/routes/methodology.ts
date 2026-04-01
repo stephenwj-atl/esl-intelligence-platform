@@ -9,13 +9,20 @@ import {
   methodologyProfilesTable,
   sectorFamiliesTable,
   projectsTable,
+  profileComparisonRunsTable,
+  assessmentSnapshotsTable,
+  methodologyProfileChangesTable,
+  funderFrameworksTable,
 } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireRole } from "../middleware/auth";
-import { SECTOR_FAMILIES, getAllProjectTypes } from "../lib/sector-families";
-import { getAllProfiles, getProfileByKey } from "../lib/methodology-profiles";
+import { SECTOR_FAMILIES, getAllProjectTypes, lookupSectorFamily } from "../lib/sector-families";
+import { getAllProfiles, getProfileByKey, getProfileForFamily } from "../lib/methodology-profiles";
 import { generateMemo, type MemoGenerationParams } from "../lib/memo-generator";
 import { ESL_SERVICE_CATALOG, getServicesForContext, recommendServices } from "../lib/esl-services-expanded";
+import { calculateLayeredPERS } from "../lib/layered-pers-engine";
+import { getAllFunderFrameworks, getFunderFramework, applyFunderToProject } from "../lib/funder-frameworks";
+import { decryptProjectFields } from "../lib/project-encryption";
 import type { SectorFamilyKey } from "../lib/sector-families";
 import type { InstrumentType } from "../lib/instrument-logic";
 
@@ -200,5 +207,325 @@ router.post("/esl-services/recommend", async (req, res) => {
   );
   res.json(recommendations);
 });
+
+router.post("/methodology/compare/project/:id", async (req, res) => {
+  const projectId = parseInt(req.params.id);
+  if (isNaN(projectId)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, projectId));
+  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+  const p = decryptProjectFields(project);
+
+  const { profileKeys, instrumentOverride, funderOverride } = req.body;
+  if (!profileKeys || !Array.isArray(profileKeys) || profileKeys.length === 0) {
+    res.status(400).json({ message: "profileKeys array required" }); return;
+  }
+
+  const instrumentType = (instrumentOverride ?? p.instrumentType ?? "LOAN") as InstrumentType;
+  const riskScores = {
+    environmentalRisk: p.environmentalRisk,
+    infrastructureRisk: p.infrastructureRisk,
+    humanExposureRisk: p.humanExposureRisk,
+    regulatoryRisk: p.regulatoryRisk,
+    dataConfidence: p.dataConfidence,
+    overallRisk: p.overallRisk,
+  };
+
+  const results: any[] = [];
+  for (const profileKey of profileKeys) {
+    const prof = getProfileByKey(profileKey);
+    if (!prof) continue;
+
+    const assessment = calculateLayeredPERS(
+      riskScores, p.projectType, p.hasSEA, p.hasESIA,
+      instrumentType, undefined, undefined, undefined, undefined,
+      undefined, profileKey,
+    );
+
+    results.push({
+      profileKey: prof.profileKey,
+      profileName: prof.name,
+      sectorFamily: prof.sectorFamily,
+      layeredScores: assessment.layeredBreakdown.layeredScores,
+      decisionSignal: assessment.decisionSignal,
+      capitalMode: assessment.capitalMode,
+      monitoringIntensity: assessment.monitoringIntensity.level,
+      transitionReadiness: assessment.layeredBreakdown.transitionReadiness,
+      disbursementReadiness: assessment.layeredBreakdown.disbursementReadiness,
+      blendedLabel: assessment.layeredBreakdown.blendedLabel,
+      conditions: assessment.layeredBreakdown.instrumentAssessment.conditions,
+      reasoning: assessment.layeredBreakdown.instrumentAssessment.reasoning,
+      weights: assessment.layeredBreakdown.weights,
+      explainability: assessment.layeredBreakdown.explainability,
+    });
+  }
+
+  const activeProfile = p.methodologyProfile ?? getProfileForFamily(lookupSectorFamily(p.projectType)).profileKey;
+  const activeResult = results.find(r => r.profileKey === activeProfile);
+
+  const comparisons = results.map(r => {
+    const base = activeResult ?? results[0];
+    return {
+      ...r,
+      deltas: {
+        persFinalDelta: Math.round((r.layeredScores.persFinalScore - base.layeredScores.persFinalScore) * 10) / 10,
+        decisionChanged: r.decisionSignal !== base.decisionSignal,
+        capitalModeChanged: r.capitalMode !== base.capitalMode,
+        monitoringChanged: r.monitoringIntensity !== base.monitoringIntensity,
+        topDriverChanges: getTopDriverChanges(r.layeredScores, base.layeredScores),
+      },
+    };
+  });
+
+  const [run] = await db.insert(profileComparisonRunsTable).values({
+    targetType: "project",
+    targetId: projectId,
+    selectedProfiles: profileKeys,
+    instrumentOverride: instrumentOverride ?? null,
+    funderOverride: funderOverride ?? null,
+    results: comparisons,
+    generatedBy: (req as any).user?.email ?? "system",
+  }).returning();
+
+  res.json({ comparisonId: run.id, activeProfile, instrumentType, comparisons });
+});
+
+router.get("/methodology/comparisons", async (_req, res) => {
+  const runs = await db.select().from(profileComparisonRunsTable).orderBy(desc(profileComparisonRunsTable.createdAt)).limit(50);
+  res.json(runs);
+});
+
+router.get("/funders", (_req, res) => {
+  res.json(getAllFunderFrameworks());
+});
+
+router.get("/funders/:key", (req, res) => {
+  const fw = getFunderFramework(req.params.key);
+  if (!fw) { res.status(404).json({ message: "Framework not found" }); return; }
+  res.json(fw);
+});
+
+router.post("/funders/apply-to-project/:id", async (req, res) => {
+  const projectId = parseInt(req.params.id);
+  if (isNaN(projectId)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, projectId));
+  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+  const p = decryptProjectFields(project);
+
+  const { frameworkKey } = req.body;
+  if (!frameworkKey) { res.status(400).json({ message: "frameworkKey required" }); return; }
+
+  const instrumentType = (p.instrumentType ?? "LOAN") as InstrumentType;
+  const recommendation = applyFunderToProject(frameworkKey, p.persScore ?? 50, p.dataConfidence, instrumentType);
+  if (!recommendation) { res.status(404).json({ message: "Framework not found" }); return; }
+
+  const fw = getFunderFramework(frameworkKey)!;
+  res.json({
+    project: { id: p.id, name: p.name, persScore: p.persScore, dataConfidence: p.dataConfidence, instrumentType },
+    framework: { key: fw.key, displayName: fw.displayName, categoryMapping: fw.categoryMapping },
+    recommendation,
+  });
+});
+
+router.post("/funders/compare", (req, res) => {
+  const { frameworkKeys, persScore, dataConfidence, instrumentType } = req.body;
+  if (!frameworkKeys || !Array.isArray(frameworkKeys)) {
+    res.status(400).json({ message: "frameworkKeys array required" }); return;
+  }
+
+  const comparisons = frameworkKeys.map((key: string) => {
+    const fw = getFunderFramework(key);
+    if (!fw) return null;
+    const rec = applyFunderToProject(key, persScore ?? 50, dataConfidence ?? 60, instrumentType ?? "LOAN");
+    return { framework: fw, recommendation: rec };
+  }).filter(Boolean);
+
+  res.json(comparisons);
+});
+
+router.post("/assessments/snapshot/:id", async (req, res) => {
+  const projectId = parseInt(req.params.id);
+  if (isNaN(projectId)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, projectId));
+  if (!project) { res.status(404).json({ message: "Project not found" }); return; }
+  const p = decryptProjectFields(project);
+
+  const instrumentType = (req.body.instrumentType ?? p.instrumentType ?? "LOAN") as InstrumentType;
+  const profileOverride = req.body.profileKey;
+
+  const riskScores = {
+    environmentalRisk: p.environmentalRisk,
+    infrastructureRisk: p.infrastructureRisk,
+    humanExposureRisk: p.humanExposureRisk,
+    regulatoryRisk: p.regulatoryRisk,
+    dataConfidence: p.dataConfidence,
+    overallRisk: p.overallRisk,
+  };
+
+  const assessment = calculateLayeredPERS(
+    riskScores, p.projectType, p.hasSEA, p.hasESIA,
+    instrumentType, undefined, undefined, undefined, undefined,
+    undefined, profileOverride,
+  );
+
+  const ls = assessment.layeredBreakdown.layeredScores;
+  const [snapshot] = await db.insert(assessmentSnapshotsTable).values({
+    projectId,
+    profileUsed: assessment.layeredBreakdown.profileUsed,
+    instrumentType,
+    funderFramework: req.body.funderFramework ?? null,
+    countryContextScore: ls.countryContextScore,
+    projectExposureScore: ls.projectExposureScore,
+    sectorSensitivityScore: ls.sectorSensitivityScore,
+    interventionDeliveryScore: ls.interventionDeliveryScore,
+    instrumentStructureScore: ls.instrumentStructureScore,
+    outcomeDeliveryScore: ls.outcomeDeliveryScore,
+    confidenceScore: ls.confidenceScore,
+    persBaseScore: ls.persBaseScore,
+    persFinalScore: ls.persFinalScore,
+    decisionSignal: assessment.decisionSignal,
+    capitalMode: assessment.capitalMode,
+    monitoringIntensity: assessment.monitoringIntensity.level,
+    disbursementReadiness: assessment.layeredBreakdown.disbursementReadiness,
+    transitionReadiness: assessment.layeredBreakdown.transitionReadiness,
+    blendedLabel: assessment.layeredBreakdown.blendedLabel ?? null,
+    conditions: assessment.layeredBreakdown.instrumentAssessment.conditions,
+    controls: assessment.layeredBreakdown.instrumentAssessment.controls ?? assessment.layeredBreakdown.instrumentAssessment.conditions,
+    reasoning: assessment.layeredBreakdown.instrumentAssessment.reasoning,
+    explainability: assessment.layeredBreakdown.explainability,
+    fullBreakdown: assessment.layeredBreakdown as any,
+    generatedBy: (req as any).user?.email ?? "system",
+  }).returning();
+
+  res.status(201).json(snapshot);
+});
+
+router.get("/assessments/snapshots/:projectId", async (req, res) => {
+  const projectId = parseInt(req.params.projectId);
+  if (isNaN(projectId)) { res.status(400).json({ message: "Invalid project ID" }); return; }
+  const snapshots = await db.select().from(assessmentSnapshotsTable)
+    .where(eq(assessmentSnapshotsTable.projectId, projectId))
+    .orderBy(desc(assessmentSnapshotsTable.createdAt));
+  res.json(snapshots);
+});
+
+router.post("/methodology/profiles/:key/update", requireRole("Admin"), async (req, res) => {
+  const profileKey = req.params.key;
+  const profile = getProfileByKey(profileKey);
+  if (!profile) { res.status(404).json({ message: "Profile not found" }); return; }
+
+  const { changes, reviewer, reason } = req.body;
+  if (!changes || !reviewer || !reason) {
+    res.status(400).json({ message: "changes, reviewer, and reason required" }); return;
+  }
+
+  const violations: string[] = [];
+  const weightFields = ["countryContext", "projectOverlay", "sensitivity", "interventionRisk"];
+  const modifierFields = ["outcomeRiskModifier", "instrumentStructureModifier", "confidenceInfluence"];
+  const relevanceFields = ["hazard", "biodiversity", "governance", "disasterHistory", "communityVulnerability", "outcomeComplexity", "monitoringNeeds"];
+
+  let materialChanges = 0;
+
+  for (const [field, newValue] of Object.entries(changes)) {
+    const nv = newValue as number;
+
+    if (weightFields.includes(field)) {
+      const original = (profile.weights as any)[field] as number;
+      const delta = Math.abs(nv - original);
+      if (delta > 0.10) violations.push(`Weight '${field}' shift of ${delta.toFixed(2)} exceeds ±0.10 limit`);
+      if (nv < 0.05) violations.push(`Weight '${field}' = ${nv} is below 0.05 minimum`);
+      if (nv > 0.50) violations.push(`Weight '${field}' = ${nv} exceeds 0.50 maximum`);
+    }
+
+    if (relevanceFields.includes(field)) {
+      const original = (profile.relevance as any)[field] as number;
+      if (nv < 0 || nv > 1) violations.push(`Relevance '${field}' = ${nv} is outside 0.0-1.0 bounds`);
+      const delta = Math.abs(nv - original);
+      if (delta > 0.20) violations.push(`Relevance '${field}' shift of ${delta.toFixed(2)} exceeds 0.20 — calibration note required`);
+      if (delta > 0.05) materialChanges++;
+    }
+  }
+
+  const proposedWeights = { ...profile.weights };
+  for (const f of weightFields) {
+    if (changes[f] !== undefined) (proposedWeights as any)[f] = changes[f];
+  }
+  const baseSum = proposedWeights.countryContext + proposedWeights.projectOverlay + proposedWeights.sensitivity + proposedWeights.interventionRisk;
+  if (Math.abs(baseSum - 1.0) > 0.01) {
+    violations.push(`Base weights sum to ${baseSum.toFixed(3)} — must normalize to 1.00`);
+  }
+
+  if (violations.length > 0) {
+    res.status(422).json({
+      message: "Calibration guardrail violations detected",
+      violations,
+      autoStatus: materialChanges >= 5 ? "UNDER_REVIEW" : null,
+    });
+    return;
+  }
+
+  const changeRecords: any[] = [];
+  for (const [field, newValue] of Object.entries(changes)) {
+    const nv = newValue as number;
+    let original: number;
+    if (weightFields.includes(field) || modifierFields.includes(field)) {
+      original = (profile.weights as any)[field] ?? 0;
+    } else {
+      original = (profile.relevance as any)[field] ?? 0;
+    }
+
+    changeRecords.push({
+      profileKey,
+      fieldChanged: field,
+      originalValue: original,
+      newValue: nv,
+      delta: Math.round((nv - original) * 1000) / 1000,
+      changeReason: reason,
+      reviewer,
+      reviewStatus: materialChanges >= 5 ? "under_review" : "approved",
+    });
+  }
+
+  if (changeRecords.length > 0) {
+    await db.insert(methodologyProfileChangesTable).values(changeRecords);
+  }
+
+  res.json({
+    message: "Profile update validated",
+    changesRecorded: changeRecords.length,
+    calibrationStatus: materialChanges >= 5 ? "UNDER_REVIEW" : "approved",
+    violations: [],
+  });
+});
+
+router.get("/methodology/profile-changes", async (_req, res) => {
+  const changes = await db.select().from(methodologyProfileChangesTable).orderBy(desc(methodologyProfileChangesTable.createdAt)).limit(100);
+  res.json(changes);
+});
+
+function getTopDriverChanges(a: any, b: any): string[] {
+  const drivers: string[] = [];
+  const fields = [
+    { key: "countryContextScore", label: "Country Context" },
+    { key: "projectExposureScore", label: "Project Exposure" },
+    { key: "sectorSensitivityScore", label: "Sector Sensitivity" },
+    { key: "interventionDeliveryScore", label: "Intervention Delivery" },
+    { key: "instrumentStructureScore", label: "Instrument Structure" },
+    { key: "outcomeDeliveryScore", label: "Outcome Delivery" },
+  ];
+  for (const f of fields) {
+    const delta = a[f.key] - b[f.key];
+    if (Math.abs(delta) > 2) {
+      drivers.push(`${f.label}: ${delta > 0 ? "+" : ""}${delta.toFixed(1)}`);
+    }
+  }
+  return drivers.sort((a, b) => {
+    const aDelta = Math.abs(parseFloat(a.split(": ")[1]));
+    const bDelta = Math.abs(parseFloat(b.split(": ")[1]));
+    return bDelta - aDelta;
+  });
+}
 
 export default router;

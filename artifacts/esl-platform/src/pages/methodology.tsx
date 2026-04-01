@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { Card, AnimatedContainer } from "@/components/ui";
-import { BookOpen, Calculator, Layers, Shield, Activity, Building2, AlertTriangle, Boxes, Gauge, GitBranch } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { BookOpen, Calculator, Layers, Shield, Activity, Building2, AlertTriangle, Boxes, Gauge, GitBranch, ArrowLeftRight } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 const BASE = "/api";
 
@@ -46,6 +47,10 @@ const FRAMEWORKS = [
 ];
 
 export default function MethodologyPage() {
+  const [comparisonProjectId, setComparisonProjectId] = useState<number | null>(null);
+  const [selectedProfiles, setSelectedProfiles] = useState<string[]>([]);
+  const [comparisonResult, setComparisonResult] = useState<any>(null);
+
   const { data: profiles = [] } = useQuery({
     queryKey: ["methodology-profiles"],
     queryFn: async () => {
@@ -63,6 +68,36 @@ export default function MethodologyPage() {
       return res.json();
     },
   });
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects-for-comparison"],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/projects`, { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : data.projects || [];
+    },
+  });
+
+  const compareProfiles = useMutation({
+    mutationFn: async () => {
+      if (!comparisonProjectId || selectedProfiles.length < 2) return null;
+      const res = await fetch(`${BASE}/methodology/compare/project/${comparisonProjectId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ profileKeys: selectedProfiles }),
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    onSuccess: (data) => setComparisonResult(data),
+  });
+
+  const toggleProfile = (key: string) => {
+    setSelectedProfiles(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    setComparisonResult(null);
+  };
 
   return (
     <Layout>
@@ -165,6 +200,102 @@ export default function MethodologyPage() {
                 </div>
               ))}
             </div>
+          </Card>
+        </AnimatedContainer>
+
+        <AnimatedContainer delay={0.18}>
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <ArrowLeftRight className="w-5 h-5 text-primary" /> Profile Comparison Engine
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">Compare how different methodology profiles score the same project. Select a project and 2+ profiles to compare.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Project</label>
+                <select
+                  value={comparisonProjectId ?? ""}
+                  onChange={e => { setComparisonProjectId(e.target.value ? parseInt(e.target.value) : null); setComparisonResult(null); }}
+                  className="w-full bg-secondary/30 border border-border/30 rounded-lg px-3 py-2 text-sm text-foreground"
+                >
+                  <option value="">Select a project...</option>
+                  {projects.map((p: any) => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.country})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Profiles (select 2+)</label>
+                <div className="flex flex-wrap gap-1">
+                  {(profiles as any[]).map((p: any) => (
+                    <button key={p.profileKey} onClick={() => toggleProfile(p.profileKey)}
+                      className={`px-2 py-1 text-[10px] rounded border transition-colors ${selectedProfiles.includes(p.profileKey) ? "bg-primary/20 text-primary border-primary/30" : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10"}`}>
+                      {p.name.replace("PERS ", "").replace(" V1", "")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => compareProfiles.mutate()}
+              disabled={!comparisonProjectId || selectedProfiles.length < 2 || compareProfiles.isPending}
+              className="px-4 py-2 bg-primary/20 text-primary rounded-lg text-sm font-medium border border-primary/30 hover:bg-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {compareProfiles.isPending ? "Comparing..." : "Run Comparison"}
+            </button>
+
+            {comparisonResult?.comparisons && (
+              <div className="mt-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left py-2 px-2 text-muted-foreground">Profile</th>
+                        <th className="text-center py-2 px-2 text-muted-foreground">PERS Final</th>
+                        <th className="text-center py-2 px-2 text-muted-foreground">Delta</th>
+                        <th className="text-center py-2 px-2 text-muted-foreground">Signal</th>
+                        <th className="text-center py-2 px-2 text-muted-foreground">Capital</th>
+                        <th className="text-center py-2 px-2 text-muted-foreground">Monitoring</th>
+                        <th className="text-left py-2 px-2 text-muted-foreground">Top Changes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {comparisonResult.comparisons.map((c: any) => (
+                        <tr key={c.profileKey} className={`hover:bg-white/[0.02] ${c.profileKey === comparisonResult.activeProfile ? "bg-primary/5" : ""}`}>
+                          <td className="py-2 px-2 font-medium text-foreground">
+                            {c.profileName}
+                            {c.profileKey === comparisonResult.activeProfile && <span className="ml-1 text-[9px] text-primary">(active)</span>}
+                          </td>
+                          <td className="text-center py-2 px-2 font-mono font-bold">
+                            <span className={c.layeredScores.persFinalScore < 40 ? "text-success" : c.layeredScores.persFinalScore < 70 ? "text-warning" : "text-destructive"}>
+                              {c.layeredScores.persFinalScore?.toFixed(1)}
+                            </span>
+                          </td>
+                          <td className="text-center py-2 px-2 font-mono">
+                            {c.deltas.persFinalDelta !== 0 && (
+                              <span className={c.deltas.persFinalDelta > 0 ? "text-red-400" : "text-green-400"}>
+                                {c.deltas.persFinalDelta > 0 ? "+" : ""}{c.deltas.persFinalDelta}
+                              </span>
+                            )}
+                          </td>
+                          <td className="text-center py-2 px-2">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] ${c.deltas.decisionChanged ? "bg-amber-500/20 text-amber-400" : "bg-white/5 text-foreground/60"}`}>
+                              {c.decisionSignal}
+                            </span>
+                          </td>
+                          <td className="text-center py-2 px-2 text-foreground/70">{c.capitalMode}</td>
+                          <td className="text-center py-2 px-2 text-foreground/70">{c.monitoringIntensity}</td>
+                          <td className="py-2 px-2 text-foreground/60">
+                            {(c.deltas.topDriverChanges || []).slice(0, 2).join(", ") || "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </Card>
         </AnimatedContainer>
 

@@ -2,7 +2,7 @@ import type { RiskScores } from "./risk-engine";
 import type { SectorFamilyKey } from "./sector-families";
 import { lookupSectorFamily } from "./sector-families";
 import { getProfileForFamily, getProfileByKey, type MethodologyProfileDef } from "./methodology-profiles";
-import type { InstrumentType } from "./instrument-logic";
+import type { InstrumentType, BlendedLabel } from "./instrument-logic";
 import { assessInstrument } from "./instrument-logic";
 import type { SensitivityProvenance } from "./country-data-lookup";
 import {
@@ -60,6 +60,7 @@ export interface LayeredBreakdown {
   explainability: string[];
   disbursementReadiness: string;
   transitionReadiness: string;
+  blendedLabel?: BlendedLabel;
 }
 
 export interface FullAssessmentResult {
@@ -242,6 +243,7 @@ export function calculateLayeredPERS(
       explainability,
       disbursementReadiness,
       transitionReadiness,
+      blendedLabel: instrumentAssessment.blendedLabel,
     },
     decisionOutcome: loanEquivDecision,
     decisionSignal: instrumentAssessment.decisionSignal,

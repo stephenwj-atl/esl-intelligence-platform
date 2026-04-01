@@ -56,13 +56,27 @@ All features must align with a mandatory 7-stage flow: Intake Screening, Baselin
 
 14. **Compliance Dashboard**: Dedicated `/compliance` page with framework selector (SOC 2 Type II, ISO 27001, ISO 27701, IFC Performance Standards).
 
+15. **Funder Framework Logic**: 9 funder frameworks (IDB, IDB Invest, CDB, World Bank, GCF, GEF, Adaptation Fund, EIB, Equator Principles) with safeguard emphasis, reporting style, disbursement controls, recommendation modifiers (PERS threshold adjustment, confidence minimum, monitoring emphasis, theory-of-change scrutiny, transition expectations). `applyFunderToProject()` generates funder-specific safeguard packages, conditions, and warnings. File: `funder-frameworks.ts`.
+
+16. **Profile Comparison Engine**: API endpoint to run assessment under multiple methodology profiles for the same project, computing deltas in PERS score, decision signal, capital mode, monitoring intensity, and top driver changes. Results stored in `profile_comparison_runs`. Route: `POST /methodology/compare/project/:id`.
+
+17. **Calibration Guardrails**: Runtime validation on profile weight/relevance changes: weight shift max ±0.10, weight bounds 0.05-0.50, relevance bounds 0.0-1.0, relevance shift warning at 0.20, base weights must sum to 1.00, auto-review threshold at 5+ material changes. Changes tracked in `methodology_profile_changes`.
+
+18. **Assessment Snapshots**: Full assessment result persistence in `assessment_snapshots` table. Supports re-running assessments with different profiles/instruments. Routes: `POST /assessments/snapshot/:id`, `GET /assessments/snapshots/:projectId`.
+
+19. **Multi-Instrument Portfolio Metrics**: Instrument-type breakdown with loan-specific (disbursement readiness, transition readiness), grant-specific (outcome delivery, ESIA/SEA coverage), and blended-specific (blended label distribution, grant-first count) aggregates. Route: `GET /portfolio/instrument-metrics`.
+
+20. **Blended Finance Labels**: 4-label classification (GRANT_FIRST, BLENDED_NOW, LOAN_READY_AFTER_VALIDATION, STRUCTURE_NOT_YET_BANKABLE) derived from PERS score, data confidence, and instrument conditions.
+
+21. **Private Sector Profile**: PERS_PRIVATE_SECTOR_V1 (9th methodology profile) with governance-heavy weighting for private-sector productive investment projects.
+
 **UI Pages (VNext):**
-- `/methodology` — Layered scoring, sector families, instrument logic, methodology profiles
+- `/methodology` — Layered scoring, sector families, instrument logic, methodology profiles, profile comparison engine
 - `/calibration` — Calibration Workbench: memo generation, validation cases, override decisions
 - `/outcomes` — Outcomes Framework: theory of change, metrics, delivery risk
 - `/disbursement` — Disbursement milestones and transition pathways
 - `/overrides` — Override Review and validation case tracking
-- `/funder-logic` — Instrument decision signal matrix, sector family capital suitability, ESL service catalog
+- `/funder-logic` — Instrument decision signal matrix, sector family capital suitability, funder frameworks (9 funders), ESL service catalog
 
 10. **Country Data Layer System**: Manages country-level environmental data (21 layers for Jamaica example) and project-specific overrides. Data layers are categorized (Environmental Hazards, Infrastructure, Social, Regulatory) and contribute to a Data Readiness Score.
 
