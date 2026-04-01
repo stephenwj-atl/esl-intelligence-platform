@@ -60,3 +60,9 @@ id = "OL2hvx6uvBZd6Ck_JBDgT"
 uri = "file://docs/PERS-upgrade-internal-brief.md"
 type = "text"
 title = "PERS Upgrade — Internal Team Brief"
+
+[[outputs]]
+id = "QE8Eq-Ze9pQFPWuDzZKVn"
+uri = "file://artifacts/esl-platform/ESL_Platform_Status_Update.md"
+type = "text"
+title = "ESL Platform — Team Review Document (April 2026)"
