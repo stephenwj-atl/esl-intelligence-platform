@@ -141,4 +141,7 @@ export const PIPELINE_SCHEDULES: Record<string, { frequency: string; intervalHou
   "who-gho": { frequency: "monthly", intervalHours: 720, priority: "low" },
   hydrosheds: { frequency: "monthly", intervalHours: 720, priority: "low" },
   "open-buildings": { frequency: "monthly", intervalHours: 720, priority: "low" },
+  thinkhazard: { frequency: "monthly", intervalHours: 720, priority: "standard" },
+  "wb-climate": { frequency: "quarterly", intervalHours: 2160, priority: "low" },
+  "nd-gain": { frequency: "quarterly", intervalHours: 2160, priority: "low" },
 };

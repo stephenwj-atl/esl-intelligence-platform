@@ -17,6 +17,9 @@ import { hydroshedsAdapter } from "./hydrosheds";
 import { openBuildingsAdapter } from "./open-buildings";
 import { nepaEiaAdapter } from "./nepa-eia";
 import { caribbeanEiaAdapter } from "./caribbean-eia";
+import { thinkhazardAdapter } from "./thinkhazard";
+import { wbClimateAdapter } from "./wb-climate";
+import { ndGainAdapter } from "./nd-gain";
 import { computeCountryScores, writeScoresToDB } from "./scoring";
 import { ingestionLogger as log } from "./utils/logger";
 import type { SourceAdapter, IngestionResult } from "./types";
@@ -43,6 +46,9 @@ const adapters: Record<string, SourceAdapter> = {
   "open-buildings": openBuildingsAdapter,
   "nepa-eia": nepaEiaAdapter,
   "caribbean-eia": caribbeanEiaAdapter,
+  thinkhazard: thinkhazardAdapter,
+  "wb-climate": wbClimateAdapter,
+  "nd-gain": ndGainAdapter,
 };
 
 export async function runPipeline(name: string): Promise<IngestionResult> {
