@@ -35,6 +35,7 @@ import { DataLayersTab } from "@/components/data-layers-tab";
 
 const TABS = [
   { id: "decision", label: "Decision", icon: ShieldCheck },
+  { id: "pers", label: "PERS", icon: Target },
   { id: "baseline", label: "Baseline", icon: Database },
   { id: "structure", label: "Structure", icon: Layers },
   { id: "financial", label: "Financial", icon: DollarSign },
@@ -177,8 +178,15 @@ export default function ProjectDetail() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <div className="flex items-center space-x-3 mb-1">
+              <div className="flex items-center flex-wrap gap-2 mb-1">
                 <Badge>{project.projectType}</Badge>
+                {(project as any).projectCategory && <Badge variant="outline" className="text-xs">{(project as any).projectCategory}</Badge>}
+                {(project as any).capitalMode && <Badge variant="outline" className="border-primary/50 text-primary text-xs">{(project as any).capitalMode}</Badge>}
+                {((project as any).pers?.monitoringIntensity || (project as any).monitoringIntensity) && (
+                  <Badge variant="outline" className={`text-xs ${((project as any).pers?.monitoringIntensity || (project as any).monitoringIntensity) === "INTENSIVE" ? "border-destructive/50 text-destructive" : ((project as any).pers?.monitoringIntensity || (project as any).monitoringIntensity) === "ENHANCED" ? "border-warning/50 text-warning" : "border-success/50 text-success"}`}>
+                    {(project as any).pers?.monitoringIntensity || (project as any).monitoringIntensity}
+                  </Badge>
+                )}
                 <span className="text-sm text-muted-foreground uppercase tracking-widest font-semibold">{project.country}</span>
                 <span className="text-sm font-mono font-bold px-2 py-0.5 bg-primary/20 text-primary rounded">{formatCurrency(project.investmentAmount)}</span>
               </div>
@@ -219,10 +227,12 @@ export default function ProjectDetail() {
                 {decision.insight}
               </p>
             </div>
-            <div className="text-center shrink-0">
-              <div className={`text-4xl font-mono font-black ${getRiskColor(riskScores.overallRisk)}`}>{riskScores.overallRisk.toFixed(1)}</div>
-              <div className="text-xs text-muted-foreground">Risk Score</div>
-              <div className="text-xs font-mono text-primary mt-1">{formatPercent(riskScores.dataConfidence)} conf.</div>
+            <div className="text-center shrink-0 space-y-2">
+              <div>
+                <div className={`text-4xl font-mono font-black ${getRiskColor((project as any).pers?.persScore ?? riskScores.overallRisk)}`}>{((project as any).pers?.persScore ?? riskScores.overallRisk).toFixed(1)}</div>
+                <div className="text-xs text-muted-foreground">{(project as any).pers?.persScore ? "PERS" : "Risk"}</div>
+              </div>
+              <div className="text-xs font-mono text-primary">{formatPercent(riskScores.dataConfidence)} conf.</div>
             </div>
           </div>
         </AnimatedContainer>
@@ -271,6 +281,152 @@ export default function ProjectDetail() {
               <CapitalDecisionSummary projectId={id} />
             </div>
           )}
+
+          {activeTab === "pers" && (() => {
+            const p = project as any;
+            const pers = p.pers || {};
+            const breakdown = pers.breakdown || {};
+            const irp = pers.interventionRiskProfile || {};
+            const persScore = pers.persScore ?? p.persScore ?? riskScores.overallRisk;
+            const getPersColor = (s: number) => s < 40 ? "text-success" : s < 70 ? "text-warning" : "text-destructive";
+            const monLevel = pers.monitoringIntensity || p.monitoringIntensity || "STANDARD";
+            const monColor = monLevel === "INTENSIVE" ? "text-destructive" : monLevel === "ENHANCED" ? "text-warning" : "text-success";
+
+            return (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="p-6 text-center">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">PERS Score</div>
+                    <div className={`text-4xl font-mono font-black ${getPersColor(persScore)}`}>{typeof persScore === "number" ? persScore.toFixed(1) : "—"}</div>
+                    <div className="text-xs text-muted-foreground mt-1">/ 100</div>
+                  </Card>
+                  <Card className="p-6 text-center">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Capital Mode</div>
+                    <div className="text-2xl font-display font-bold text-primary">{p.capitalMode || "—"}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Recommended</div>
+                  </Card>
+                  <Card className="p-6 text-center">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Monitoring</div>
+                    <div className={`text-2xl font-display font-bold ${monColor}`}>{monLevel}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Intensity Level</div>
+                  </Card>
+                  <Card className="p-6 text-center">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Intervention Risk</div>
+                    <div className={`text-4xl font-mono font-black ${getPersColor(pers.interventionRiskScore ?? 0)}`}>{typeof pers.interventionRiskScore === "number" ? pers.interventionRiskScore.toFixed(1) : "—"}</div>
+                    <div className="text-xs text-muted-foreground mt-1">/ 100</div>
+                  </Card>
+                </div>
+
+                {breakdown.ceriScore !== undefined && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">PERS Formula Breakdown</h3>
+                    <p className="text-xs text-muted-foreground mb-4 font-mono">
+                      PERS = (CERI × 0.50) + (Project Overlay × 0.25) + (Sensitivity × 0.15) + (Intervention Risk × 0.10)
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                      {[
+                        { label: "CERI", value: breakdown.ceriScore, weight: "50%", desc: "Country Environmental Risk" },
+                        { label: "Project Overlay", value: breakdown.projectOverlay, weight: "25%", desc: "Sector complexity" },
+                        { label: "Sensitivity", value: breakdown.sensitivityScore, weight: "15%", desc: "Human & governance" },
+                        { label: "Intervention Risk", value: breakdown.interventionRiskScore, weight: "10%", desc: "Delivery modality" },
+                      ].map(item => (
+                        <div key={item.label} className="bg-secondary/30 rounded-xl p-4">
+                          <div className="text-xs text-muted-foreground mb-1">{item.label} <span className="text-primary">({item.weight})</span></div>
+                          <div className={`text-2xl font-mono font-bold ${getPersColor(item.value)}`}>{typeof item.value === "number" ? item.value.toFixed(1) : "—"}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{item.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {breakdown.explainability && Array.isArray(breakdown.explainability) && (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Explainability</h4>
+                        {breakdown.explainability.map((line: string, i: number) => (
+                          <p key={i} className="text-sm text-foreground/80 pl-4 border-l-2 border-primary/30">{line}</p>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                {irp.interventionType && (
+                  <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Intervention Risk Profile: {irp.interventionType}</h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-secondary/30 rounded-xl p-4">
+                        <div className="text-xs text-muted-foreground">Base Risk</div>
+                        <div className="text-xl font-mono font-bold">{irp.baseRisk}</div>
+                      </div>
+                      <div className="bg-secondary/30 rounded-xl p-4">
+                        <div className="text-xs text-muted-foreground">Adjusted Risk</div>
+                        <div className={`text-xl font-mono font-bold ${getPersColor(irp.adjustedRisk)}`}>{irp.adjustedRisk}</div>
+                      </div>
+                    </div>
+                    {irp.riskDrivers && Array.isArray(irp.riskDrivers) && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold mb-2">Risk Drivers</h4>
+                        <div className="space-y-2">
+                          {irp.riskDrivers.map((d: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center text-sm bg-secondary/20 rounded-lg px-3 py-2">
+                              <span className="text-foreground/80">{d.factor}</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
+                                  <div className="h-full bg-primary rounded-full" style={{ width: `${(d.weight * 100)}%` }} />
+                                </div>
+                                <span className="font-mono text-xs w-10 text-right">{d.score}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {irp.typicalFailures && Array.isArray(irp.typicalFailures) && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold mb-2 text-destructive/80">Typical Failure Modes</h4>
+                        <ul className="space-y-1">
+                          {irp.typicalFailures.map((f: string, i: number) => (
+                            <li key={i} className="text-sm text-foreground/70 flex items-start gap-2">
+                              <AlertTriangle className="w-3 h-3 mt-0.5 text-destructive/60 shrink-0" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {irp.mitigationRecommendations && Array.isArray(irp.mitigationRecommendations) && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-2 text-success/80">Mitigation Recommendations</h4>
+                        <ul className="space-y-1">
+                          {irp.mitigationRecommendations.map((r: string, i: number) => (
+                            <li key={i} className="text-sm text-foreground/70 flex items-start gap-2">
+                              <CheckCircle className="w-3 h-3 mt-0.5 text-success/60 shrink-0" />
+                              {r}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </Card>
+                )}
+
+                <Card className="p-6 bg-secondary/10">
+                  <h3 className="text-lg font-semibold mb-4">Project Classification</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: "Category", value: p.projectCategory },
+                      { label: "Intervention", value: p.interventionType },
+                      { label: "Lender Framework", value: p.lenderFramework || "Not specified" },
+                      { label: "SEA/ESIA", value: [p.inputs?.hasSEA && "SEA", p.inputs?.hasESIA && "ESIA"].filter(Boolean).join(" + ") || "None" },
+                    ].map(item => (
+                      <div key={item.label}>
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider">{item.label}</div>
+                        <div className="text-sm font-semibold mt-1">{item.value || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            );
+          })()}
 
           {activeTab === "structure" && (
             <div className="space-y-6">

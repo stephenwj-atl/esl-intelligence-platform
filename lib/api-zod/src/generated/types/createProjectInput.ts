@@ -5,13 +5,21 @@
  * ESL Environmental Intelligence Platform API
  * OpenAPI spec version: 0.3.0
  */
+import type { CreateProjectInputInterventionType } from "./createProjectInputInterventionType";
+import type { CreateProjectInputLenderFramework } from "./createProjectInputLenderFramework";
+import type { CreateProjectInputProjectCategory } from "./createProjectInputProjectCategory";
 import type { CreateProjectInputProjectType } from "./createProjectInputProjectType";
 
 export interface CreateProjectInput {
   name: string;
   country: string;
   projectType: CreateProjectInputProjectType;
+  projectCategory?: CreateProjectInputProjectCategory;
+  interventionType?: CreateProjectInputInterventionType;
+  lenderFramework?: CreateProjectInputLenderFramework;
   investmentAmount: number;
+  latitude?: number;
+  longitude?: number;
   /**
    * @minimum 0
    * @maximum 10
@@ -45,4 +53,6 @@ export interface CreateProjectInput {
   hasLabData?: boolean;
   hasMonitoringData?: boolean;
   isIFCAligned?: boolean;
+  hasSEA?: boolean;
+  hasESIA?: boolean;
 }

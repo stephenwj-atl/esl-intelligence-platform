@@ -145,4 +145,7 @@ export const PIPELINE_SCHEDULES: Record<string, { frequency: string; intervalHou
   "wb-climate": { frequency: "quarterly", intervalHours: 2160, priority: "low" },
   "nd-gain": { frequency: "quarterly", intervalHours: 2160, priority: "low" },
   "wb-documents": { frequency: "monthly", intervalHours: 720, priority: "standard" },
+  "inform-risk": { frequency: "quarterly", intervalHours: 2160, priority: "standard" },
+  "transparency-cpi": { frequency: "quarterly", intervalHours: 2160, priority: "standard" },
+  "em-dat": { frequency: "quarterly", intervalHours: 2160, priority: "standard" },
 };

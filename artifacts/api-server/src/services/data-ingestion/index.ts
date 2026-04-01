@@ -21,6 +21,9 @@ import { thinkhazardAdapter } from "./thinkhazard";
 import { wbClimateAdapter } from "./wb-climate";
 import { ndGainAdapter } from "./nd-gain";
 import { wbDocumentsAdapter } from "./wb-documents";
+import { informRiskAdapter } from "./inform-risk";
+import { transparencyCpiAdapter } from "./transparency-cpi";
+import { emDatAdapter } from "./em-dat";
 import { computeCountryScores, writeScoresToDB } from "./scoring";
 import { ingestionLogger as log } from "./utils/logger";
 import type { SourceAdapter, IngestionResult } from "./types";
@@ -51,6 +54,9 @@ const adapters: Record<string, SourceAdapter> = {
   "wb-climate": wbClimateAdapter,
   "nd-gain": ndGainAdapter,
   "wb-documents": wbDocumentsAdapter,
+  "inform-risk": informRiskAdapter,
+  "transparency-cpi": transparencyCpiAdapter,
+  "em-dat": emDatAdapter,
 };
 
 export async function runPipeline(name: string): Promise<IngestionResult> {

@@ -16,6 +16,7 @@ export const STAGES: Stage[] = [
 
 export const TAB_STAGE_MAP: Record<string, string> = {
   decision: "Stage 4: Decision",
+  pers: "Stage 3: Risk",
   baseline: "Stage 2: Baseline",
   structure: "Stage 5: Control",
   financial: "Stage 4–5",

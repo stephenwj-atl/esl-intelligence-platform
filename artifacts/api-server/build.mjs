@@ -18,6 +18,7 @@ async function buildAll() {
     entryPoints: [
       path.resolve(artifactDir, "src/index.ts"),
       path.resolve(artifactDir, "src/scripts/run-ingestion.ts"),
+      path.resolve(artifactDir, "src/scripts/seed-demo-projects.ts"),
     ],
     platform: "node",
     bundle: true,

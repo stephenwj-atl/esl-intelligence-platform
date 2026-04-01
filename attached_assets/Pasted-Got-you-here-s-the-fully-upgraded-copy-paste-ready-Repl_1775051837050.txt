@@ -1,0 +1,463 @@
+Got you — here’s the fully upgraded, copy-paste-ready Replit prompt with grants, loans, and blended finance properly expanded across ALL real-world development spend categories (not just traditional sectors).
+
+This version fixes the key gap: DFIs don’t fund “sectors” — they fund intervention types across infrastructure, social systems, resilience, governance, and emergency response.
+
+⸻
+
+🔧 FULL REPLIT BUILD PROMPT (FINAL — WITH GRANT / BLENDED EXPANSION)
+
+Copy everything below into Replit.
+
+⸻
+
+REPLIT PROMPT
+
+You are a senior full-stack engineer and systems architect. Build the next production-grade version of the ESL Caribbean Environmental Intelligence Platform immediately inside this Replit project.
+
+Do not respond with analysis or a plan. Build.
+
+If something is unclear, make the most defensible assumption, document it in /docs/BUILD_ASSUMPTIONS.md, and continue.
+
+⸻
+
+🎯 MISSION
+
+Transform the platform from a country-level environmental intelligence system into a project-level capital deployment decision system that supports:
+	•	Loans
+	•	Grants
+	•	Blended finance
+
+Across ALL real-world development intervention types, not just infrastructure sectors.
+
+⸻
+
+⚠️ CRITICAL UPGRADE (NEW REQUIREMENT)
+
+The system MUST support full development finance use cases, including:
+	•	infrastructure
+	•	social programs
+	•	climate adaptation
+	•	disaster recovery
+	•	governance reform
+	•	environmental protection
+	•	agriculture & livelihoods
+	•	public health
+	•	education
+	•	emergency response
+
+This is NOT a “sector-only” system.
+
+It must support how DFIs actually deploy capital.
+
+⸻
+
+1. EXPANDED PROJECT CLASSIFICATION MODEL
+
+Replace simple “sector” logic with a two-layer classification system:
+
+1.1 Project Type (Primary Classification)
+
+Each project MUST belong to one of these:
+
+HARD INFRASTRUCTURE
+	•	transport (roads, highways, bridges)
+	•	ports and maritime
+	•	airports
+	•	energy generation
+	•	transmission & distribution
+	•	water supply
+	•	wastewater treatment
+	•	solid waste
+	•	irrigation systems
+	•	flood control infrastructure
+	•	housing & urban development
+	•	industrial facilities
+
+SOFT INFRASTRUCTURE / SOCIAL SYSTEMS
+	•	healthcare systems
+	•	hospitals & clinics
+	•	education systems
+	•	schools & training centers
+	•	social protection programs
+	•	housing upgrades
+	•	community infrastructure
+
+CLIMATE & ENVIRONMENTAL PROGRAMS
+	•	coastal protection
+	•	mangrove restoration
+	•	reforestation
+	•	watershed management
+	•	biodiversity protection
+	•	coral reef restoration
+	•	land rehabilitation
+	•	climate adaptation programs
+	•	climate mitigation programs
+
+AGRICULTURE & LIVELIHOODS
+	•	agricultural production
+	•	irrigation support
+	•	agro-processing
+	•	rural development
+	•	fisheries & aquaculture
+	•	food security programs
+
+GOVERNANCE & INSTITUTIONAL
+	•	regulatory reform
+	•	environmental governance systems
+	•	digital government systems
+	•	land administration systems
+	•	capacity building
+	•	public sector strengthening
+
+DISASTER RESPONSE & RECOVERY
+	•	emergency response
+	•	disaster recovery
+	•	reconstruction
+	•	resilience rebuilding
+	•	humanitarian support
+
+⸻
+
+1.2 Intervention Type (Secondary Classification)
+
+Each project must also have:
+	•	physical asset
+	•	programmatic intervention
+	•	policy / regulatory
+	•	emergency / rapid response
+	•	hybrid
+
+⸻
+
+2. CAPITAL MODE (MANDATORY CORE LOGIC)
+
+Every project MUST include:
+	•	capital_mode:
+	•	LOAN
+	•	GRANT
+	•	BLENDED
+
+This must drive:
+	•	risk tolerance
+	•	scoring thresholds
+	•	monitoring intensity
+	•	acceptable confidence levels
+
+⸻
+
+3. PROJECT RISK MODEL (UPDATED)
+
+3.1 PERS Formula
+
+Implement:
+
+PERS = (CERI * 0.50) + (ProjectOverlay * 0.25) + (Sensitivity * 0.15) + (InterventionRisk * 0.10)
+
+Then apply:
+	•	confidence adjustment
+	•	capital-mode logic
+
+⸻
+
+4. NEW: INTERVENTION RISK ENGINE
+
+This is critical.
+
+Different project types carry fundamentally different risks.
+
+Build an InterventionRiskScore based on:
+
+4.1 Physical Infrastructure
+	•	exposure to hazards
+	•	construction complexity
+	•	long-term asset vulnerability
+
+4.2 Social / Programmatic
+	•	dependency on institutions
+	•	delivery risk
+	•	community acceptance
+	•	execution complexity
+
+4.3 Environmental Programs
+	•	ecological uncertainty
+	•	long-term outcomes
+	•	monitoring difficulty
+
+4.4 Governance Projects
+	•	political risk
+	•	institutional fragility
+	•	corruption exposure
+
+4.5 Disaster Response
+	•	urgency
+	•	incomplete data
+	•	rapid deployment constraints
+
+⸻
+
+5. CAPITAL MODE LOGIC (VERY IMPORTANT)
+
+5.1 LOAN MODE
+
+Requires:
+	•	lower risk tolerance
+	•	higher confidence
+	•	strong predictability
+
+Rules:
+	•	high risk → decline
+	•	low confidence → pricing penalty
+	•	requires clear mitigation path
+
+⸻
+
+5.2 GRANT MODE
+
+Allows:
+	•	higher risk
+	•	lower confidence
+	•	early-stage environments
+
+BUT requires:
+	•	high monitoring intensity
+	•	structured milestones
+	•	validation checkpoints
+
+⸻
+
+5.3 BLENDED MODE
+
+Used when:
+	•	risk moderate
+	•	confidence moderate
+	•	viability uncertain
+
+Structure:
+	•	grant absorbs early risk
+	•	loan activates after validation
+
+⸻
+
+6. DECISION LOGIC (UPDATED)
+
+Decision is NOT just risk score.
+
+Use:
+
+Capital Mode	Risk	Confidence	Decision
+Loan	High	Any	DECLINE
+Loan	Moderate	Low	CONDITION
+Grant	High	Low	PROCEED WITH CONTROLS
+Blended	Moderate	Moderate	CONDITION
+Any	Low	High	PROCEED
+
+
+⸻
+
+7. CONFIDENCE → FINANCIAL CONTROL
+
+Rename to:
+
+Data Confidence Adjustment Factor
+
+Use it to drive:
+	•	pricing adjustment (loans)
+	•	monitoring intensity (grants)
+	•	capital structuring (blended)
+
+⸻
+
+8. MONITORING INTENSITY ENGINE
+
+Create levels:
+	•	STANDARD
+	•	ENHANCED
+	•	INTENSIVE
+
+Rules:
+	•	grants default ≥ enhanced
+	•	low confidence → increase level
+	•	high-risk projects → intensive
+
+⸻
+
+9. DATA SOURCE INTEGRATION (MANDATORY)
+
+Implement adapters for:
+	•	INFORM Risk Index
+	•	Transparency International CPI
+	•	EM-DAT
+
+Even if partially stubbed:
+	•	full pipeline structure required
+	•	seed realistic data
+	•	show in UI
+
+⸻
+
+10. DATABASE (REQUIRED TABLES)
+
+Must include:
+	•	projects
+	•	project_classifications
+	•	intervention_types
+	•	project_assessments
+	•	project_overlay_factors
+	•	intervention_risk_profiles
+	•	sector_sensitivity_profiles
+	•	methodology_versions
+	•	validation_cases
+	•	governance_indicators
+	•	disaster_loss_history
+
+Support:
+	•	versioning
+	•	auditability
+	•	explainability
+
+⸻
+
+11. FRONTEND (REQUIRED PAGES)
+
+Project Intake
+
+Must include:
+	•	classification (type + intervention)
+	•	capital mode
+	•	coordinates
+	•	sector
+	•	project value
+
+Assessment Output
+
+Show:
+	•	CERI
+	•	overlay score
+	•	intervention risk
+	•	sensitivity score
+	•	confidence
+	•	PERS
+	•	decision
+	•	capital mode recommendation
+	•	monitoring level
+	•	pricing adjustment
+
+Methodology Page
+
+Show:
+	•	full model logic
+	•	weights
+	•	definitions
+
+Validation Library
+
+Show:
+	•	case studies
+	•	expected vs actual
+
+⸻
+
+12. DEMO DATA (MANDATORY)
+
+Seed:
+
+Projects
+	•	coastal tourism resort (loan)
+	•	wastewater treatment plant (loan)
+	•	mangrove restoration (grant)
+	•	disaster recovery housing (grant)
+	•	agriculture irrigation (blended)
+	•	digital land registry (grant/governance)
+	•	port expansion (blended)
+
+Ensure:
+	•	all decision types appear
+	•	all capital modes appear
+
+⸻
+
+13. VALIDATION SYSTEM
+
+Create:
+	•	validation cases
+	•	event comparisons
+	•	outcome vs predicted risk
+
+Seed 3 realistic demo cases.
+
+⸻
+
+14. EXPLAINABILITY (MANDATORY)
+
+Every result must explain:
+	•	why score is high/low
+	•	what drove risk
+	•	what reduced confidence
+	•	what actions are required
+
+⸻
+
+15. DOCUMENTATION
+
+Generate:
+	•	BUILD_SUMMARY.md
+	•	PERS_METHODOLOGY.md
+	•	CAPITAL_MODE_LOGIC.md
+	•	INTERVENTION_MODEL.md
+	•	API.md
+	•	DATA_SOURCES.md
+
+⸻
+
+16. ACCEPTANCE CRITERIA
+
+Build is complete only if:
+	•	project can be created
+	•	assessment runs
+	•	PERS is returned
+	•	capital mode logic works
+	•	monitoring level is shown
+	•	explainability works
+	•	demo projects exist
+	•	validation library works
+
+⸻
+
+17. EXECUTION ORDER
+	1.	schema
+	2.	backend services
+	3.	scoring engine
+	4.	intervention model
+	5.	capital logic
+	6.	APIs
+	7.	frontend
+	8.	seed data
+	9.	docs
+	10.	fix errors
+
+⸻
+
+FINAL INSTRUCTION
+
+Build a working system TODAY.
+
+Do not wait for perfect data.
+
+Do not stop at scaffolding.
+
+Deliver a functioning, explainable, end-to-end platform.
+
+⸻
+
+🔚
+
+⸻
+
+If you want next step after this:
+
+I’d strongly recommend we immediately do:
+
+👉 PERS calibration + weighting defense (DFI-grade justification)
+👉 or build the capital pricing engine tied to real loan structures
+
+That’s what takes this from “impressive” to unavoidable.

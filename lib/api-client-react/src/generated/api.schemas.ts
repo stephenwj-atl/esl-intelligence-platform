@@ -22,13 +22,86 @@ export const CreateProjectInputProjectType = {
   Hotel: "Hotel",
   Industrial: "Industrial",
   Agriculture: "Agriculture",
+  Wind: "Wind",
+  Geothermal: "Geothermal",
+  Road: "Road",
+  Bridge: "Bridge",
+  Dam: "Dam",
+  Power_Plant: "Power Plant",
+  Water_Treatment: "Water Treatment",
+  Hospital: "Hospital",
+  School: "School",
+  Housing: "Housing",
+  Community_Centre: "Community Centre",
+  Market: "Market",
+  Mangrove_Restoration: "Mangrove Restoration",
+  Coral_Reef_Protection: "Coral Reef Protection",
+  Watershed_Management: "Watershed Management",
+  Forest_Conservation: "Forest Conservation",
+  Carbon_Sequestration: "Carbon Sequestration",
+  Aquaculture: "Aquaculture",
+  Irrigation: "Irrigation",
+  Food_Processing: "Food Processing",
+  Cold_Chain: "Cold Chain",
+  Regulatory_Capacity: "Regulatory Capacity",
+  Environmental_Agency: "Environmental Agency",
+  Land_Registry: "Land Registry",
+  Monitoring_Network: "Monitoring Network",
+  Emergency_Shelter: "Emergency Shelter",
+  Early_Warning_System: "Early Warning System",
+  Debris_Management: "Debris Management",
+  Infrastructure_Repair: "Infrastructure Repair",
+  Mining: "Mining",
+  Energy: "Energy",
+  Waste_Management: "Waste Management",
+  Chemical_Processing: "Chemical Processing",
+} as const;
+
+export type CreateProjectInputProjectCategory =
+  (typeof CreateProjectInputProjectCategory)[keyof typeof CreateProjectInputProjectCategory];
+
+export const CreateProjectInputProjectCategory = {
+  Hard_Infrastructure: "Hard Infrastructure",
+  Soft_Infrastructure: "Soft Infrastructure",
+  "Climate_&_Environment": "Climate & Environment",
+  "Agriculture_&_Food_Security": "Agriculture & Food Security",
+  "Governance_&_Institutional": "Governance & Institutional",
+  "Disaster_Response_&_Recovery": "Disaster Response & Recovery",
+} as const;
+
+export type CreateProjectInputInterventionType =
+  (typeof CreateProjectInputInterventionType)[keyof typeof CreateProjectInputInterventionType];
+
+export const CreateProjectInputInterventionType = {
+  Physical_Infrastructure: "Physical Infrastructure",
+  "Social/Programmatic": "Social/Programmatic",
+  Environmental: "Environmental",
+  Governance: "Governance",
+  Disaster: "Disaster",
+} as const;
+
+export type CreateProjectInputLenderFramework =
+  (typeof CreateProjectInputLenderFramework)[keyof typeof CreateProjectInputLenderFramework];
+
+export const CreateProjectInputLenderFramework = {
+  IDB_ESPF: "IDB ESPF",
+  CDB_ESRP: "CDB ESRP",
+  World_Bank_ESF: "World Bank ESF",
+  GCF: "GCF",
+  EIB: "EIB",
+  Equator_Principles: "Equator Principles",
 } as const;
 
 export interface CreateProjectInput {
   name: string;
   country: string;
   projectType: CreateProjectInputProjectType;
+  projectCategory?: CreateProjectInputProjectCategory;
+  interventionType?: CreateProjectInputInterventionType;
+  lenderFramework?: CreateProjectInputLenderFramework;
   investmentAmount: number;
+  latitude?: number;
+  longitude?: number;
   /**
    * @minimum 0
    * @maximum 10
@@ -62,6 +135,8 @@ export interface CreateProjectInput {
   hasLabData?: boolean;
   hasMonitoringData?: boolean;
   isIFCAligned?: boolean;
+  hasSEA?: boolean;
+  hasESIA?: boolean;
 }
 
 export interface RiskScores {

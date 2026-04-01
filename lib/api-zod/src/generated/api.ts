@@ -82,6 +82,8 @@ export const createProjectBodyWaterStressMax = 10;
 export const createProjectBodyHasLabDataDefault = false;
 export const createProjectBodyHasMonitoringDataDefault = false;
 export const createProjectBodyIsIFCAlignedDefault = false;
+export const createProjectBodyHasSEADefault = false;
+export const createProjectBodyHasESIADefault = false;
 
 export const CreateProjectBody = zod.object({
   name: zod.string(),
@@ -92,8 +94,72 @@ export const CreateProjectBody = zod.object({
     "Hotel",
     "Industrial",
     "Agriculture",
+    "Wind",
+    "Geothermal",
+    "Road",
+    "Bridge",
+    "Dam",
+    "Power Plant",
+    "Water Treatment",
+    "Hospital",
+    "School",
+    "Housing",
+    "Community Centre",
+    "Market",
+    "Mangrove Restoration",
+    "Coral Reef Protection",
+    "Watershed Management",
+    "Forest Conservation",
+    "Carbon Sequestration",
+    "Aquaculture",
+    "Irrigation",
+    "Food Processing",
+    "Cold Chain",
+    "Regulatory Capacity",
+    "Environmental Agency",
+    "Land Registry",
+    "Monitoring Network",
+    "Emergency Shelter",
+    "Early Warning System",
+    "Debris Management",
+    "Infrastructure Repair",
+    "Mining",
+    "Energy",
+    "Waste Management",
+    "Chemical Processing",
   ]),
+  projectCategory: zod
+    .enum([
+      "Hard Infrastructure",
+      "Soft Infrastructure",
+      "Climate & Environment",
+      "Agriculture & Food Security",
+      "Governance & Institutional",
+      "Disaster Response & Recovery",
+    ])
+    .optional(),
+  interventionType: zod
+    .enum([
+      "Physical Infrastructure",
+      "Social/Programmatic",
+      "Environmental",
+      "Governance",
+      "Disaster",
+    ])
+    .optional(),
+  lenderFramework: zod
+    .enum([
+      "IDB ESPF",
+      "CDB ESRP",
+      "World Bank ESF",
+      "GCF",
+      "EIB",
+      "Equator Principles",
+    ])
+    .optional(),
   investmentAmount: zod.number(),
+  latitude: zod.number().optional(),
+  longitude: zod.number().optional(),
   floodRisk: zod
     .number()
     .min(createProjectBodyFloodRiskMin)
@@ -123,6 +189,8 @@ export const CreateProjectBody = zod.object({
     .boolean()
     .default(createProjectBodyHasMonitoringDataDefault),
   isIFCAligned: zod.boolean().default(createProjectBodyIsIFCAlignedDefault),
+  hasSEA: zod.boolean().default(createProjectBodyHasSEADefault),
+  hasESIA: zod.boolean().default(createProjectBodyHasESIADefault),
 });
 
 /**

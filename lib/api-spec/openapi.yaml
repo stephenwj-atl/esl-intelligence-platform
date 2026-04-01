@@ -388,8 +388,21 @@ components:
           default: Jamaica
         projectType:
           type: string
-          enum: [Solar, Port, Hotel, Industrial, Agriculture]
+          enum: [Solar, Port, Hotel, Industrial, Agriculture, Wind, Geothermal, Road, Bridge, Dam, "Power Plant", "Water Treatment", Hospital, School, Housing, "Community Centre", Market, "Mangrove Restoration", "Coral Reef Protection", "Watershed Management", "Forest Conservation", "Carbon Sequestration", Aquaculture, Irrigation, "Food Processing", "Cold Chain", "Regulatory Capacity", "Environmental Agency", "Land Registry", "Monitoring Network", "Emergency Shelter", "Early Warning System", "Debris Management", "Infrastructure Repair", Mining, Energy, "Waste Management", "Chemical Processing"]
+        projectCategory:
+          type: string
+          enum: ["Hard Infrastructure", "Soft Infrastructure", "Climate & Environment", "Agriculture & Food Security", "Governance & Institutional", "Disaster Response & Recovery"]
+        interventionType:
+          type: string
+          enum: ["Physical Infrastructure", "Social/Programmatic", "Environmental", "Governance", "Disaster"]
+        lenderFramework:
+          type: string
+          enum: ["IDB ESPF", "CDB ESRP", "World Bank ESF", "GCF", "EIB", "Equator Principles"]
         investmentAmount:
+          type: number
+        latitude:
+          type: number
+        longitude:
           type: number
         floodRisk:
           type: number
@@ -422,6 +435,12 @@ components:
           type: boolean
           default: false
         isIFCAligned:
+          type: boolean
+          default: false
+        hasSEA:
+          type: boolean
+          default: false
+        hasESIA:
           type: boolean
           default: false
     RiskScores:

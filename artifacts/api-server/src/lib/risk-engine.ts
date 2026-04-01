@@ -10,7 +10,7 @@ interface RiskInputs {
   isIFCAligned: boolean;
 }
 
-interface RiskScores {
+export interface RiskScores {
   environmentalRisk: number;
   infrastructureRisk: number;
   humanExposureRisk: number;
