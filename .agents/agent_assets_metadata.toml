@@ -66,3 +66,9 @@ id = "QE8Eq-Ze9pQFPWuDzZKVn"
 uri = "file://artifacts/esl-platform/ESL_Platform_Status_Update.md"
 type = "text"
 title = "ESL Platform — Team Review Document (April 2026)"
+
+[[outputs]]
+id = "wO4GW4OOMvmpdTSQ9vbmI"
+uri = "file://docs/ESL-Intelligence-Platform-Complete.md"
+type = "text"
+title = "ESL Intelligence Platform - Complete Overview"
